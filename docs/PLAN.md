@@ -2,7 +2,7 @@
 
 Derived from [BRD.md](BRD.md) (source of truth). Scope is the **P1 rows of BRD section 5** plus the scaffolding needed to make them real. Stack decisions are settled in [../CLAUDE.md](../CLAUDE.md) and are not revisited here.
 
-Every persona figure quoted below was computed directly, not copied from the BRD's prose. Where the two disagree, see [section 7](#7-open-questions-this-plan-depends-on).
+Every persona figure quoted below was computed directly, not copied from the BRD's prose. Where the two disagree, see [section 7](#7-open-questions-and-resolved-decisions).
 
 ---
 
@@ -48,7 +48,7 @@ Seven stages, each independently demonstrable. **Stage 1 completes before any UI
 Markers:
 
 - `[+TABLE]` — the task adds a table. It is **not done** until (a) the table is joined into the DPDP export path, (b) joined into the account-deletion path, (c) has a row-level-security test proving user B cannot read user A's row. These are acceptance criteria of the *same* task, never a later pass.
-- `[?OQ-n]` — depends on a BRD open question; the assumption to proceed under is named in [section 7](#7-open-questions-this-plan-depends-on).
+- `[?OQ-n]` — depends on a BRD open question; the assumption to proceed under is named in [section 7](#7-open-questions-and-resolved-decisions).
 
 Estimates assume one developer with Claude Code, tests included.
 
@@ -59,9 +59,9 @@ Estimates assume one developer with Claude Code, tests included.
 | Id | FR | Task | Prereq | Est | Acceptance |
 | --- | --- | --- | --- | --- | --- |
 | T01 | SCAFFOLD | Monorepo root: `.gitignore`, `.editorconfig`, branch/commit convention note, `docs/` index | — | 2 h | `git log --oneline` shows a commit prefixed with an FR id or `INFRA:`; root README names the three packages |
-| T02 | SCAFFOLD | Spring Boot 3 / Java 21 Maven scaffold, wrapper, `local`/`ci`/`prod` profiles, actuator | T01 | 3 h | `./mvnw -q test` exits 0; `GET /actuator/health` returns `{"status":"UP"}` |
+| T02 | SCAFFOLD | Spring Boot 3 / Java 21 Maven scaffold, wrapper, `local`/`ci`/`prod` profiles, actuator | T01 | 3 h | `./mvnw -q test` exits 0; `GET /actuator/health` returns `{"status":"UP"}`; `mvnw` is committed executable (`git update-index --chmod=+x api/mvnw`) and `git ls-files -s api/mvnw` shows mode `100755` |
 | T03 | INFRA | Docker Compose Postgres + Flyway + `V1__baseline.sql` (`app_user` role; comment recording money = paise `bigint`) | T02 | 3 h | `./mvnw flyway:info` lists V1 applied; a schema-lint test fails on any `double precision` money column |
-| T04 | INFRA | Neon connection from env; HikariCP tuned for scale-to-zero (connection-timeout ≥ 10 s, validation query, no retry-as-error) | T03 | 3 h | Test simulating a 12 s first connect passes without surfacing an error; `git grep -i 'postgres://'` returns nothing tracked |
+| T04 | INFRA | Neon connection from env; HikariCP tuned for scale-to-zero (connection-timeout ≥ 10 s, validation query, no retry-as-error) | T03 | 3 h | Test simulating a 12 s first connect passes without surfacing an error; `git grep -n -iE -e 'postgres(ql)?://' -e 'neon\.tech'` returns nothing tracked (covers plain and JDBC Postgres URLs and Neon hostnames; written so this row does not match itself) |
 | T05 | INFRA | GitHub Actions: api `./mvnw -B verify`, web `npm ci && npm test && ng build`, `~/.m2` + npm caches, path filters | T02 | 3 h | A PR touching only `api/**` runs one job; cached run under 6 min |
 | T06 | SCAFFOLD | Angular 18 standalone scaffold, routing, light/dark tokens, 380 px shell with bottom nav, `ng add @angular/pwa` service-worker registration (registration only — caching strategy is T79) | T01 | 3 h | `ng build` exits 0; shell at 380 px in both themes with no horizontal scroll; a production build registers the service worker |
 | T07 | SCAFFOLD | `PaiseInrPipe` (paise `long` → lakh/crore INR) + contrast token test | T06 | 3 h | `501600000 → "₹50.16 L"`, `1900 → "₹19"`, `12700000 → "₹1,27,000"`; every token pair ≥ 4.5:1 |
@@ -133,7 +133,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | T41 | FR-07 | Unplanned-expense rebalance endpoint over T24 | T24, T40 | 3 h | Response names the absorbing waterfall step and revised safe-to-spend; figures equal the rules-engine result (no service-layer arithmetic) |
 | T42 | FR-04, FR-06 | Web: expense entry — amount keypad, category, mode, note, tag, save | T37, T07 | 4 h | A scripted run completes amount → category → mode → save in 4 taps and under 10 s; 380 px dark; screen-reader labels on every control |
 | T43 | FR-04 | Web: offline queue + idempotency-key sync; conflict resolution left to the API. Rides on T06's service-worker registration; dashboard caching stays in T79 | T42, T06 | 3 h | An expense entered offline appears locally and syncs once on reconnect; a double sync creates no duplicate row |
-| T43b | INFRA | **Walking-skeleton Android APK:** Capacitor wrapper, OAuth deep-link return, debug build installed on the owner's phone. Proves sign-in → expense entry → offline queue end-to-end on real hardware while the surface is still small | T33, T43 | 4 h | Debug APK installs on the device; Google sign-in completes through the deep-link return and the session survives an app restart; an expense entered with the device in airplane mode syncs exactly once on reconnect, creating no duplicate; app id read from config — `[?OQ-4]` placeholder `com.finpath.app` |
+| T43b | INFRA | **Walking-skeleton Android APK:** Capacitor wrapper, OAuth deep-link return, debug build installed on the owner's phone. Proves sign-in → expense entry → offline queue end-to-end on real hardware while the surface is still small | T33, T43 | 4 h | Debug APK installs on the device; Google sign-in completes through the deep-link return and the session survives an app restart; an expense entered with the device in airplane mode syncs exactly once on reconnect, creating no duplicate; app id read from config — `[?OQ-4]` placeholder `com.finpath.app`; `gradlew` is committed executable (`git update-index --chmod=+x web/android/gradlew`) and `git ls-files -s web/android/gradlew` shows mode `100755` |
 | T44 | FR-03, FR-05 | Web: income sources and recurring templates screens | T35, T38 | 4 h | A quarterly template shows both the bill amount and the per-cycle spread; 380 px dark verified |
 | T45 | FR-10 | Web: budget screen, per-category consumption, 80/100 banners | T40 | 3 h | Percentages equal the API response exactly (no client division); banner contrast ≥ 4.5:1 in both themes |
 | T46 | FR-01 | Web: onboarding wizard shell — one question per screen, resumable, progress, consent + purpose step | T33, T31 | 4 h | Closing mid-wizard resumes at the same step; the wizard cannot complete without a recorded consent row |
