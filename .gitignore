@@ -1,0 +1,40 @@
+# --- Java / Maven (api/) ---
+target/
+*.class
+*.log
+!.mvn/wrapper/maven-wrapper.properties
+
+# --- Node / Angular (web/) ---
+node_modules/
+dist/
+.angular/
+coverage/
+npm-debug.log*
+
+# --- Capacitor / Android (web/android/) ---
+.gradle/
+**/android/**/build/
+local.properties
+*.keystore
+*.jks
+
+# --- Secrets and environment (never commit connection strings) ---
+.env
+.env.*
+!.env.example
+*.pem
+
+# --- Personal financial data (DPDP) ---
+*.statement.*
+exports/
+
+# --- IDE / OS ---
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# --- Claude Code local settings ---
+.claude/settings.local.json
