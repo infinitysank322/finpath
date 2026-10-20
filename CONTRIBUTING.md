@@ -6,17 +6,20 @@ One feature = one branch = one FR id from the [BRD](docs/BRD.md).
 
 | Work | Branch name | Example |
 | --- | --- | --- |
-| A BRD functional requirement | `fr-NN/<slug>` | `fr-04/loan-amortisation` |
+| A BRD functional requirement | `fr-NN/<slug>` | `fr-12/loan-amortisation` |
 | Scaffolding / infra task with no FR | `infra/tNN-<slug>` | `infra/t01-monorepo-root` |
 
 Branch from `master`. Keep a branch to its one FR; split anything else into its own branch.
+
+- A task listing several FRs (e.g. T11 "FR-12, FR-13") uses the first FR id listed.
+- Tasks labelled `SCAFFOLD` or `INFRA` in PLAN.md use `infra/` branches and the `INFRA:` prefix.
 
 ## Commits
 
 The subject starts with the FR id, or `INFRA:` for non-FR work, then the plan task id:
 
 ```
-FR-04: T21 amortisation schedule with BigDecimal rounding
+FR-12: T11 amortising loan EMI and schedule
 INFRA: T01 monorepo root — gitignore, editorconfig, conventions, docs index
 ```
 

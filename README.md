@@ -12,7 +12,9 @@ A web and Android personal-finance assistant that helps salaried Indians track e
 | --- | --- | --- | --- |
 | `api/` | REST API and rules engine (all money maths) | Spring Boot 3, Java 21, Maven, PostgreSQL (Neon), Flyway, Google OAuth2/JWT | T02 |
 | `web/` | Responsive PWA and Android app | Angular 18+ standalone components, ngx-echarts, Capacitor | T06 |
-| `infra/` | Local compose, Docker and CI support | Docker Compose, GitHub Actions | T03–T08 |
+| `infra/` | Local compose and Docker support | Docker Compose | T03, T08 |
+
+CI workflows live in `.github/workflows/` (T05), where GitHub Actions requires them.
 
 ## Commands
 

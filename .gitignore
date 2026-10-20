@@ -2,7 +2,6 @@
 target/
 *.class
 *.log
-!.mvn/wrapper/maven-wrapper.properties
 
 # --- Node / Angular (web/) ---
 node_modules/
@@ -18,15 +17,33 @@ local.properties
 *.keystore
 *.jks
 
-# --- Secrets and environment (never commit connection strings) ---
+# --- Secrets and environment (never commit credentials or connection strings) ---
 .env
 .env.*
 !.env.example
 *.pem
+*.p12
+*.key
+client_secret*.json
+google-services.json
+keystore.properties
+key.properties
+application-local.*
 
-# --- Personal financial data (DPDP) ---
-*.statement.*
-exports/
+# --- Local-only files, e.g. the T10b golden fixture holding real persona figures ---
+*.local.*
+
+# --- Personal financial data (DPDP): statements, exports, DB dumps ---
+/exports/
+statements/
+*[Ss]tatement*.pdf
+*[Ss]tatement*.csv
+*[Ss]tatement*.xls
+*[Ss]tatement*.xlsx
+backups/
+*.dump
+*.backup
+*.sql.gz
 
 # --- IDE / OS ---
 .idea/

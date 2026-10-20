@@ -4,8 +4,19 @@
 *.bat text eol=crlf
 
 *.jar binary
+*.aar binary
+*.apk binary
 *.png binary
 *.jpg binary
+*.gif binary
+*.webp binary
 *.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.zip binary
+*.gz binary
 *.jks binary
 *.keystore binary
+*.p12 binary
