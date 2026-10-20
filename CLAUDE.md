@@ -11,3 +11,8 @@ web/: Angular 18+, standalone components, ngx-echarts, Capacitor (Android)
 - One feature = one branch = one FR id from the BRD. Commit message starts with FR id.
 ## Commands
 api: ./mvnw test | web: npm test, ng build
+## Agents (.claude/agents/)
+- Design: architect turns an FR into a design note under docs/design/ before building.
+- Build: api-feature for backend, web-ui for frontend, rules-engine for all money logic.
+- Verify: finance-qa checks money logic after rules-engine changes (read-only).
+- Review: reviewer runs before every commit (read-only). compliance-review before merging anything touching stored data, consent, export/deletion or ingestion.
