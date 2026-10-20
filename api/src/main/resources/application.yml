@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: finpath-api
+  profiles:
+    default: local
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
+
+---
+# The local profile lives inline because .gitignore excludes application-local.* files.
+spring:
+  config:
+    activate:
+      on-profile: local
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.finpath: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%logger{36}) - %msg%n"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: ci
+
+logging:
+  level:
+    root: WARN
+
+---
+# Production config comes from the environment only; no secrets in this file.
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: framework
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
