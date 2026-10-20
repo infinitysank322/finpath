@@ -1,0 +1,1 @@
+Turns an FR into a design: API contract, tables, screens. Doesn’t write code.

@@ -1,0 +1,1 @@
+Writes and checks money-logic tests against the persona numbers

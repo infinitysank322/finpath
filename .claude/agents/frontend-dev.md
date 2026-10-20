@@ -1,0 +1,1 @@
+Writes the Angular screens, charts and Capacitor setup
