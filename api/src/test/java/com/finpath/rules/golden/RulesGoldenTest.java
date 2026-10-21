@@ -1,13 +1,16 @@
 package com.finpath.rules.golden;
 
 import static com.finpath.rules.golden.GoldenAssert.assertWithinOnePercent;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.finpath.rules.AmortisingLoan;
 import com.finpath.rules.BulletLoan;
 import com.finpath.rules.Loan;
 import com.finpath.rules.Money;
+import com.finpath.rules.PayoffPlanner;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -40,6 +43,23 @@ class RulesGoldenTest {
         BigDecimal pct = BulletLoan.effectiveAnnualRate(loan).movePointRight(2);
         BigDecimal expected = fx.decimal(GoldenKeys.BULLET_EFFECTIVE_RATE_PCT);
         assertWithinOnePercent(GoldenKeys.BULLET_EFFECTIVE_RATE_PCT, expected, pct);
+    }
+
+    @Test
+    void avalancheOrdersHighRateBulletLoanBeforeHomeLoan() {
+        Loan.Bullet bullet = new Loan.Bullet(Money.ofPaise(fx.paise(GoldenKeys.BULLET_PRINCIPAL)),
+                Money.ofPaise(fx.paise(GoldenKeys.BULLET_MONTHLY_INTEREST)), LocalDate.of(2100, 1, 1));
+        PayoffPlanner.DebtEntry bulletEntry = new PayoffPlanner.DebtEntry("bullet",
+                BulletLoan.effectiveAnnualRate(bullet), bullet.principal(),
+                Money.ofPaise(fx.paise(GoldenKeys.BULLET_MONTHLY_INTEREST)));
+        PayoffPlanner.DebtEntry home = new PayoffPlanner.DebtEntry("home", homeRate(), homePrincipal(),
+                Money.ofPaise(fx.paise(GoldenKeys.HOME_STATED_EMI)));
+        // Input order deliberately puts the lower-rate loan first.
+        List<PayoffPlanner.DebtEntry> ordered =
+                PayoffPlanner.order(List.of(home, bulletEntry), PayoffPlanner.Strategy.AVALANCHE);
+        assertEquals(List.of("bullet", "home"), ordered.stream().map(PayoffPlanner.DebtEntry::id).toList());
+        assertEquals(List.of("bullet", "home"), PayoffPlanner
+                .plan(List.of(home, bulletEntry), PayoffPlanner.Strategy.AVALANCHE).order());
     }
 
     @Test
