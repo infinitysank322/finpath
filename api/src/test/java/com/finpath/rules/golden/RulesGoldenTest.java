@@ -8,6 +8,7 @@ import com.finpath.rules.BulletLoan;
 import com.finpath.rules.Loan;
 import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
+import com.finpath.rules.PrepaymentSimulator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -67,5 +68,19 @@ class RulesGoldenTest {
         AmortisingLoan.Schedule s = AmortisingLoan.schedule(homePrincipal(), homeRate(),
                 fx.integer(GoldenKeys.HOME_TENURE_MONTHS));
         assertWithinOnePercent(fx.paise(GoldenKeys.HOME_INTEREST_REMAINING), s.totalInterest().paise());
+    }
+
+    @Test
+    void homeLoanEmiToCloseEarly() {
+        Money emi = PrepaymentSimulator.emiToClose(homePrincipal(), homeRate(),
+                fx.integer(GoldenKeys.HOME_CLOSE_MONTHS));
+        assertWithinOnePercent(fx.paise(GoldenKeys.HOME_CLOSE_EMI), emi.paise());
+    }
+
+    @Test
+    void homeLoanInterestSavedByEarlyClose() {
+        PrepaymentSimulator.Outcome o = PrepaymentSimulator.closeIn(homePrincipal(), homeRate(),
+                fx.integer(GoldenKeys.HOME_TENURE_MONTHS), fx.integer(GoldenKeys.HOME_CLOSE_MONTHS));
+        assertWithinOnePercent(fx.paise(GoldenKeys.HOME_INTEREST_SAVED), o.interestSaved().paise());
     }
 }
