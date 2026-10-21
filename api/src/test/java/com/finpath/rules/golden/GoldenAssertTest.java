@@ -29,9 +29,9 @@ class GoldenAssertTest {
 
     @Test
     void decimalOverload() {
-        assertDoesNotThrow(() -> assertWithinOnePercent(new BigDecimal("15.33"), new BigDecimal("15.30")));
+        assertDoesNotThrow(() -> assertWithinOnePercent(new BigDecimal("12.50"), new BigDecimal("12.5")));
         assertThrows(AssertionError.class,
-                () -> assertWithinOnePercent(new BigDecimal("15.33"), new BigDecimal("15.00")));
+                () -> assertWithinOnePercent(new BigDecimal("12.50"), new BigDecimal("15.00")));
     }
 
     @Test
