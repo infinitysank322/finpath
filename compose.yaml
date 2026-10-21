@@ -1,0 +1,30 @@
+# Local development stack. Run from the repo root: `docker compose up -d`.
+# Values come from ./.env (copy .env.example); T08 adds the api service here.
+#
+# Host port defaults to 5433, not 5432: a native PostgreSQL service may already
+# own 5432 on the dev machine. Change DB_PORT in .env if 5433 is taken too.
+name: finpath
+
+services:
+  db:
+    # Pinned to the PostgreSQL major Neon runs (17) so local migrations behave like prod.
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-finpath}
+      POSTGRES_USER: ${DB_USER:-finpath}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set - copy .env.example to .env}
+    ports:
+      # Bound to loopback only; the dev database is never reachable from the LAN.
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  pgdata:

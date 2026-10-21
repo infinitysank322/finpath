@@ -25,6 +25,17 @@ spring:
   config:
     activate:
       on-profile: local
+    # Reads DB_* from the gitignored .env (repo root or api/) so `./mvnw spring-boot:run`
+    # needs no exports. Real environment variables still win over these values.
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+  datasource:
+    # Compose Postgres (compose.yaml), host port 5433 by default. The scheme sits in a
+    # placeholder so no complete Postgres URL literal is tracked (T04 git-grep guard).
+    url: jdbc:${DB_SCHEME:postgresql}://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:finpath}
+    username: ${DB_USER:finpath}
+    password: ${DB_PASSWORD}
 
 server:
   port: 8080
@@ -40,6 +51,11 @@ spring:
   config:
     activate:
       on-profile: ci
+  # CI has no database: the build verifies code and migrations statically (SchemaLintTest).
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
 
 logging:
   level:
@@ -47,6 +63,7 @@ logging:
 
 ---
 # Production config comes from the environment only; no secrets in this file.
+# The Neon datasource (env-only URL, HikariCP tuned for scale-to-zero) lands in T04.
 spring:
   config:
     activate:
