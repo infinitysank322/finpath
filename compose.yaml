@@ -1,8 +1,12 @@
-# Local development stack. Run from the repo root: `docker compose up -d`.
-# Values come from ./.env (copy .env.example); T08 adds the api service here.
+# Local development stack. Run from the repo root: `docker compose up -d --build`
+# (db and api), or `docker compose up -d db` for the database alone.
+# Values come from ./.env (copy .env.example). The api container is configured from
+# environment variables only: nothing is baked into the image, and ./.env is neither
+# copied into it nor mounted.
 #
 # Host port defaults to 5433, not 5432: a native PostgreSQL service may already
-# own 5432 on the dev machine. Change DB_PORT in .env if 5433 is taken too.
+# own 5432 on the dev machine. Change DB_PORT in .env to move it; inside the compose
+# network the api always reaches the database at db:5432.
 name: finpath
 
 services:
@@ -25,6 +29,34 @@ services:
       timeout: 3s
       retries: 10
       start_period: 10s
+
+  api:
+    build:
+      context: ./api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Local profile against the compose db. For a real deployment set SPRING_PROFILES_ACTIVE=prod
+      # and NEON_DATABASE_URL (or point DB_HOST at any Postgres) in the host's environment.
+      SPRING_PROFILES_ACTIVE: local
+      # Probes are on by default only in prod; the container healthcheck needs the liveness group.
+      MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+      DB_HOST: db
+      DB_PORT: "5432"   # container-side port, NOT the host-mapped DB_PORT
+      DB_NAME: ${DB_NAME:-finpath}
+      DB_USER: ${DB_USER:-finpath}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set - copy .env.example to .env}
+    ports:
+      # Loopback only, like the database.
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "java", "-Xmx32m", "-Xss256k", "-Xshare:auto", "-XX:TieredStopAtLevel=1", "-cp", "/app/hc", "HealthCheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
 volumes:
   pgdata:

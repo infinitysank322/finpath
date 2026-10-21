@@ -38,6 +38,14 @@ set -a; . ../.env; set +a     # flyway-maven-plugin reads DB_* from the environm
 ./mvnw spring-boot:run        # local profile reads ../.env itself and migrates on start
 ```
 
+To run the API in a container too: `docker compose up -d --build` starts `db` and `api` (health at `http://localhost:8080/actuator/health`, port set by `API_PORT`, loopback only); `docker compose up -d db` starts the database alone. The image is configured by environment variables only (`SPRING_PROFILES_ACTIVE`, `DB_*` or `NEON_DATABASE_URL`); `.env` never enters the build context or the image. Inside the compose network the API reaches Postgres at `db:5432`, whatever `DB_PORT` is. Multi-arch build check (builds, does not push):
+
+```sh
+docker buildx build --platform linux/arm64,linux/amd64 -f api/Dockerfile api
+```
+
+Tests are skipped in the image build (`-DskipTests`); CI runs them.
+
 The compose database listens on host port **5433**, not 5432, so it can sit beside a native PostgreSQL install. Change `DB_PORT` in `.env` to move it; compose, the Spring `local` profile and the Flyway plugin all read it. Settings: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (see `.env.example`). `./mvnw test` needs no database.
 
 If `./mvnw flyway:*` fails with an authentication error, `DB_PASSWORD` is almost certainly not exported in that shell (run the `set -a; . ../.env; set +a` line first).
