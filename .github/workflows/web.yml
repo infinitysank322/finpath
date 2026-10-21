@@ -2,9 +2,10 @@ name: web
 
 on:
   push:
-    branches: [dev, master]
+    branches: [dev]
     paths: ['web/**', '.github/workflows/web.yml']
   pull_request:
+    branches: [master]
     paths: ['web/**', '.github/workflows/web.yml']
 
 permissions:

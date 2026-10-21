@@ -2,9 +2,10 @@ name: api
 
 on:
   push:
-    branches: [dev, master]
+    branches: [dev]
     paths: ['api/**', '.github/workflows/api.yml']
   pull_request:
+    branches: [master]
     paths: ['api/**', '.github/workflows/api.yml']
 
 permissions:
