@@ -12,7 +12,8 @@ import java.util.Optional;
  * Amortising (EMI) loan maths. Pure and deterministic: no clock, no I/O. Rates are annual
  * fractions (0.08 = 8%). Interest accrues monthly at rate/12 on the opening balance, rounded to
  * paise each instalment; the final instalment absorbs the rounding residue so the balance closes
- * at exactly zero. Not valid for bullet loans, which are interest-only.
+ * at exactly zero. Not valid for bullet loans, which are interest-only: the {@link Loan}-typed
+ * overloads reject them via {@link #requireAmortising(Loan)}.
  */
 public final class AmortisingLoan {
 
@@ -94,6 +95,31 @@ public final class AmortisingLoan {
             throw new IllegalArgumentException("annualRate must not be negative");
         }
         return annualRate.divide(MONTHS_PER_YEAR, MathPolicy.CALC);
+    }
+
+    /**
+     * Type guard for the amortising path: only {@link LoanType#EMI} loans are accepted. A bullet or
+     * card-EMI loan fails loudly instead of yielding a plausible but wrong amortised number.
+     */
+    public static Loan.Emi requireAmortising(Loan loan) {
+        Objects.requireNonNull(loan, "loan");
+        if (loan.type() != LoanType.EMI || !(loan instanceof Loan.Emi emi)) {
+            throw new IllegalArgumentException(
+                    "Amortising maths applies to EMI loans only, got " + loan.type());
+        }
+        return emi;
+    }
+
+    /** Typed entry point: EMI of an {@link Loan.Emi}; any other loan type is rejected. */
+    public static Money emi(Loan loan, int tenureMonths) {
+        Loan.Emi l = requireAmortising(loan);
+        return emi(l.principal(), l.annualRate(), tenureMonths);
+    }
+
+    /** Typed entry point: schedule of an {@link Loan.Emi}; any other loan type is rejected. */
+    public static Schedule schedule(Loan loan, int tenureMonths) {
+        Loan.Emi l = requireAmortising(loan);
+        return schedule(l.principal(), l.annualRate(), tenureMonths);
     }
 
     /** Standard EMI, rounded to paise. Zero rate is principal / n; zero principal is zero. */
