@@ -21,6 +21,9 @@ public record RuleConfig(
         BigDecimal budgetAlertLimit,
         int equityMinHorizonYears) {
 
+    /** Share of a freed EMI that rolls into goals by default (100%). Not a record component. */
+    public static final BigDecimal DEFAULT_EMI_REDIRECT = BigDecimal.ONE;
+
     public RuleConfig {
         Objects.requireNonNull(emiToIncomeWarn, "emiToIncomeWarn");
         Objects.requireNonNull(emiToIncomeBlock, "emiToIncomeBlock");
