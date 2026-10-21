@@ -91,7 +91,17 @@ spring:
 server:
   port: ${PORT:8080}
   shutdown: graceful
-  forward-headers-strategy: framework
+  # FORWARDED HEADERS (decision based on the code and docs/PLAN.md T84, not on the reviewer's note):
+  # prod runs as one container behind a TLS-terminating reverse proxy on the same host/network, so
+  # the app must honour X-Forwarded-Proto/For. `framework` (the previous value) honours them from
+  # ANY client, so a directly exposed port lets callers spoof scheme, host and client address.
+  # `native` uses Tomcat's RemoteIpValve, which only trusts the headers when the immediate peer
+  # matches server.tomcat.remoteip.internal-proxies (Tomcat default: loopback and private ranges,
+  # which covers a Docker bridge network); a public peer's headers are ignored.
+  # Trade-off: any private-range peer is trusted, so never publish this port to a private LAN you
+  # do not control. Tighten with SERVER_TOMCAT_REMOTEIP_INTERNAL_PROXIES (regex of the proxy IP),
+  # or set SERVER_FORWARD_HEADERS_STRATEGY=none when no proxy is in front.
+  forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:native}
 
 management:
   endpoint:
