@@ -1,4 +1,4 @@
-/* Design tokens. Chosen for >= 4.5:1 text contrast; automated token-pair test is pending (T07). */
+/* Design tokens. Chosen for >= 4.5:1 text contrast; enforced by app/tokens.spec.ts. */
 :root {
   color-scheme: light;
   --fp-bg: #ffffff;
