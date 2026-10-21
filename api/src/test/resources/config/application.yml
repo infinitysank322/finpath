@@ -2,9 +2,11 @@
 # database, under every profile, so the datasource and Flyway stay off here. The
 # local profile still migrates the compose Postgres when the app actually runs.
 # A future DB-backed test opts back in explicitly (e.g. Testcontainers).
-# Consequence: ProfilesTest does NOT prove the prod profile can start. Prod has no
-# datasource until T04, which must add a test that the prod datasource binds from env
-# without relying on this exclusion.
+# Consequence: ProfilesTest does NOT prove the prod profile can start. The prod datasource
+# (NEON_DATABASE_URL -> pooled datasource + direct Flyway URL, Hikari tuning) is proven by
+# com.finpath.config.ProdDatasourceTest, which loads the main application.yml directly and
+# runs the real post-processor, so it does not depend on this exclusion. The post-processor
+# also stays out of the way when DataSourceAutoConfiguration is excluded, as it is here.
 spring:
   autoconfigure:
     exclude:
