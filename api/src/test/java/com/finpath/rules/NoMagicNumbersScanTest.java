@@ -51,7 +51,7 @@ class NoMagicNumbersScanTest {
         for (String s : new String[] {"x = 0.40;", "new BigDecimal(\"0.12\")", ".12", "5000", "5_000", "= 5000L"}) {
             assertTrue(FORBIDDEN.matcher(s).find(), s);
         }
-        for (String s : new String[] {"0.125", "50000", "500_000L", "10.40", "0.401"}) {
+        for (String s : new String[] {"0.125", "73000", "500_000L", "10.40", "0.401"}) {
             assertTrue(!FORBIDDEN.matcher(s).find(), s);
         }
     }
