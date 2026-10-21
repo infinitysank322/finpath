@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.finpath.rules.AmortisingLoan;
 import com.finpath.rules.BulletLoan;
+import com.finpath.rules.DatedGoal;
 import com.finpath.rules.Loan;
 import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
@@ -82,5 +83,20 @@ class RulesGoldenTest {
         PrepaymentSimulator.Outcome o = PrepaymentSimulator.closeIn(homePrincipal(), homeRate(),
                 fx.integer(GoldenKeys.HOME_TENURE_MONTHS), fx.integer(GoldenKeys.HOME_CLOSE_MONTHS));
         assertWithinOnePercent(fx.paise(GoldenKeys.HOME_INTEREST_SAVED), o.interestSaved().paise());
+    }
+
+    @Test
+    void datedGoalMonthlyNeed() {
+        LocalDate reference = LocalDate.of(2026, 10, 25);
+        int startDay = 25;
+        LocalDate target = LocalDate.of(2026, 10, 25);
+        while (com.finpath.rules.CycleCalendar.cyclesBetween(reference, target, startDay)
+                < fx.integer(GoldenKeys.GOAL_CYCLES)) {
+            target = target.plusMonths(1);
+        }
+        DatedGoal.Result r = DatedGoal.evaluate(Money.ofPaise(fx.paise(GoldenKeys.GOAL_TARGET)), Money.ZERO,
+                Money.ZERO, target, reference, startDay);
+        assertEquals(fx.integer(GoldenKeys.GOAL_CYCLES), r.cyclesRemaining());
+        assertWithinOnePercent(fx.paise(GoldenKeys.GOAL_MONTHLY), r.monthlyNeed().paise());
     }
 }
