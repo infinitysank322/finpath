@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.finpath.rules.AmortisingLoan;
 import com.finpath.rules.BulletLoan;
+import com.finpath.rules.EmergencyFund;
 import com.finpath.rules.Loan;
 import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
@@ -82,5 +83,26 @@ class RulesGoldenTest {
         PrepaymentSimulator.Outcome o = PrepaymentSimulator.closeIn(homePrincipal(), homeRate(),
                 fx.integer(GoldenKeys.HOME_TENURE_MONTHS), fx.integer(GoldenKeys.HOME_CLOSE_MONTHS));
         assertWithinOnePercent(fx.paise(GoldenKeys.HOME_INTEREST_SAVED), o.interestSaved().paise());
+    }
+
+    private EmergencyFund.Result emergency() {
+        return EmergencyFund.evaluate(Money.ofPaise(fx.paise(GoldenKeys.OUTFLOW_MONTHLY)),
+                Money.ofPaise(fx.paise(GoldenKeys.EMERGENCY_CURRENT)));
+    }
+
+    @Test
+    void emergencyFundOneMonthTarget() {
+        assertWithinOnePercent(fx.paise(GoldenKeys.EMERGENCY_ONE_MONTH), emergency().oneMonth().paise());
+    }
+
+    @Test
+    void emergencyFundThreeMonthTarget() {
+        assertWithinOnePercent(fx.paise(GoldenKeys.EMERGENCY_THREE_MONTH), emergency().threeMonth().paise());
+    }
+
+    @Test
+    void emergencyFundMonthsCovered() {
+        assertWithinOnePercent(GoldenKeys.EMERGENCY_MONTHS_COVERED,
+                fx.decimal(GoldenKeys.EMERGENCY_MONTHS_COVERED), emergency().monthsCovered());
     }
 }
