@@ -32,6 +32,8 @@
         <db.port>5433</db.port>
         <db.name>finpath</db.name>
         <db.user>finpath</db.user>
+        <!-- Extra JDBC query string, e.g. ?sslmode=require for Neon; empty for local. -->
+        <db.params></db.params>
     </properties>
 
     <dependencies>
@@ -78,7 +80,7 @@
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
                 <configuration>
-                    <url>jdbc:${db.scheme}://${db.host}:${db.port}/${db.name}</url>
+                    <url>jdbc:${db.scheme}://${db.host}:${db.port}/${db.name}${db.params}</url>
                     <user>${db.user}</user>
                     <password>${env.DB_PASSWORD}</password>
                     <locations>
@@ -122,6 +124,11 @@
             <id>env-db-user</id>
             <activation><property><name>env.DB_USER</name></property></activation>
             <properties><db.user>${env.DB_USER}</db.user></properties>
+        </profile>
+        <profile>
+            <id>env-db-params</id>
+            <activation><property><name>env.DB_PARAMS</name></property></activation>
+            <properties><db.params>${env.DB_PARAMS}</db.params></properties>
         </profile>
     </profiles>
 </project>

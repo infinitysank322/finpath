@@ -63,11 +63,30 @@ logging:
 
 ---
 # Production config comes from the environment only; no secrets in this file.
-# The Neon datasource (env-only URL, HikariCP tuned for scale-to-zero) lands in T04.
+# The datasource URL and credentials are NOT here: NeonDatasourceEnvironmentPostProcessor
+# derives them (pooled URL for the app, direct URL for Flyway) from the NEON_DATABASE_URL
+# environment variable, and SPRING_DATASOURCE_* overrides it. Missing config fails fast.
 spring:
   config:
     activate:
       on-profile: prod
+  datasource:
+    # HikariCP tuned for Neon scale-to-zero. The first connection after an idle suspend can take
+    # many seconds while compute wakes; that is normal latency, not an error. So: wait long
+    # (connection-timeout), do not fail startup on a slow first connect (initialization-fail-timeout
+    # >= connection-timeout), and add no retry layer or ERROR log on the way. A truly
+    # unreachable database still fails after the timeout, loudly, which is correct.
+    hikari:
+      pool-name: finpath-neon
+      connection-timeout: 30000        # ms; a 12 s cold start must succeed (T04 test), min is 10000
+      initialization-fail-timeout: 30000
+      validation-timeout: 6000
+      connection-test-query: SELECT 1  # explicit validation on checkout of an idle connection
+      maximum-pool-size: 5             # Neon free tier and pooler connection limits are small
+      minimum-idle: 0                  # let an idle pool drain so compute can suspend
+      idle-timeout: 120000
+      max-lifetime: 240000             # below Neon's 5 min idle suspend and pooler recycling
+      keepalive-time: 0                # off on purpose: pings would stop compute scaling to zero
 
 server:
   port: ${PORT:8080}
