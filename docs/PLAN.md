@@ -49,7 +49,7 @@ Markers:
 
 - `[+TABLE]` — the task adds a table. It is **not done** until (a) the table is joined into the DPDP export path, (b) joined into the account-deletion path, (c) has a row-level-security test proving user B cannot read user A's row. These are acceptance criteria of the *same* task, never a later pass.
 - `[?OQ-n]` — depends on a BRD open question; the assumption to proceed under is named in [section 7](#7-open-questions-and-resolved-decisions).
-- `[LOCAL]` — needs the owner's PC, real hardware or secrets (Docker, Neon/OAuth/SMTP credentials, the phone, the VM, or the real T10b golden fixture). Not suitable for a cloud agent; run locally.
+- `[LOCAL]` — needs the owner's PC, real hardware or secrets (Docker, Neon/OAuth/SMTP credentials, the phone or the VM). Not suitable for a cloud agent; run locally.
 
 **Status** column: `TODO` / `IN-PROGRESS` / `DONE` / `BLOCKED`. Update it in the same commit that moves the task.
 
