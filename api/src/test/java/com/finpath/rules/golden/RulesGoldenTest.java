@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.finpath.rules.AmortisingLoan;
 import com.finpath.rules.BulletLoan;
+import com.finpath.rules.DatedGoal;
 import com.finpath.rules.EmergencyFund;
 import com.finpath.rules.EmiGuard;
 import com.finpath.rules.Loan;
@@ -117,5 +118,15 @@ class RulesGoldenTest {
                 Money.ofPaise(fx.paise(GoldenKeys.OUTFLOW_MONTHLY)));
         assertWithinOnePercent(GoldenKeys.EMERGENCY_MONTHS_COVERED, fx.decimal(GoldenKeys.EMERGENCY_MONTHS_COVERED),
                 covered);
+    }
+
+    @Test
+    void datedGoalMonthlyNeed() {
+        LocalDate ref = LocalDate.of(2026, 10, 25);
+        LocalDate due = ref.plusMonths(fx.integer(GoldenKeys.GOAL_CYCLES));
+        DatedGoal.Result r = DatedGoal.evaluate(Money.ofPaise(fx.paise(GoldenKeys.GOAL_TARGET)), Money.ZERO,
+                Money.ZERO, ref, due, 25, RuleConfig.defaults());
+        assertEquals(fx.integer(GoldenKeys.GOAL_CYCLES), r.cyclesRemaining());
+        assertWithinOnePercent(fx.paise(GoldenKeys.GOAL_MONTHLY), r.monthlyNeed().paise());
     }
 }
