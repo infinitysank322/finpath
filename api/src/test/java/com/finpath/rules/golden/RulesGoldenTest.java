@@ -14,6 +14,7 @@ import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
 import com.finpath.rules.PrepaymentSimulator;
 import com.finpath.rules.RuleConfig;
+import com.finpath.rules.Statistics;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -139,5 +140,12 @@ class RulesGoldenTest {
         assertWithinOnePercent(fx.paise(GoldenKeys.FI_INFLATED_EXPENSE), r.inflatedMonthlyExpense().paise());
         assertWithinOnePercent(fx.paise(GoldenKeys.FI_GROSS_CORPUS), r.grossCorpus().paise());
         assertWithinOnePercent(fx.paise(GoldenKeys.FI_NET_CORPUS), r.netCorpus().paise());
+    }
+
+    @Test
+    void savingsRateIsSurplusOverIncome() {
+        BigDecimal rate = Statistics.savingsRate(Money.ofPaise(fx.paise(GoldenKeys.SURPLUS_MONTHLY)),
+                Money.ofPaise(fx.paise(GoldenKeys.INCOME_MONTHLY)));
+        assertWithinOnePercent(GoldenKeys.SAVINGS_RATE_PCT, fx.decimal(GoldenKeys.SAVINGS_RATE_PCT), rate);
     }
 }
