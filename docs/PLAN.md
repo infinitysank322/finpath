@@ -157,7 +157,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | T54 | DONE | FR-18 | Debt-trap guard endpoint, invoked automatically on loan create | T48, T17 | 2 h | A loan pushing the ratio past 50% returns BLOCK and does not persist without explicit client confirmation; the ratio equals T17's output |
 | T55 | TODO | FR-12, FR-13, FR-01 | Web: loan list + detail; appends the debt step to the wizard | T49, T47 | 4 h | Five persona debts entered via the wizard total ₹63,332 EMI; detail renders all three loan types at 380 px dark |
 | T56 | DONE | FR-14, FR-15 | Web: payoff timeline chart with roll-off steps (ngx-echarts) | T51, T50 | 4 h | Legible at 380 px in both themes; has an aria description and a table equivalent listing each loan's end date |
-| T57 | TODO | FR-13 | Web: principal-vs-interest stacked area chart | T49 | 3 h | Series come from the loan detail endpoint; table-equivalent totals match the API to the paise |
+| T57 | IN-PROGRESS | FR-13 | Web: principal-vs-interest stacked area chart | T49 | 3 h | Series come from the loan detail endpoint; table-equivalent totals match the API to the paise |
 | T58 | TODO | FR-18 | Web: EMI-to-income gauge with the 40% line + guard dialog | T54 | 3 h | Shows 49.87% and the 40% marker; colour is not the only indicator of WARN/BLOCK |
 | T59 | TODO | FR-17 | Web: prepayment simulator screen | T53 | 3 h | Results shown as a range with the 6% / 12% / 8.35% assumptions beside them; no single confident figure; no named security or product |
 | T60 | TODO | FR-16 | Web: sinking-fund card for bullet loans | T52 | 2 h | Shows set-aside, progress and behind-schedule state; 380 px dark verified |
