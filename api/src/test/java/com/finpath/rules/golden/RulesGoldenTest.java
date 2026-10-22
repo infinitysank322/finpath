@@ -17,6 +17,7 @@ import com.finpath.rules.Loan;
 import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
 import com.finpath.rules.PrepaymentSimulator;
+import com.finpath.rules.RecurringSplit;
 import com.finpath.rules.RuleConfig;
 import com.finpath.rules.SinkingFund;
 import com.finpath.rules.Statistics;
@@ -345,6 +346,23 @@ class RulesGoldenTest {
                 IncomeCalculator.cycleTotal(sources, cycle));
         assertWithinOnePercent(monthly, IncomeCalculator.cycleTotal(sources, prev));
         assertWithinOnePercent(monthly, IncomeCalculator.cycleTotal(sources, next));
+    }
+
+    /** Three consecutive quarterly instalments add up to the fixture's bill exactly (remainder on the last). */
+    @Test
+    void quarterlyBillInstalmentsSumToTheBill() {
+        long bill = fx.paise(GoldenKeys.QUARTERLY_BILL);
+        int periods = RecurringSplit.periodMonths(RecurringSplit.Frequency.QUARTERLY);
+        long sum = 0;
+        CycleCalendar.Cycle cycle = CycleCalendar.cycleFor(REFERENCE, START_DAY);
+        RecurringSplit.Template t = new RecurringSplit.Template(bill, RecurringSplit.Frequency.QUARTERLY,
+                cycle.start(), null);
+        for (int i = 0; i < periods; i++) {
+            sum += RecurringSplit.due(t, cycle, START_DAY).orElseThrow().amountPaise();
+            cycle = CycleCalendar.next(cycle, START_DAY);
+        }
+        ASSERTED.add(GoldenKeys.QUARTERLY_BILL);
+        assertTrue(sum == bill, "figure " + GoldenKeys.QUARTERLY_BILL + " mismatch (values withheld)");
     }
 
     @Test

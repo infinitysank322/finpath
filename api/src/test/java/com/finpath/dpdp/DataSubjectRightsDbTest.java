@@ -41,6 +41,19 @@ class DataSubjectRightsDbTest {
         seedIncomeSource(b);
         seedTransaction(a);
         seedTransaction(b);
+        seedRecurringTemplate(a);
+        seedRecurringTemplate(b);
+    }
+
+    /** One recurring_template row per user (superuser insert). */
+    private static void seedRecurringTemplate(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); java.sql.PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO recurring_template (user_id, category_id, amount_paise, frequency, mode, start_date) "
+                        + "VALUES (?, (SELECT id FROM category WHERE code = 'UTILITIES'), 600000, 'QUARTERLY', "
+                        + "'UPI', DATE '2026-10-01')")) {
+            ps.setObject(1, user);
+            ps.executeUpdate();
+        }
     }
 
     /** One transaction row per user (superuser insert). */
@@ -119,6 +132,9 @@ class DataSubjectRightsDbTest {
         assertThat(reparsed.at("/tables/transaction")).hasSize(1);
         assertThat(reparsed.at("/tables/transaction/0/category_code").asText()).isEqualTo("DINING");
         assertThat(reparsed.at("/tables/transaction/0/amount_paise").asLong()).isEqualTo(4000);
+        assertThat(reparsed.at("/tables/recurring_template")).hasSize(1);
+        assertThat(reparsed.at("/tables/recurring_template/0/category_code").asText()).isEqualTo("UTILITIES");
+        assertThat(reparsed.at("/tables/recurring_template/0/amount_paise").asLong()).isEqualTo(600000);
         assertThat(reparsed.get("tables").has("category")).isFalse();
     }
 
@@ -145,7 +161,8 @@ class DataSubjectRightsDbTest {
                         + "+ (SELECT count(*) FROM consent WHERE user_id = '" + a + "') "
                         + "+ (SELECT count(*) FROM plan_cycle WHERE user_id = '" + a + "') "
                         + "+ (SELECT count(*) FROM income_source WHERE user_id = '" + a + "') "
-                        + "+ (SELECT count(*) FROM transaction WHERE user_id = '" + a + "')")) {
+                        + "+ (SELECT count(*) FROM transaction WHERE user_id = '" + a + "') "
+                        + "+ (SELECT count(*) FROM recurring_template WHERE user_id = '" + a + "')")) {
             rs.next();
             assertThat(rs.getLong(1)).isZero();
         }

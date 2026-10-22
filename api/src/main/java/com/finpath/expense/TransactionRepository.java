@@ -23,9 +23,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Repository
 public class TransactionRepository {
 
-    /** A write payload. source is always MANUAL in the MVP, so it is not a field. */
+    /** A write payload. {@code source} defaults to MANUAL; only the recurring materialiser sets RECURRING. */
     public record Draft(LocalDate txnDate, long amountPaise, Direction direction, String categoryCode, String mode,
-            String tag, String note, String idempotencyKey) {
+            String tag, String note, String idempotencyKey, String source) {
+
+        public Draft(LocalDate txnDate, long amountPaise, Direction direction, String categoryCode, String mode,
+                String tag, String note, String idempotencyKey) {
+            this(txnDate, amountPaise, direction, categoryCode, mode, tag, note, idempotencyKey, "MANUAL");
+        }
     }
 
     public record Transaction(UUID id, LocalDate txnDate, long amountPaise, Direction direction,
@@ -73,10 +78,10 @@ public class TransactionRepository {
             UUID categoryId = categoryId(j, d.categoryCode());
             List<UUID> ids = j.queryForList("INSERT INTO transaction (user_id, txn_date, amount_paise, direction, "
                     + "category_id, mode, tag, source, note, dedupe_hash, idempotency_key) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, 'MANUAL', ?, ?, ?) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                     + "ON CONFLICT (user_id, idempotency_key) DO NOTHING RETURNING id", UUID.class, userId,
                     d.txnDate(), d.amountPaise(), d.direction().name(), categoryId, d.mode().trim().toUpperCase(
-                            java.util.Locale.ROOT), d.tag(), d.note(), hash, d.idempotencyKey());
+                            java.util.Locale.ROOT), d.tag(), d.source(), d.note(), hash, d.idempotencyKey());
             if (!ids.isEmpty()) {
                 return new InsertResult(j.queryForObject(SELECT + "WHERE t.id = ?", MAP, ids.get(0)), true);
             }

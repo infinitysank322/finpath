@@ -28,7 +28,8 @@ public final class DataSubjectRegistry {
             new TableRef("consent", "user_id"), new TableRef("plan_cycle", "user_id"),
             new TableRef("income_source", "user_id"),
             new TableRef("transaction", "user_id",
-                    ROW_WITH_CATEGORY_CODE));
+                    ROW_WITH_CATEGORY_CODE),
+            new TableRef("recurring_template", "user_id", ROW_WITH_CATEGORY_CODE));
 
     /**
      * Reference tables identical for every user: no user_id, no personal data, hence no RLS, not
@@ -40,7 +41,8 @@ public final class DataSubjectRegistry {
     /** Deletion lists children before parents; users is the root, so it comes last. */
     private static final List<TableRef> DELETE = List.of(new TableRef("consent", "user_id"),
             new TableRef("plan_cycle", "user_id"), new TableRef("income_source", "user_id"),
-            new TableRef("transaction", "user_id"), new TableRef("users", "id"));
+            new TableRef("transaction", "user_id"), new TableRef("recurring_template", "user_id"),
+            new TableRef("users", "id"));
 
     private DataSubjectRegistry() {
     }

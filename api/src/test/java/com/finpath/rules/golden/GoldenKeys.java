@@ -74,6 +74,9 @@ public final class GoldenKeys {
     public static final String SURPLUS_LATER_CYCLE = "surplus.later_cycle_id";
     public static final String SAVINGS_RATE_PCT = "stats.savings_rate_pct";
 
+    // Recurring bills (T38): a quarterly bill spread over three cycles (fixture-only; owner adds to the local file)
+    public static final String QUARTERLY_BILL = "fixed.quarterly_bill_paise";
+
     public static final List<String> ALL = List.of(
             HOME_PRINCIPAL, HOME_RATE_PCT, HOME_TENURE_MONTHS, HOME_STATED_EMI, HOME_INTEREST_REMAINING,
             HOME_CLOSE_MONTHS, HOME_CLOSE_EMI, HOME_INTEREST_SAVED,
@@ -86,5 +89,5 @@ public final class GoldenKeys {
             GOAL_TARGET, GOAL_CYCLES, GOAL_MONTHLY,
             FI_TODAY_EXPENSE, FI_HORIZON_YEARS, FI_INFLATED_EXPENSE, FI_GROSS_CORPUS, FI_PASSIVE_MONTHLY,
             FI_NET_CORPUS,
-            SURPLUS_MONTHLY, SURPLUS_LATER, SURPLUS_LATER_CYCLE, SAVINGS_RATE_PCT);
+            SURPLUS_MONTHLY, SURPLUS_LATER, SURPLUS_LATER_CYCLE, SAVINGS_RATE_PCT, QUARTERLY_BILL);
 }
