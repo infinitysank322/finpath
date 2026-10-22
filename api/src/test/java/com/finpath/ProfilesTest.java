@@ -4,12 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.finpath.auth.JwtIssuer;
+import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,9 +29,17 @@ class ProfilesTest {
         assertThat(JSON.readTree(response.getBody())).isEqualTo(JSON.readTree(expected));
     }
 
-    private static void assertEnvNotExposed(TestRestTemplate rest) {
+    /**
+     * T29: security now sits in front of actuator, so an anonymous caller gets 401. The real check
+     * is that even an authenticated caller gets 404, i.e. the endpoint is not exposed at all.
+     */
+    private static void assertEnvNotExposed(TestRestTemplate rest, JwtIssuer issuer) {
         assertThat(rest.getForEntity("/actuator/env", String.class).getStatusCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(issuer.issue(UUID.randomUUID()).value());
+        assertThat(rest.exchange("/actuator/env", HttpMethod.GET, new HttpEntity<>(headers), String.class)
+                .getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Nested
@@ -36,6 +49,9 @@ class ProfilesTest {
         @Autowired
         private TestRestTemplate rest;
 
+        @Autowired
+        private JwtIssuer issuer;
+
         @Test
         void healthIsExactlyStatusUp() throws Exception {
             assertJsonEquals(rest, "/actuator/health", "{\"status\":\"UP\"}");
@@ -43,7 +59,7 @@ class ProfilesTest {
 
         @Test
         void envEndpointIsNotExposed() {
-            assertEnvNotExposed(rest);
+            assertEnvNotExposed(rest, issuer);
         }
     }
 
@@ -54,6 +70,9 @@ class ProfilesTest {
         @Autowired
         private TestRestTemplate rest;
 
+        @Autowired
+        private JwtIssuer issuer;
+
         @Test
         void healthIsExactlyStatusUp() throws Exception {
             assertJsonEquals(rest, "/actuator/health", "{\"status\":\"UP\"}");
@@ -61,7 +80,7 @@ class ProfilesTest {
 
         @Test
         void envEndpointIsNotExposed() {
-            assertEnvNotExposed(rest);
+            assertEnvNotExposed(rest, issuer);
         }
     }
 
@@ -71,6 +90,9 @@ class ProfilesTest {
     class Prod {
         @Autowired
         private TestRestTemplate rest;
+
+        @Autowired
+        private JwtIssuer issuer;
 
         // Probes are on in prod, which adds the group names; pin that shape so no details or components creep in.
         @Test
@@ -87,7 +109,7 @@ class ProfilesTest {
 
         @Test
         void envEndpointIsNotExposed() {
-            assertEnvNotExposed(rest);
+            assertEnvNotExposed(rest, issuer);
         }
     }
 }

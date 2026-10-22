@@ -48,6 +48,12 @@ services:
       DB_NAME: ${DB_NAME:-finpath}
       DB_USER: ${DB_USER:-finpath}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set - copy .env.example to .env}
+      # Sign-in (T29). Passed through from .env; the api itself refuses to start if any is empty
+      # (not `:?` here, so `docker compose up -d db` alone still works without them).
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      FINPATH_JWT_SECRET: ${FINPATH_JWT_SECRET:-}
+      FINPATH_AUTH_ALLOWED_REDIRECTS: ${FINPATH_AUTH_ALLOWED_REDIRECTS:-http://localhost:4200/auth/callback}
     ports:
       # Loopback only, like the database.
       - "127.0.0.1:${API_PORT:-8080}:8080"

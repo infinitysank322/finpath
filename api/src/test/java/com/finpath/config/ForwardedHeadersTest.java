@@ -2,6 +2,8 @@ package com.finpath.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.finpath.auth.JwtIssuer;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,8 +49,10 @@ class ForwardedHeadersTest {
         }
     }
 
-    private static String get(TestRestTemplate rest) {
+    /** T29: the echo endpoint sits behind bearer auth like every other API path. */
+    private static String get(TestRestTemplate rest, JwtIssuer issuer) {
         HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(issuer.issue(java.util.UUID.randomUUID()).value());
         headers.add("X-Forwarded-Proto", "https");
         headers.add("X-Forwarded-For", "203.0.113.9");
         return rest.exchange("/test-scheme", org.springframework.http.HttpMethod.GET,
@@ -64,9 +68,12 @@ class ForwardedHeadersTest {
         @Autowired
         private TestRestTemplate rest;
 
+        @Autowired
+        private JwtIssuer issuer;
+
         @Test
         void loopbackProxyHeadersAreHonoured() {
-            assertThat(get(rest)).isEqualTo("https");
+            assertThat(get(rest, issuer)).isEqualTo("https");
         }
     }
 
@@ -80,9 +87,12 @@ class ForwardedHeadersTest {
         @Autowired
         private TestRestTemplate rest;
 
+        @Autowired
+        private JwtIssuer issuer;
+
         @Test
         void spoofedHeadersFromUntrustedPeerAreIgnored() {
-            assertThat(get(rest)).isEqualTo("http");
+            assertThat(get(rest, issuer)).isEqualTo("http");
         }
     }
 }
