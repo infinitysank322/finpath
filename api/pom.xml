@@ -34,6 +34,9 @@
         <db.user>finpath</db.user>
         <!-- Extra JDBC query string, e.g. ?sslmode=require for Neon; empty for local. -->
         <db.params></db.params>
+
+        <!-- JaCoCo's prepare-agent fills this; empty keeps @{argLine} valid when JaCoCo is skipped. -->
+        <argLine></argLine>
     </properties>
 
     <dependencies>
@@ -117,6 +120,18 @@
                         <version>${postgresql.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <!--
+                    Tests run in UTC on every machine. pgJDBC sends the JVM zone to Postgres, and an
+                    IST Windows JVM reports the legacy alias Asia/Calcutta, which newer postgres:17
+                    images reject before any test runs.
+                -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>@{argLine} -Duser.timezone=UTC</argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <!-- T27: coverage gate. Fails `verify` when line coverage on the rules package is under 90%. -->
