@@ -1,0 +1,76 @@
+<h1>Income sources</h1>
+
+@if (total(); as t) {
+  <p class="headline" role="status">
+    <span class="muted">This cycle's income</span>
+    <strong>{{ t.totalPaise | paiseInr }}</strong>
+    <span class="muted">Cycle from {{ shortDate(t.cycleStart) }}; next cycle starts {{ shortDate(t.cycleEndExclusive) }}</span>
+  </p>
+}
+
+@if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+@if (message()) { <p class="ok" role="status">{{ message() }}</p> }
+
+<h2>Your sources</h2>
+@if (loading()) {
+  <p class="muted" role="status">Loading...</p>
+} @else if (items().length === 0 && !error()) {
+  <p class="muted">No income sources yet. Add your salary to get started.</p>
+}
+<ul aria-label="Income sources">
+  @for (r of items(); track r.id) {
+    <li class="row">
+      <div class="main">
+        <strong>{{ typeLabel(r.type) }}</strong>
+        <span class="badge">{{ freqLabel(r.frequency) }}<span class="sr-only"> income</span></span>
+        @if (r.countsInCurrentCycle) { <span class="badge">Counts this cycle</span> }
+        <div>{{ exact(r.amountPaise) }}</div>
+        <div class="muted">From {{ shortDate(r.startDate) }}@if (r.endDate) { to {{ shortDate(r.endDate) }} }</div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn" [disabled]="busy()" [attr.aria-label]="'Edit ' + typeLabel(r.type) + ' income of ' + exact(r.amountPaise)" (click)="openEdit(r)">Edit</button>
+        @if (confirmingId() === r.id) {
+          <button type="button" class="btn primary" [disabled]="busy()" [attr.aria-label]="'Confirm remove ' + typeLabel(r.type) + ' income of ' + exact(r.amountPaise)" (click)="remove(r)">Confirm remove</button>
+          <button type="button" class="btn" [disabled]="busy()" (click)="keep()">Keep</button>
+        } @else {
+          <button type="button" class="btn" [disabled]="busy()" [attr.aria-label]="'Remove ' + typeLabel(r.type) + ' income of ' + exact(r.amountPaise)" (click)="askRemove(r)">Remove</button>
+        }
+      </div>
+    </li>
+  }
+</ul>
+
+@if (formOpen()) {
+  <form (submit)="$event.preventDefault(); save()" aria-label="Income source">
+    <label class="field"><span>Type</span>
+      <select id="inc-type" (change)="type.set($any($event.target).value)">
+        @for (x of types; track x.code) { <option [value]="x.code" [selected]="type() === x.code">{{ x.label }}</option> }
+      </select>
+    </label>
+    <label class="field"><span>How often</span>
+      <select id="inc-freq" (change)="setFrequency($any($event.target).value)">
+        @for (x of frequencies; track x.code) { <option [value]="x.code" [selected]="frequency() === x.code">{{ x.label }}</option> }
+      </select>
+    </label>
+    <label class="field"><span>Amount in rupees</span>
+      <input type="text" id="inc-amount" inputmode="decimal" autocomplete="off" aria-describedby="inc-hint"
+        [value]="amountText()" (input)="on(amountText, $event)" />
+    </label>
+    <label class="field"><span>{{ frequency() === 'ONE_OFF' ? 'Date received' : 'Starts on' }}</span>
+      <input type="date" id="inc-start" [attr.aria-describedby]="dateError() ? 'inc-date-err' : null" [value]="startDate()" (input)="on(startDate, $event)" />
+    </label>
+    @if (frequency() === 'MONTHLY') {
+      <label class="field"><span>Ends on (optional)</span>
+        <input type="date" id="inc-end" [attr.aria-invalid]="dateError() ? true : null" [attr.aria-describedby]="dateError() ? 'inc-date-err' : null" [value]="endDate()" (input)="on(endDate, $event)" />
+      </label>
+    }
+    @if (dateError()) { <p id="inc-date-err" class="error" role="alert">{{ dateError() }}</p> }
+    <p id="inc-hint" class="muted">Whole rupees or up to two decimals. Do not enter account or ID numbers; there is no field for them.</p>
+    <div class="actions">
+      <button type="submit" class="btn primary" [disabled]="!canSave()">Save</button>
+      <button type="button" class="btn" (click)="cancel()">Cancel</button>
+    </div>
+  </form>
+} @else {
+  <p><button type="button" class="btn primary" id="inc-add" (click)="openAdd()">Add income</button></p>
+}

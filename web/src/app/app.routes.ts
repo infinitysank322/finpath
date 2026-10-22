@@ -13,6 +13,8 @@ export const routes: Routes = [
   { path: 'spending', loadComponent: page, title: 'Spending - FinPath', data: { heading: 'Spending' } },
   { path: 'debt', loadComponent: page, title: 'Debt - FinPath', data: { heading: 'Debt' } },
   { path: 'goals', loadComponent: page, title: 'Goals - FinPath', data: { heading: 'Goals' } },
-  { path: 'more', loadComponent: page, title: 'More - FinPath', data: { heading: 'More' } },
+  { path: 'more', pathMatch: 'full', loadComponent: () => import('./plan/more.component').then((m) => m.MoreComponent), title: 'More - FinPath' },
+  { path: 'more/income', loadComponent: () => import('./plan/income.component').then((m) => m.IncomeComponent), title: 'Income sources - FinPath' },
+  { path: 'more/recurring', loadComponent: () => import('./plan/recurring.component').then((m) => m.RecurringComponent), title: 'Recurring bills - FinPath' },
   { path: '**', redirectTo: 'home' },
 ];
