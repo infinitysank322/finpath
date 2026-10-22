@@ -10,6 +10,7 @@ import com.finpath.rules.CycleCalendar;
 import com.finpath.rules.LoanDetail;
 import com.finpath.rules.LoanType;
 import com.finpath.rules.Money;
+import com.finpath.rules.PayoffPlanner;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -71,6 +72,15 @@ public class LoanService {
             boolean pastDue, boolean balloonFinalPayment, List<InstalmentView> instalments) {
     }
 
+    /** One loan in payoff order; payoffCycle is the 0-based cycle offset in which it closes. */
+    public record PayoffStepView(UUID loanId, String lender, long outstandingPaise, String annualRate,
+            long monthlyPaymentPaise, int payoffCycle) {
+    }
+
+    public record PayoffPlanView(String strategy, List<PayoffStepView> order, long totalInterestPaise,
+            long totalPaidPaise, int cycles) {
+    }
+
     private final LoanRepository loans;
     private final ConsentService consents;
     private final Clock clock;
@@ -108,6 +118,56 @@ public class LoanService {
                 d.effectiveAnnualRate().toPlainString(), d.interestRemaining().paise(),
                 d.totalRemainingPayable().paise(), d.instalmentsRemaining(), payoff, d.closed(), d.pastDue(),
                 d.balloonFinalPayment(), rows);
+    }
+
+    /** FR-14 plan over the caller's open loans. The strategy is required: anything else is 400, never a default. */
+    public PayoffPlanView payoffPlan(UUID userId, String strategyName) {
+        PayoffPlanner.Strategy strategy = strategy(strategyName);
+        int startDay = loans.cycleStartDay(userId).orElseThrow(LoanNotFoundException::new);
+        LocalDate today = LocalDate.now(clock);
+        List<Row> rows = loans.list(userId);
+        List<PayoffPlanner.DebtEntry> debts = rows.stream().map(r -> debtEntry(r, today, startDay)).toList();
+        PayoffPlanner.Plan plan;
+        try {
+            plan = PayoffPlanner.plan(debts, strategy);
+        } catch (IllegalArgumentException | ArithmeticException | IllegalStateException e) {
+            throw new InvalidLoanException();
+        }
+        java.util.Map<String, Row> byId = new java.util.HashMap<>();
+        rows.forEach(r -> byId.put(r.id().toString(), r));
+        java.util.Map<String, PayoffPlanner.DebtEntry> entries = new java.util.HashMap<>();
+        debts.forEach(e -> entries.put(e.id(), e));
+        List<PayoffStepView> steps = plan.order().stream().map(id -> {
+            Row r = byId.get(id);
+            PayoffPlanner.DebtEntry e = entries.get(id);
+            return new PayoffStepView(r.id(), r.lender(), e.outstanding().paise(),
+                    e.annualRate().stripTrailingZeros().toPlainString(), e.monthlyPayment().paise(),
+                    plan.payoffCycle().get(id));
+        }).toList();
+        return new PayoffPlanView(strategy.name().toLowerCase(java.util.Locale.ROOT), steps,
+                plan.totalInterest().paise(), plan.totalPaid().paise(), plan.cycles());
+    }
+
+    private static PayoffPlanner.DebtEntry debtEntry(Row r, LocalDate today, int startDay) {
+        try {
+            LoanDetail.Result d = LoanDetail.compute(loanType(r.type()), Money.ofPaise(r.principalOutstandingPaise()),
+                    r.rate(), r.emiDerived() || r.emiPaise() == null ? null : Money.ofPaise(r.emiPaise()),
+                    r.emisLeft(), r.bulletDueDate(), Money.ofPaise(r.upfrontFeePaise()), today, startDay);
+            return new PayoffPlanner.DebtEntry(r.id().toString(), d.effectiveAnnualRate(),
+                    Money.ofPaise(r.principalOutstandingPaise()), d.emiUsed());
+        } catch (IllegalArgumentException | ArithmeticException e) {
+            throw new InvalidLoanException();
+        }
+    }
+
+    private static PayoffPlanner.Strategy strategy(String raw) {
+        if ("avalanche".equals(raw)) {
+            return PayoffPlanner.Strategy.AVALANCHE;
+        }
+        if ("snowball".equals(raw)) {
+            return PayoffPlanner.Strategy.SNOWBALL;
+        }
+        throw new InvalidLoanException();
     }
 
     private static PayoffCycle payoff(CycleCalendar.Cycle c) {

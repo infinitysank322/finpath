@@ -332,6 +332,34 @@ class LoanApiDbTest {
     }
 
     @Test
+    void payoffPlanPutsTheGoldLoanFirstUnderAvalancheAndUnknownStrategyIs400() throws Exception {
+        as(a);
+        send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT, null, null),
+                201);
+        JsonNode gold = send(post("/loans"), body("Gold Lender", "bullet", GOLD_PRINCIPAL, GOLD_RATE, null, null,
+                DUE, null), 201);
+        JsonNode p = send(get("/loans/payoff-plan").param("strategy", "avalanche"), null, 200);
+        assertThat(p.get("strategy").asText()).isEqualTo("avalanche");
+        assertThat(p.get("order")).hasSize(2);
+        assertThat(p.get("order").get(0).get("loanId").asText()).isEqualTo(gold.get("id").asText());
+        assertThat(p.get("cycles").asInt()).isPositive();
+        send(get("/loans/payoff-plan").param("strategy", "fastest"), null, 400);
+        send(get("/loans/payoff-plan"), null, 400);
+        send(get("/loans/payoff-plan").param("strategy", "AVALANCHE"), null, 400);
+    }
+
+    @Test
+    void payoffPlanOnlyIncludesTheCallersLoans() throws Exception {
+        as(a);
+        send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT, null, null),
+                201);
+        as(b);
+        JsonNode p = send(get("/loans/payoff-plan").param("strategy", "snowball"), null, 200);
+        assertThat(p.get("order")).isEmpty();
+        assertThat(p.get("cycles").asInt()).isZero();
+    }
+
+    @Test
     void detailReportsStatedEmiAndRulesFiguresWithLabelledComparison() throws Exception {
         as(a);
         JsonNode v = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT,

@@ -4,6 +4,7 @@ import com.finpath.auth.CurrentUserId;
 import com.finpath.loan.LoanService.LoanDetailView;
 import com.finpath.loan.LoanService.LoanInput;
 import com.finpath.loan.LoanService.LoanView;
+import com.finpath.loan.LoanService.PayoffPlanView;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Loan endpoints. The owner is always the authenticated principal; a userId in a body is ignored. */
@@ -38,6 +40,12 @@ public class LoanController {
     @GetMapping
     public ResponseEntity<List<LoanView>> list(@CurrentUserId UUID userId) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.list(userId));
+    }
+
+    @GetMapping("/payoff-plan")
+    public ResponseEntity<PayoffPlanView> payoffPlan(@CurrentUserId UUID userId,
+            @RequestParam(required = false) String strategy) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.payoffPlan(userId, strategy));
     }
 
     @GetMapping("/{id}")
