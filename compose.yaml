@@ -1,0 +1,62 @@
+# Local development stack. Run from the repo root: `docker compose up -d --build`
+# (db and api), or `docker compose up -d db` for the database alone.
+# Values come from ./.env (copy .env.example). The api container is configured from
+# environment variables only: nothing is baked into the image, and ./.env is neither
+# copied into it nor mounted.
+#
+# Host port defaults to 5433, not 5432: a native PostgreSQL service may already
+# own 5432 on the dev machine. Change DB_PORT in .env to move it; inside the compose
+# network the api always reaches the database at db:5432.
+name: finpath
+
+services:
+  db:
+    # Pinned to the PostgreSQL major Neon runs (17) so local migrations behave like prod.
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-finpath}
+      POSTGRES_USER: ${DB_USER:-finpath}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set - copy .env.example to .env}
+    ports:
+      # Bound to loopback only; the dev database is never reachable from the LAN.
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: ./api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Local profile against the compose db. For a real deployment set SPRING_PROFILES_ACTIVE=prod
+      # and NEON_DATABASE_URL (or point DB_HOST at any Postgres) in the host's environment.
+      SPRING_PROFILES_ACTIVE: local
+      # Probes are on by default only in prod; the container healthcheck needs the liveness group.
+      MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+      DB_HOST: db
+      DB_PORT: "5432"   # container-side port, NOT the host-mapped DB_PORT
+      DB_NAME: ${DB_NAME:-finpath}
+      DB_USER: ${DB_USER:-finpath}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set - copy .env.example to .env}
+    ports:
+      # Loopback only, like the database.
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "java", "-Xmx32m", "-Xss256k", "-Xshare:auto", "-XX:TieredStopAtLevel=1", "-cp", "/app/hc", "HealthCheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  pgdata:

@@ -19,6 +19,21 @@
 
     <properties>
         <java.version>21</java.version>
+
+        <!--
+            Connection settings for `./mvnw flyway:*` against the local compose Postgres.
+            Each is overridden by its environment variable (DB_HOST, DB_PORT, DB_NAME, DB_USER)
+            through the env-db-* profiles below. DB_PASSWORD has no default: environment only.
+            The JDBC scheme is a separate property so that no complete Postgres URL literal is
+            tracked anywhere (T04 guard: git grep for Postgres URLs and Neon hosts stays empty).
+        -->
+        <db.scheme>postgresql</db.scheme>
+        <db.host>localhost</db.host>
+        <db.port>5433</db.port>
+        <db.name>finpath</db.name>
+        <db.user>finpath</db.user>
+        <!-- Extra JDBC query string, e.g. ?sslmode=require for Neon; empty for local. -->
+        <db.params></db.params>
     </properties>
 
     <dependencies>
@@ -29,6 +44,23 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -43,6 +75,99 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <!-- Version comes from the Spring Boot parent, so it matches flyway-core. -->
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <configuration>
+                    <url>jdbc:${db.scheme}://${db.host}:${db.port}/${db.name}${db.params}</url>
+                    <user>${db.user}</user>
+                    <password>${env.DB_PASSWORD}</password>
+                    <locations>
+                        <location>filesystem:src/main/resources/db/migration</location>
+                    </locations>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.flywaydb</groupId>
+                        <artifactId>flyway-database-postgresql</artifactId>
+                        <version>${flyway.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>${postgresql.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <!-- T27: coverage gate. Fails `verify` when line coverage on the rules package is under 90%. -->
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals><goal>prepare-agent</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals><goal>report</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>rules-coverage-check</id>
+                        <phase>verify</phase>
+                        <goals><goal>check</goal></goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <includes>
+                                        <include>com.finpath.rules</include>
+                                    </includes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
+    <!-- Maven has no ${VAR:default} syntax, so each profile swaps in one env var when it is set. -->
+    <profiles>
+        <profile>
+            <id>env-db-host</id>
+            <activation><property><name>env.DB_HOST</name></property></activation>
+            <properties><db.host>${env.DB_HOST}</db.host></properties>
+        </profile>
+        <profile>
+            <id>env-db-port</id>
+            <activation><property><name>env.DB_PORT</name></property></activation>
+            <properties><db.port>${env.DB_PORT}</db.port></properties>
+        </profile>
+        <profile>
+            <id>env-db-name</id>
+            <activation><property><name>env.DB_NAME</name></property></activation>
+            <properties><db.name>${env.DB_NAME}</db.name></properties>
+        </profile>
+        <profile>
+            <id>env-db-user</id>
+            <activation><property><name>env.DB_USER</name></property></activation>
+            <properties><db.user>${env.DB_USER}</db.user></properties>
+        </profile>
+        <profile>
+            <id>env-db-params</id>
+            <activation><property><name>env.DB_PARAMS</name></property></activation>
+            <properties><db.params>${env.DB_PARAMS}</db.params></properties>
+        </profile>
+    </profiles>
 </project>

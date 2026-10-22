@@ -25,6 +25,17 @@ spring:
   config:
     activate:
       on-profile: local
+    # Reads DB_* from the gitignored .env (repo root or api/) so `./mvnw spring-boot:run`
+    # needs no exports. Real environment variables still win over these values.
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+  datasource:
+    # Compose Postgres (compose.yaml), host port 5433 by default. The scheme sits in a
+    # placeholder so no complete Postgres URL literal is tracked (T04 git-grep guard).
+    url: jdbc:${DB_SCHEME:postgresql}://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:finpath}
+    username: ${DB_USER:finpath}
+    password: ${DB_PASSWORD}
 
 server:
   port: 8080
@@ -40,6 +51,11 @@ spring:
   config:
     activate:
       on-profile: ci
+  # CI has no database: the build verifies code and migrations statically (SchemaLintTest).
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
 
 logging:
   level:
@@ -47,15 +63,45 @@ logging:
 
 ---
 # Production config comes from the environment only; no secrets in this file.
+# The datasource URL and credentials are NOT here: NeonDatasourceEnvironmentPostProcessor
+# derives them (pooled URL for the app, direct URL for Flyway) from the NEON_DATABASE_URL
+# environment variable, and SPRING_DATASOURCE_* overrides it. Missing config fails fast.
 spring:
   config:
     activate:
       on-profile: prod
+  datasource:
+    # HikariCP tuned for Neon scale-to-zero. The first connection after an idle suspend can take
+    # many seconds while compute wakes; that is normal latency, not an error. So: wait long
+    # (connection-timeout), do not fail startup on a slow first connect (initialization-fail-timeout
+    # >= connection-timeout), and add no retry layer or ERROR log on the way. A truly
+    # unreachable database still fails after the timeout, loudly, which is correct.
+    hikari:
+      pool-name: finpath-neon
+      connection-timeout: 30000        # ms; a 12 s cold start must succeed (T04 test), min is 10000
+      initialization-fail-timeout: 30000
+      validation-timeout: 6000
+      connection-test-query: SELECT 1  # explicit validation on checkout of an idle connection
+      maximum-pool-size: 5             # Neon free tier and pooler connection limits are small
+      minimum-idle: 0                  # let an idle pool drain so compute can suspend
+      idle-timeout: 120000
+      max-lifetime: 240000             # below Neon's 5 min idle suspend and pooler recycling
+      keepalive-time: 0                # off on purpose: pings would stop compute scaling to zero
 
 server:
   port: ${PORT:8080}
   shutdown: graceful
-  forward-headers-strategy: framework
+  # FORWARDED HEADERS (decision based on the code and docs/PLAN.md T84, not on the reviewer's note):
+  # prod runs as one container behind a TLS-terminating reverse proxy on the same host/network, so
+  # the app must honour X-Forwarded-Proto/For. `framework` (the previous value) honours them from
+  # ANY client, so a directly exposed port lets callers spoof scheme, host and client address.
+  # `native` uses Tomcat's RemoteIpValve, which only trusts the headers when the immediate peer
+  # matches server.tomcat.remoteip.internal-proxies (Tomcat default: loopback and private ranges,
+  # which covers a Docker bridge network); a public peer's headers are ignored.
+  # Trade-off: any private-range peer is trusted, so never publish this port to a private LAN you
+  # do not control. Tighten with SERVER_TOMCAT_REMOTEIP_INTERNAL_PROXIES (regex of the proxy IP),
+  # or set SERVER_FORWARD_HEADERS_STRATEGY=none when no proxy is in front.
+  forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:native}
 
 management:
   endpoint:

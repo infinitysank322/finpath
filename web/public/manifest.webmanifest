@@ -1,0 +1,12 @@
+{
+  "name": "FinPath",
+  "short_name": "FinPath",
+  "display": "standalone",
+  "scope": "./",
+  "start_url": "./",
+  "background_color": "#ffffff",
+  "theme_color": "#0b5cad",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
