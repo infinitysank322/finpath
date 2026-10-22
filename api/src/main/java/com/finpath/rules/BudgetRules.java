@@ -119,6 +119,17 @@ public final class BudgetRules {
         return totals;
     }
 
+    /** Exact total of the amounts ({@code Math.addExact}); zero for an empty collection. */
+    public static Money sum(java.util.Collection<Money> amounts) {
+        Objects.requireNonNull(amounts, "amounts");
+        long total = 0L;
+        for (Money m : amounts) {
+            Objects.requireNonNull(m, "amount");
+            total = Math.addExact(total, m.paise());
+        }
+        return Money.ofPaise(total);
+    }
+
     private static void requireNonNegative(Money m, String name) {
         if (m.isNegative()) {
             throw new IllegalArgumentException(name + " must not be negative");

@@ -97,6 +97,16 @@ class BudgetRulesTest {
     }
 
     @Test
+    void sumAddsExactlyAndRejectsOverflowAndNulls() {
+        assertEquals(Money.ZERO, BudgetRules.sum(java.util.List.of()));
+        assertEquals(Money.ofPaise(600L), BudgetRules.sum(
+                java.util.List.of(Money.ofPaise(100L), Money.ofPaise(200L), Money.ofPaise(300L))));
+        assertThrows(ArithmeticException.class, () -> BudgetRules.sum(
+                java.util.List.of(Money.ofPaise(Long.MAX_VALUE), Money.ofPaise(1L))));
+        assertThrows(NullPointerException.class, () -> BudgetRules.sum(java.util.Arrays.asList(Money.ZERO, null)));
+    }
+
+    @Test
     void safeToSpendOnDayTenOfThirtyOneDayCycle() {
         // cycle 25 Oct -> 25 Nov is 31 days; day 10 of the cycle is 3 Nov (9 elapsed), 22 days left incl. today
         CycleCalendar.Cycle cycle = CycleCalendar.cycleFor(LocalDate.of(2026, 10, 25), 25);
