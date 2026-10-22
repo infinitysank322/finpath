@@ -3,6 +3,11 @@ spring:
     name: finpath-api
   profiles:
     default: local
+  # T32: money is integer paise on the wire. Jackson would silently turn 12.5 into 12 for a long;
+  # reject it instead so a float amount is a 400, never a rounded write.
+  jackson:
+    deserialization:
+      accept-float-as-int: false
   # T29: Google sign-in as a confidential client. Credentials come from the environment only
   # (startup fails if either is empty). Google's redirect URI is Spring's default,
   # {baseUrl}/login/oauth2/code/google, and must match the one registered in the Google console.
@@ -35,6 +40,13 @@ management:
     health:
       show-details: never
       show-components: never
+
+# T32 log hygiene: Spring's web layer logs "Resolved [<exception>: <message>]" and Jackson parse
+# errors at DEBUG, and those messages can echo request content (amounts, merchant text, tokens).
+# Pinned to INFO in every profile, so turning debug on elsewhere never turns this on.
+logging:
+  level:
+    org.springframework.web: INFO
 
 server:
   error:
@@ -140,6 +152,11 @@ server:
     session:
       cookie:
         secure: true   # prod is HTTPS-only behind the proxy; the sign-in session cookie never goes over http
+
+# T32: smaller public surface in prod; the document is served everywhere else.
+springdoc:
+  api-docs:
+    enabled: ${OPENAPI_ENABLED:false}
 
 management:
   endpoint:

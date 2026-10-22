@@ -43,8 +43,8 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
  *   <li>Google sign-in ({@code /oauth2/authorization/**}, {@code /login/oauth2/code/**}): Spring's
  *       oauth2Login as a confidential client. The only place a session exists, and only for the
  *       few seconds between the redirect to Google and the callback.</li>
- *   <li>Everything else: a stateless bearer-JWT resource server. Health and the token endpoints
- *       are public; every other path needs {@code Authorization: Bearer <jwt>}. No cookies are
+ *   <li>Everything else: a stateless bearer-JWT resource server. Health, the OpenAPI document and the token
+ *       endpoints are public; every other path needs {@code Authorization: Bearer <jwt>}. No cookies are
  *       read, so CSRF protection is off for this chain only.</li>
  * </ol>
  */
@@ -94,6 +94,9 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/auth/token", "/auth/refresh").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // T32: the OpenAPI document describes routes and schemas only, never data.
+                        // It is off in prod unless OPENAPI_ENABLED=true (404 then); Swagger UI is not shipped.
+                        .requestMatchers("/v3/api-docs", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)

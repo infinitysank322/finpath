@@ -19,6 +19,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- T32: springdoc 2.8.x targets Spring Boot 3.4/3.5; exact pin, released well over two weeks ago. -->
+        <springdoc.version>2.8.13</springdoc.version>
 
         <!--
             Connection settings for `./mvnw flyway:*` against the local compose Postgres.
@@ -77,6 +79,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+        <!-- T32: OpenAPI document only (no Swagger UI, so no static assets are served). Pinned exactly. -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+            <version>${springdoc.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

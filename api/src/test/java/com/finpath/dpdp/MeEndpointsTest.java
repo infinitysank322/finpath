@@ -212,9 +212,10 @@ class MeEndpointsTest {
         String access = bearer(me);
         String refresh = refreshTokens.issue(me);
         doThrow(new IllegalStateException("db down")).when(data).delete(me);
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                () -> mvc.perform(delete("/me").header("Authorization", access)))
-                .hasRootCauseInstanceOf(IllegalStateException.class);
+        // T32: the failure now surfaces as the generic 500 body instead of propagating out of MockMvc.
+        mvc.perform(delete("/me").header("Authorization", access))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("server_error"));
         assertThat(codeOf("/me/consent", access)).isEqualTo(200);
         assertThat(refreshTokens.rotate(refresh)).isPresent();
     }
