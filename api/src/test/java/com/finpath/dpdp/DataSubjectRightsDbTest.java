@@ -37,6 +37,18 @@ class DataSubjectRightsDbTest {
         f.consents.grant(b, ConsentStatement.CURRENT.purpose(), ConsentStatement.CURRENT.version());
         seedPlanCycle(a);
         seedPlanCycle(b);
+        seedIncomeSource(a);
+        seedIncomeSource(b);
+    }
+
+    /** One income_source row per user (superuser insert). */
+    private static void seedIncomeSource(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); java.sql.PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO income_source (user_id, type, frequency, amount_paise, start_date) "
+                        + "VALUES (?, 'SALARY', 'MONTHLY', 10000000, DATE '2026-01-01')")) {
+            ps.setObject(1, user);
+            ps.executeUpdate();
+        }
     }
 
     /** One plan_cycle row per user (superuser insert), so the generic one-row-per-table checks cover it. */
@@ -112,7 +124,8 @@ class DataSubjectRightsDbTest {
         try (Connection c = TestDb.admin(); Statement s = c.createStatement();
                 ResultSet rs = s.executeQuery("SELECT (SELECT count(*) FROM users WHERE id = '" + a + "') "
                         + "+ (SELECT count(*) FROM consent WHERE user_id = '" + a + "') "
-                        + "+ (SELECT count(*) FROM plan_cycle WHERE user_id = '" + a + "')")) {
+                        + "+ (SELECT count(*) FROM plan_cycle WHERE user_id = '" + a + "') "
+                        + "+ (SELECT count(*) FROM income_source WHERE user_id = '" + a + "')")) {
             rs.next();
             assertThat(rs.getLong(1)).isZero();
         }

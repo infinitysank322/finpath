@@ -34,6 +34,9 @@ class OpenApiTest {
                 .andExpect(jsonPath("$.info.title").value("FinPath API"))
                 .andExpect(jsonPath("$.paths['/me/export']").exists())
                 .andExpect(jsonPath("$.paths['/auth/token']").exists())
+                .andExpect(jsonPath("$.paths['/income-sources']").exists())
+                .andExpect(jsonPath("$.paths['/income-sources/{id}']").exists())
+                .andExpect(jsonPath("$.paths['/income-sources/cycle-total']").exists())
                 .andExpect(jsonPath("$.components.securitySchemes.bearer.scheme").value("bearer"));
     }
 
