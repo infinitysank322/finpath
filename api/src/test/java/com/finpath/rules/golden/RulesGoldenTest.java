@@ -149,11 +149,11 @@ class RulesGoldenTest {
         List<EmiRollOff.Step> steps = EmiRollOff.timeline(rollOffDebts(), REFERENCE, START_DAY);
         assertEquals(3, steps.size());
         expectPaise(GoldenKeys.ROLLOFF_1, steps.get(0).freed().paise());
-        expectCycleId(GoldenKeys.ROLLOFF_1_CYCLE, steps.get(0).cycleMonth());
+        expectCycleId(GoldenKeys.ROLLOFF_1_CYCLE, YearMonth.from(steps.get(0).cycleId()));
         expectPaise(GoldenKeys.ROLLOFF_2, steps.get(1).freed().paise());
-        expectCycleId(GoldenKeys.ROLLOFF_2_CYCLE, steps.get(1).cycleMonth());
+        expectCycleId(GoldenKeys.ROLLOFF_2_CYCLE, YearMonth.from(steps.get(1).cycleId()));
         expectPaise(GoldenKeys.ROLLOFF_3, steps.get(2).freed().paise());
-        expectCycleId(GoldenKeys.ROLLOFF_3_CYCLE, steps.get(2).cycleMonth());
+        expectCycleId(GoldenKeys.ROLLOFF_3_CYCLE, YearMonth.from(steps.get(2).cycleId()));
     }
 
     /**
@@ -180,7 +180,7 @@ class RulesGoldenTest {
         // mandatory outflow can never go negative.
         WaterfallAllocator.Result later = allocate(income + last.cumulativeRedirected().paise(), mandatoryNow);
         expectPaise(GoldenKeys.SURPLUS_LATER, later.surplus().paise());
-        expectCycleId(GoldenKeys.SURPLUS_LATER_CYCLE, last.cycleMonth());
+        expectCycleId(GoldenKeys.SURPLUS_LATER_CYCLE, YearMonth.from(last.cycleId()));
     }
 
     /**

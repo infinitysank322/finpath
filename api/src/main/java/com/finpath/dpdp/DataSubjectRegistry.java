@@ -15,11 +15,11 @@ public final class DataSubjectRegistry {
     }
 
     private static final List<TableRef> EXPORT = List.of(new TableRef("users", "id"),
-            new TableRef("consent", "user_id"));
+            new TableRef("consent", "user_id"), new TableRef("plan_cycle", "user_id"));
 
     /** Deletion lists children before parents; users is the root, so it comes last. */
     private static final List<TableRef> DELETE = List.of(new TableRef("consent", "user_id"),
-            new TableRef("users", "id"));
+            new TableRef("plan_cycle", "user_id"), new TableRef("users", "id"));
 
     private DataSubjectRegistry() {
     }

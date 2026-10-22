@@ -96,12 +96,10 @@ class EmiRollOffTest {
     }
 
     @Test
-    void cycleMonthIsYearMonthOfCycleStart() {
+    void cycleIdIsCycleStartDate() {
         EmiRollOff.Step s = EmiRollOff.timeline(List.of(new EmiRollOff.Debt("A", rs(10), 1)),
                 LocalDate.of(2030, 12, 30), DAY).get(0);
         assertEquals(LocalDate.of(2031, 1, 25), s.cycleId());
-        assertEquals(java.time.YearMonth.of(2031, 1), s.cycleMonth());
-        assertEquals("2031-01", s.cycleMonth().toString());
     }
 
     @Test

@@ -2,7 +2,6 @@ package com.finpath.rules;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -64,14 +63,6 @@ public final class EmiRollOff {
         /** Cycle id: the cycle's start date. */
         public LocalDate cycleId() {
             return cycle.start();
-        }
-
-        /**
-         * Cycle id in the golden-fixture convention (yyyy-MM): the year-month of the cycle's
-         * start date, e.g. a cycle starting 2030-01-25 is 2030-01 regardless of start day.
-         */
-        public YearMonth cycleMonth() {
-            return YearMonth.from(cycle.start());
         }
     }
 

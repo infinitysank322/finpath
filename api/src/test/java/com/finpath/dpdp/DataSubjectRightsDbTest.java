@@ -35,6 +35,18 @@ class DataSubjectRightsDbTest {
         f.consents.grant(a, ConsentStatement.CURRENT.purpose(), ConsentStatement.CURRENT.version());
         DpdpFixture.actAs(b);
         f.consents.grant(b, ConsentStatement.CURRENT.purpose(), ConsentStatement.CURRENT.version());
+        seedPlanCycle(a);
+        seedPlanCycle(b);
+    }
+
+    /** One plan_cycle row per user (superuser insert), so the generic one-row-per-table checks cover it. */
+    private static void seedPlanCycle(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); java.sql.PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO plan_cycle (user_id, cycle_start, cycle_end, start_day) "
+                        + "VALUES (?, DATE '2026-09-25', DATE '2026-10-25', 25)")) {
+            ps.setObject(1, user);
+            ps.executeUpdate();
+        }
     }
 
     private static List<String> allTables() throws SQLException {
@@ -99,7 +111,8 @@ class DataSubjectRightsDbTest {
         }
         try (Connection c = TestDb.admin(); Statement s = c.createStatement();
                 ResultSet rs = s.executeQuery("SELECT (SELECT count(*) FROM users WHERE id = '" + a + "') "
-                        + "+ (SELECT count(*) FROM consent WHERE user_id = '" + a + "')")) {
+                        + "+ (SELECT count(*) FROM consent WHERE user_id = '" + a + "') "
+                        + "+ (SELECT count(*) FROM plan_cycle WHERE user_id = '" + a + "')")) {
             rs.next();
             assertThat(rs.getLong(1)).isZero();
         }
