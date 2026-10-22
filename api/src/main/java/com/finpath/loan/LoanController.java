@@ -5,6 +5,8 @@ import com.finpath.loan.LoanService.LoanDetailView;
 import com.finpath.loan.LoanService.LoanInput;
 import com.finpath.loan.LoanService.LoanView;
 import com.finpath.loan.LoanService.PayoffPlanView;
+import com.finpath.loan.LoanService.SinkingFundView;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
@@ -56,6 +58,15 @@ public class LoanController {
     @GetMapping("/{id}/detail")
     public ResponseEntity<LoanDetailView> detail(@CurrentUserId UUID userId, @PathVariable UUID id) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.detail(userId, id));
+    }
+
+    @GetMapping("/{id}/sinking-fund")
+    public ResponseEntity<SinkingFundView> sinkingFund(@CurrentUserId UUID userId, @PathVariable UUID id,
+            @RequestParam(required = false) Long savedPaise,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(
+                    iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fundStart) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(service.sinkingFund(userId, id, savedPaise, fundStart));
     }
 
     @PutMapping("/{id}")

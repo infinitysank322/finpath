@@ -360,6 +360,44 @@ class LoanApiDbTest {
     }
 
     @Test
+    void sinkingFundMatchesRulesAndFlagsAThirtyThousandShortfallAsBehind() throws Exception {
+        as(a);
+        JsonNode g = send(post("/loans"), body("Gold Lender", "bullet", GOLD_PRINCIPAL, GOLD_RATE, null, null, DUE,
+                null), 201);
+        String url = "/loans/" + g.get("id").asText() + "/sinking-fund";
+        java.time.LocalDate start = REF.minusMonths(30);
+        com.finpath.rules.SinkingFund.Result none = com.finpath.rules.SinkingFund.evaluate(
+                Money.ofPaise(GOLD_PRINCIPAL), Money.ZERO, start, java.time.LocalDate.parse(DUE), REF, 1);
+        JsonNode j = send(get(url).param("savedPaise", "0").param("fundStart", start.toString()), null, 200);
+        assertThat(j.get("setAsidePerCyclePaise").asLong()).isEqualTo(none.setAsidePerCycle().paise());
+        assertThat(j.get("cyclesRemaining").asInt()).isEqualTo(none.cyclesRemaining());
+        long shortfall = 3_000_000L;
+        long saved = none.expectedSavedByNow().paise() - shortfall;
+        assertThat(saved).isPositive();
+        JsonNode b1 = send(get(url).param("savedPaise", String.valueOf(saved)).param("fundStart", start.toString()),
+                null, 200);
+        assertThat(b1.get("status").asText()).isEqualTo("BEHIND");
+        assertThat(b1.get("behindSchedule").asBoolean()).isTrue();
+        assertThat(b1.get("catchUpPaise").asLong()).isEqualTo(shortfall);
+        JsonNode full = send(get(url).param("savedPaise", String.valueOf(GOLD_PRINCIPAL)), null, 200);
+        assertThat(full.get("status").asText()).isEqualTo("FUNDED");
+    }
+
+    @Test
+    void sinkingFundRejectsMissingSavedAndNonBulletAndOtherUsers() throws Exception {
+        as(a);
+        JsonNode g = send(post("/loans"), body("Gold Lender", "bullet", GOLD_PRINCIPAL, GOLD_RATE, null, null, DUE,
+                null), 201);
+        JsonNode h = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT,
+                null, null), 201);
+        send(get("/loans/" + g.get("id").asText() + "/sinking-fund"), null, 400);
+        send(get("/loans/" + g.get("id").asText() + "/sinking-fund").param("savedPaise", "-1"), null, 400);
+        send(get("/loans/" + h.get("id").asText() + "/sinking-fund").param("savedPaise", "0"), null, 400);
+        as(b);
+        send(get("/loans/" + g.get("id").asText() + "/sinking-fund").param("savedPaise", "0"), null, 404);
+    }
+
+    @Test
     void detailReportsStatedEmiAndRulesFiguresWithLabelledComparison() throws Exception {
         as(a);
         JsonNode v = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT,

@@ -11,6 +11,7 @@ import com.finpath.rules.LoanDetail;
 import com.finpath.rules.LoanType;
 import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
+import com.finpath.rules.SinkingFund;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -79,6 +80,12 @@ public class LoanService {
 
     public record PayoffPlanView(String strategy, List<PayoffStepView> order, long totalInterestPaise,
             long totalPaidPaise, int cycles) {
+    }
+
+    /** FR-16 sinking-fund status for a bullet loan; paise throughout, status is BEHIND / PAST_DUE etc. */
+    public record SinkingFundView(UUID loanId, int cyclesRemaining, long outstandingPaise, long setAsidePerCyclePaise,
+            long finalCycleAmountPaise, long expectedSavedByNowPaise, long savedDeltaPaise, long catchUpPaise,
+            String status, boolean behindSchedule) {
     }
 
     private final LoanRepository loans;
@@ -168,6 +175,30 @@ public class LoanService {
             return PayoffPlanner.Strategy.SNOWBALL;
         }
         throw new InvalidLoanException();
+    }
+
+    /**
+     * FR-16. The amount already set aside is supplied by the caller (nothing is stored); the fund starts
+     * on fundStart, defaulting to the day the loan was recorded. Only bullet loans have a sinking fund.
+     */
+    public SinkingFundView sinkingFund(UUID userId, UUID id, Long savedPaise, LocalDate fundStart) {
+        Row r = loans.find(userId, id).orElseThrow(LoanNotFoundException::new);
+        if (!BULLET.equals(r.type()) || savedPaise == null || savedPaise < 0 || r.bulletDueDate() == null) {
+            throw new InvalidLoanException();
+        }
+        int startDay = loans.cycleStartDay(userId).orElseThrow(LoanNotFoundException::new);
+        LocalDate start = fundStart != null ? fundStart : r.createdAt().atZone(CYCLE_ZONE).toLocalDate();
+        SinkingFund.Result f;
+        try {
+            f = SinkingFund.evaluate(Money.ofPaise(r.principalOutstandingPaise()), Money.ofPaise(savedPaise), start,
+                    r.bulletDueDate(), LocalDate.now(clock), startDay);
+        } catch (IllegalArgumentException | ArithmeticException e) {
+            throw new InvalidLoanException();
+        }
+        boolean behind = f.status() == SinkingFund.Status.BEHIND || f.status() == SinkingFund.Status.PAST_DUE;
+        return new SinkingFundView(r.id(), f.cyclesRemaining(), f.outstanding().paise(), f.setAsidePerCycle().paise(),
+                f.finalCycleAmount().paise(), f.expectedSavedByNow().paise(), f.savedDelta().paise(),
+                f.catchUp().paise(), f.status().name(), behind);
     }
 
     private static PayoffCycle payoff(CycleCalendar.Cycle c) {
