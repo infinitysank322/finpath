@@ -154,7 +154,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | T51 | DONE | FR-15 | Roll-off timeline endpoint | T50, T15 | 3 h | Returns the three freed-EMI steps with cycle ids matching T15 |
 | T52 | DONE | FR-16 | Sinking-fund status endpoint + behind-schedule flag | T49, T13 | 3 h | ₹10,588/cycle for the gold loan; a deliberate ₹30 k shortfall flags `BEHIND` with the catch-up amount |
 | T53 | DONE | FR-17 | Prepayment simulator endpoint (lump sum, EMI increase, target close date) | T49, T16 | 3 h | 13-year target returns ₹52,804 and ₹36.44 L saved; the response carries the assumption set used |
-| T54 | TODO | FR-18 | Debt-trap guard endpoint, invoked automatically on loan create | T48, T17 | 2 h | A loan pushing the ratio past 50% returns BLOCK and does not persist without explicit client confirmation; the ratio equals T17's output |
+| T54 | IN-PROGRESS | FR-18 | Debt-trap guard endpoint, invoked automatically on loan create | T48, T17 | 2 h | A loan pushing the ratio past 50% returns BLOCK and does not persist without explicit client confirmation; the ratio equals T17's output |
 | T55 | TODO | FR-12, FR-13, FR-01 | Web: loan list + detail; appends the debt step to the wizard | T49, T47 | 4 h | Five persona debts entered via the wizard total ₹63,332 EMI; detail renders all three loan types at 380 px dark |
 | T56 | TODO | FR-14, FR-15 | Web: payoff timeline chart with roll-off steps (ngx-echarts) | T51, T50 | 4 h | Legible at 380 px in both themes; has an aria description and a table equivalent listing each loan's end date |
 | T57 | TODO | FR-13 | Web: principal-vs-interest stacked area chart | T49 | 3 h | Series come from the loan detail endpoint; table-equivalent totals match the API to the paise |
