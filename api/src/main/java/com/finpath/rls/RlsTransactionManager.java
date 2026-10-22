@@ -66,6 +66,12 @@ public class RlsTransactionManager extends DataSourceTransactionManager {
         try (Statement s = c.createStatement()) {
             s.execute("SET LOCAL ROLE " + APP_ROLE);
         }
+        // The consent statement version the code requires; finpath_has_consent() compares against it,
+        // so consent given to an older wording stops counting without a migration.
+        try (PreparedStatement ps = c.prepareStatement("SELECT set_config('app.consent_version', ?, true)")) {
+            ps.setString(1, com.finpath.dpdp.ConsentStatement.CURRENT.version());
+            ps.execute();
+        }
         if (user.isPresent()) {
             try (PreparedStatement ps = c.prepareStatement("SELECT set_config('app.current_user_id', ?, true)")) {
                 ps.setString(1, user.get().toString());

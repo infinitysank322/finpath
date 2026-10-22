@@ -51,13 +51,48 @@ class DataSubjectRegistryTest {
         assertThat(DataSubjectRegistry.deleteTables()).last().extracting(TableRef::table).isEqualTo("users");
     }
 
+    /** Fails with a message naming each migrated table that the registry lacks. */
+    static void assertRegistryCovers(String label, List<TableRef> registry, List<String> migrated) {
+        for (String table : migrated) {
+            assertThat(registry).extracting(TableRef::table)
+                    .as("%s registry must list table %s", label, table).contains(table);
+        }
+    }
+
     @Test
     void everyMigratedTableIsInBothRegistries() throws IOException {
-        for (String table : migratedTables()) {
-            assertThat(DataSubjectRegistry.exportTables()).extracting(TableRef::table)
-                    .as("export registry must list table %s", table).contains(table);
-            assertThat(DataSubjectRegistry.deleteTables()).extracting(TableRef::table)
-                    .as("delete registry must list table %s", table).contains(table);
+        assertRegistryCovers("export", DataSubjectRegistry.exportTables(), migratedTables());
+        assertRegistryCovers("delete", DataSubjectRegistry.deleteTables(), migratedTables());
+    }
+
+    @Test
+    void removingATableFromEitherRegistryFailsTheCheckAndNamesTheTable() throws IOException {
+        for (String victim : migratedTables()) {
+            List<TableRef> export = DataSubjectRegistry.exportTables().stream()
+                    .filter(t -> !t.table().equals(victim)).toList();
+            List<TableRef> delete = DataSubjectRegistry.deleteTables().stream()
+                    .filter(t -> !t.table().equals(victim)).toList();
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> assertRegistryCovers("export", export, migratedTables()))
+                    .isInstanceOf(AssertionError.class).hasMessageContaining("export registry must list table " + victim);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> assertRegistryCovers("delete", delete, migratedTables()))
+                    .isInstanceOf(AssertionError.class).hasMessageContaining("delete registry must list table " + victim);
+        }
+    }
+
+    @Test
+    void consentIsRegisteredAndDeletedBeforeUsers() {
+        assertThat(DataSubjectRegistry.exportTables()).extracting(TableRef::table).contains("consent");
+        assertThat(DataSubjectRegistry.deleteTables()).extracting(TableRef::table).containsExactly("consent", "users");
+    }
+
+    @Test
+    void everyDeleteEntryComesBeforeTheTablesItReferences() throws IOException {
+        // Children before parents: any table declared REFERENCES users must precede users.
+        List<String> order = DataSubjectRegistry.deleteTables().stream().map(TableRef::table).toList();
+        for (String child : migratedTables()) {
+            if (!child.equals("users")) {
+                assertThat(order.indexOf(child)).as("delete order of %s", child).isLessThan(order.indexOf("users"));
+            }
         }
     }
 

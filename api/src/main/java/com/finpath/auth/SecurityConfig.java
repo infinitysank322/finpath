@@ -117,7 +117,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    JwtDecoder jwtDecoder(AuthProperties properties) {
+    JwtDecoder jwtDecoder(AuthProperties properties, DeletedUsers deletedUsers) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(signingKey(properties))
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
@@ -126,7 +126,8 @@ public class SecurityConfig {
                 new JwtClaimValidator<Instant>(JwtClaimNames.EXP, Objects::nonNull),
                 new JwtTimestampValidator(CLOCK_SKEW),
                 new JwtIssuerValidator(JwtIssuer.ISSUER),
-                subjectIsUserId()));
+                subjectIsUserId(),
+                subjectNotDeleted(deletedUsers)));
         return decoder;
     }
 
@@ -143,6 +144,20 @@ public class SecurityConfig {
                 return OAuth2TokenValidatorResult.success();
             } catch (IllegalArgumentException e) {
                 return OAuth2TokenValidatorResult.failure(invalid);
+            }
+        };
+    }
+
+    /** A token for a deleted account (DELETE /me) is refused until it would have expired anyway. */
+    private static OAuth2TokenValidator<Jwt> subjectNotDeleted(DeletedUsers deletedUsers) {
+        OAuth2Error deleted = new OAuth2Error("invalid_token", "account deleted", null);
+        return jwt -> {
+            try {
+                return deletedUsers.isDeleted(UUID.fromString(String.valueOf(jwt.getSubject())))
+                        ? OAuth2TokenValidatorResult.failure(deleted)
+                        : OAuth2TokenValidatorResult.success();
+            } catch (IllegalArgumentException e) {
+                return OAuth2TokenValidatorResult.success();   // subjectIsUserId reports a malformed sub
             }
         };
     }

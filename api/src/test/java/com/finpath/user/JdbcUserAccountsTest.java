@@ -186,6 +186,12 @@ class JdbcUserAccountsTest {
             if (hadSignin) {
                 admin.execute("ALTER ROLE finpath_signin RENAME TO " + parked);
             }
+            // V3 (T31) adds a second cluster-wide role with the same lifecycle.
+            String parkedPurge = "finpath_purge_parked_" + suffix;
+            boolean hadPurge = roleExists("finpath_purge");
+            if (hadPurge) {
+                admin.execute("ALTER ROLE finpath_purge RENAME TO " + parkedPurge);
+            }
             try {
                 admin.execute("CREATE ROLE " + role + " LOGIN NOSUPERUSER NOBYPASSRLS CREATEROLE PASSWORD '"
                         + rolePassword + "'");
@@ -197,9 +203,13 @@ class JdbcUserAccountsTest {
             } finally {
                 admin.execute("DROP DATABASE IF EXISTS " + db + " WITH (FORCE)");
                 admin.execute("DROP ROLE IF EXISTS finpath_signin"); // only ever the scratch owner's copy here
+                admin.execute("DROP ROLE IF EXISTS finpath_purge");
                 admin.execute("DROP ROLE IF EXISTS " + role);
                 if (hadSignin) {
                     admin.execute("ALTER ROLE " + parked + " RENAME TO finpath_signin");
+                }
+                if (hadPurge) {
+                    admin.execute("ALTER ROLE " + parkedPurge + " RENAME TO finpath_purge");
                 }
             }
         }
@@ -212,6 +222,11 @@ class JdbcUserAccountsTest {
         private boolean hasRole(String member, String privilege) {
             return Boolean.TRUE.equals(admin.queryForObject(
                     "SELECT pg_has_role(?, 'finpath_signin', ?)", Boolean.class, member, privilege));
+        }
+
+        private boolean hasPurgeRole(String member, String privilege) {
+            return Boolean.TRUE.equals(admin.queryForObject(
+                    "SELECT pg_has_role(?, 'finpath_purge', ?)", Boolean.class, member, privilege));
         }
 
         private boolean pg16OrLater() {
@@ -248,6 +263,14 @@ class JdbcUserAccountsTest {
                 if (pg16OrLater()) {
                     assertThat(hasRole(role, "SET")).as("owner must not SET ROLE finpath_signin").isFalse();
                 }
+                assertThat(roleExists("finpath_purge")).as("V3 role created by the scratch owner").isTrue();
+                assertThat(hasPurgeRole(role, "USAGE")).as("owner must not inherit finpath_purge").isFalse();
+                if (pg16OrLater()) {
+                    assertThat(hasPurgeRole(role, "SET")).as("owner must not SET ROLE finpath_purge").isFalse();
+                }
+                // The purge works for the owner (the app's login role), as a non-superuser.
+                assertThat(owner.queryForObject("SELECT cardinality(finpath_purge_unconsented_users(interval '1 day'))",
+                        Integer.class)).isNotNull();
 
                 JdbcUserAccounts asOwner = new JdbcUserAccounts(owner,
                         new TransactionTemplate(new DataSourceTransactionManager(ownerDs)));
@@ -273,6 +296,28 @@ class JdbcUserAccountsTest {
                 UUID appFirst = asApp.findOrCreateByVerifiedEmail(appEmail, "App Path");
                 assertThat(asApp.findOrCreateByVerifiedEmail(appEmail, "App Path")).isEqualTo(appFirst);
                 assertThat(asApp.findOrCreateByVerifiedEmail(ownerEmail, "x")).isEqualTo(ownerFirst);
+            });
+        }
+
+        /** The same fail-closed guarantee for V3's finpath_purge, which can delete any users row. */
+        @ParameterizedTest(name = "out-of-band finpath_purge grant WITH {0}")
+        @ValueSource(strings = {"INHERIT TRUE, SET FALSE", "INHERIT FALSE, SET TRUE"})
+        void v3MigrationFailsClosedWhenTheOwnerWouldKeepThePurgeRole(String flags) throws Exception {
+            assumeTrue(pg16OrLater(), "SKIPPED: membership INHERIT/SET options exist from PostgreSQL 16");
+            withScratchOwner(null, (role, rolePassword, dbUrl) -> {
+                admin.execute("CREATE ROLE finpath_purge NOLOGIN NOINHERIT");
+                admin.execute("GRANT finpath_purge TO " + role + " WITH ADMIN TRUE, " + flags);
+                DriverManagerDataSource ownerDs = new DriverManagerDataSource(dbUrl, role, rolePassword);
+                assertThatThrownBy(() -> Flyway.configure().dataSource(ownerDs).load().migrate())
+                        .isInstanceOf(FlywayException.class)
+                        .hasStackTraceContaining("V3 refused");
+                JdbcTemplate superuserOnScratch = new JdbcTemplate(new DriverManagerDataSource(dbUrl, USER, PASSWORD));
+                assertThat(superuserOnScratch.queryForObject(
+                        "SELECT count(*) FROM flyway_schema_history WHERE version = '3' AND success", Long.class))
+                        .isZero();
+                assertThat(superuserOnScratch.queryForObject(
+                        "SELECT count(*) FROM pg_policies WHERE policyname = 'users_purge_delete'", Long.class))
+                        .as("policy rolled back with the migration").isZero();
             });
         }
 

@@ -23,7 +23,8 @@ import org.junit.jupiter.api.Test;
 class RlsMetadataTest {
 
     /** SECURITY DEFINER functions are RLS bypasses by design; adding one needs a conscious edit here. */
-    static final Set<String> SECURITY_DEFINER_ALLOW_LIST = Set.of("finpath_user_id_by_email");
+    static final Set<String> SECURITY_DEFINER_ALLOW_LIST = Set.of("finpath_user_id_by_email",
+            "finpath_purge_unconsented_users");
 
     @Test
     void everyMigratedTableEnablesForcesAndHasAPolicy() throws IOException {

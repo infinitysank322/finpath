@@ -66,4 +66,9 @@ public class OneTimeCodeStore {
         }
         return Optional.of(entry.userId());
     }
+
+    /** Drops every live code of this user (account deletion), so none can be redeemed afterwards. */
+    public void revokeAll(UUID userId) {
+        byHash.values().removeIf(e -> e.userId().equals(userId));
+    }
 }

@@ -33,8 +33,11 @@ public class AuthController {
     private final OneTimeCodeStore codes;
     private final RefreshTokenStore refreshTokens;
     private final JwtIssuer jwt;
+    private final DeletedUsers deletedUsers;
 
-    public AuthController(OneTimeCodeStore codes, RefreshTokenStore refreshTokens, JwtIssuer jwt) {
+    public AuthController(OneTimeCodeStore codes, RefreshTokenStore refreshTokens, JwtIssuer jwt,
+            DeletedUsers deletedUsers) {
+        this.deletedUsers = deletedUsers;
         this.codes = codes;
         this.refreshTokens = refreshTokens;
         this.jwt = jwt;
@@ -43,6 +46,7 @@ public class AuthController {
     @PostMapping("/token")
     public ResponseEntity<?> token(@RequestBody CodeRequest request) {
         return codes.consume(request.code(), request.codeVerifier())
+                .filter(userId -> !deletedUsers.isDeleted(userId))
                 .<ResponseEntity<?>>map(userId -> ok(userId, refreshTokens.issue(userId)))
                 .orElseGet(AuthController::invalidGrant);
     }
@@ -50,6 +54,7 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody RefreshRequest request) {
         return refreshTokens.rotate(request.refreshToken())
+                .filter(r -> !deletedUsers.isDeleted(r.userId()))
                 .<ResponseEntity<?>>map(r -> ok(r.userId(), r.refreshToken()))
                 .orElseGet(AuthController::invalidGrant);
     }
