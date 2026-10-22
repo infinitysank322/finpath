@@ -82,7 +82,7 @@ class JdbcUserAccountsTest {
             admin = new JdbcTemplate(superuser);
             AppUserDataSource appDs = new AppUserDataSource();
             app = new JdbcTemplate(appDs);
-            accounts = new JdbcUserAccounts(app, new TransactionTemplate(new DataSourceTransactionManager(appDs)));
+            accounts = new JdbcUserAccounts(app, new TransactionTemplate(new com.finpath.rls.RlsTransactionManager(appDs)));
         }
 
         private String email() {
@@ -268,7 +268,7 @@ class JdbcUserAccountsTest {
                     }
                 };
                 JdbcUserAccounts asApp = new JdbcUserAccounts(new JdbcTemplate(appDs),
-                        new TransactionTemplate(new DataSourceTransactionManager(appDs)));
+                        new TransactionTemplate(new com.finpath.rls.RlsTransactionManager(appDs)));
                 String appEmail = email();
                 UUID appFirst = asApp.findOrCreateByVerifiedEmail(appEmail, "App Path");
                 assertThat(asApp.findOrCreateByVerifiedEmail(appEmail, "App Path")).isEqualTo(appFirst);
