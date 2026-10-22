@@ -6,13 +6,19 @@ import com.finpath.loan.LoanRepository.Draft;
 import com.finpath.loan.LoanRepository.Row;
 import com.finpath.rules.AmortisingLoan;
 import com.finpath.rules.BulletLoan;
+import com.finpath.rules.CycleCalendar;
+import com.finpath.rules.LoanDetail;
+import com.finpath.rules.LoanType;
 import com.finpath.rules.Money;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -43,22 +49,88 @@ public class LoanService {
             Instant createdAt) {
     }
 
+    static final ZoneId CYCLE_ZONE = ZoneId.of("Asia/Kolkata");
+    static final String COMPUTED_EMI_LABEL = "Calculated from principal, rate and tenure (comparison only)";
+
+    /** One remaining payment; paise throughout. */
+    public record InstalmentView(int number, long openingPaise, long interestPaise, long principalPaise,
+            long paymentPaise, long closingPaise) {
+    }
+
+    /** The cycle [start, endExclusive) of the final payment. */
+    public record PayoffCycle(LocalDate start, LocalDate endExclusive) {
+    }
+
+    /** The rules-computed EMI, shown only next to a stated one and never used for cash flow. */
+    public record ComputedEmiComparison(String label, long emiPaise) {
+    }
+
+    public record LoanDetailView(UUID id, String lender, String type, long emiUsedPaise, boolean emiDerived,
+            ComputedEmiComparison computedEmiComparison, String effectiveAnnualRate, long interestRemainingPaise,
+            long totalRemainingPayablePaise, int instalmentsRemaining, PayoffCycle payoffCycle, boolean closed,
+            boolean pastDue, boolean balloonFinalPayment, List<InstalmentView> instalments) {
+    }
+
     private final LoanRepository loans;
     private final ConsentService consents;
+    private final Clock clock;
 
+    @Autowired
     public LoanService(LoanRepository loans, ConsentService consents) {
+        this(loans, consents, Clock.system(CYCLE_ZONE));
+    }
+
+    LoanService(LoanRepository loans, ConsentService consents, Clock clock) {
         this.loans = loans;
         this.consents = consents;
+        this.clock = clock;
+    }
+
+    /** FR-13 detail. Every figure comes from LoanDetail.compute; the stated EMI drives cash flow. */
+    public LoanDetailView detail(UUID userId, UUID id) {
+        Row r = loans.find(userId, id).orElseThrow(LoanNotFoundException::new);
+        int startDay = loans.cycleStartDay(userId).orElseThrow(LoanNotFoundException::new);
+        LoanDetail.Result d;
+        try {
+            d = LoanDetail.compute(loanType(r.type()), Money.ofPaise(r.principalOutstandingPaise()), r.rate(),
+                    r.emiDerived() || r.emiPaise() == null ? null : Money.ofPaise(r.emiPaise()), r.emisLeft(),
+                    r.bulletDueDate(), Money.ofPaise(r.upfrontFeePaise()), LocalDate.now(clock), startDay);
+        } catch (IllegalArgumentException | ArithmeticException e) {
+            throw new InvalidLoanException();
+        }
+        ComputedEmiComparison cmp = d.emiDerived() ? null
+                : d.computedEmi().map(m -> new ComputedEmiComparison(COMPUTED_EMI_LABEL, m.paise())).orElse(null);
+        PayoffCycle payoff = d.payoffCycle().map(LoanService::payoff).orElse(null);
+        List<InstalmentView> rows = d.instalments().stream().map(i -> new InstalmentView(i.number(),
+                i.opening().paise(), i.interest().paise(), i.principal().paise(), i.payment().paise(),
+                i.closing().paise())).toList();
+        return new LoanDetailView(r.id(), r.lender(), r.type(), d.emiUsed().paise(), d.emiDerived(), cmp,
+                d.effectiveAnnualRate().toPlainString(), d.interestRemaining().paise(),
+                d.totalRemainingPayable().paise(), d.instalmentsRemaining(), payoff, d.closed(), d.pastDue(),
+                d.balloonFinalPayment(), rows);
+    }
+
+    private static PayoffCycle payoff(CycleCalendar.Cycle c) {
+        return new PayoffCycle(c.start(), c.endExclusive());
+    }
+
+    private static LoanType loanType(String dbValue) {
+        return switch (dbValue) {
+            case EMI -> LoanType.EMI;
+            case BULLET -> LoanType.BULLET;
+            case CARD_EMI -> LoanType.CARD_EMI;
+            default -> throw new InvalidLoanException();
+        };
     }
 
     public LoanView create(UUID userId, LoanInput in) {
-        Draft d = draft(in);
+        Draft d = draft(in, LocalDate.now(clock));
         consents.require(userId);
         return view(loans.insert(userId, d));
     }
 
     public LoanView replace(UUID userId, UUID id, LoanInput in) {
-        Draft d = draft(in);
+        Draft d = draft(in, LocalDate.now(clock));
         consents.require(userId);
         return view(loans.update(userId, id, d).orElseThrow(LoanNotFoundException::new));
     }
@@ -79,7 +151,7 @@ public class LoanService {
     }
 
     /** Validates and resolves the instalment; throws InvalidLoanException before any write. */
-    private static Draft draft(LoanInput in) {
+    private static Draft draft(LoanInput in, LocalDate today) {
         if (in == null || in.type() == null || !TYPES.contains(in.type()) || in.lender() == null
                 || in.principalOutstandingPaise() == null || in.principalOutstandingPaise() < 0) {
             throw new InvalidLoanException();
@@ -96,10 +168,13 @@ public class LoanService {
         }
         Integer emisLeft = null;
         if (!bullet) {
-            if (in.emisLeft() <= 0 || in.emisLeft() > Integer.MAX_VALUE) {
+            if (!LoanDetail.tenureWithinLimit(in.emisLeft())) {
                 throw new InvalidLoanException();
             }
             emisLeft = in.emisLeft().intValue();
+        }
+        if (bullet && !LoanDetail.dueWithinHorizon(in.bulletDueDate(), today)) {
+            throw new InvalidLoanException();
         }
         long fee = in.upfrontFeePaise() == null ? 0L : in.upfrontFeePaise();
         if (fee < 0 || (fee > 0 && (!CARD_EMI.equals(type) || fee >= in.principalOutstandingPaise()))) {

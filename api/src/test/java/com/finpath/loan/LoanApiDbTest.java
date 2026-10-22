@@ -21,6 +21,7 @@ import com.finpath.dpdp.ConsentStatement;
 import com.finpath.rls.RlsTransactionManager;
 import com.finpath.rules.AmortisingLoan;
 import com.finpath.rules.BulletLoan;
+import com.finpath.rules.LoanDetail;
 import com.finpath.rules.Money;
 import com.finpath.rules.golden.GoldenFixture;
 import com.finpath.rules.golden.GoldenKeys;
@@ -60,6 +61,7 @@ class LoanApiDbTest {
     private static final long GOLD_PRINCIPAL = FX.paise(GoldenKeys.LOAN_GOLD_PRINCIPAL);
     private static final BigDecimal GOLD_RATE = FX.decimal(GoldenKeys.LOAN_GOLD_RATE);
     private static final String DUE = "2031-10-15";
+    private static final java.time.LocalDate REF = java.time.LocalDate.of(2026, 10, 22);
 
     private MockMvc mvc;
     private ObjectMapper om;
@@ -78,7 +80,9 @@ class LoanApiDbTest {
         bf.registerSingleton("tx", tx);
         ConsentService consents = new ConsentService(bf.getBeanProvider(JdbcTemplate.class),
                 bf.getBeanProvider(TransactionTemplate.class));
-        service = new LoanService(new LoanRepository(() -> jdbc, () -> tx), consents);
+        service = new LoanService(new LoanRepository(() -> jdbc, () -> tx), consents,
+                java.time.Clock.fixed(REF.atStartOfDay(java.time.ZoneId.of("Asia/Kolkata")).toInstant(),
+                        java.time.ZoneId.of("Asia/Kolkata")));
         om = new ObjectMapper().findAndRegisterModules()
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
@@ -325,6 +329,106 @@ class LoanApiDbTest {
                 null, null), 201);
         send(delete("/loans/" + v.get("id").asText()), null, 204);
         assertThat(loanCount(a)).isZero();
+    }
+
+    @Test
+    void detailReportsStatedEmiAndRulesFiguresWithLabelledComparison() throws Exception {
+        as(a);
+        JsonNode v = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT,
+                null, null), 201);
+        JsonNode d = send(get("/loans/" + v.get("id").asText() + "/detail"), null, 200);
+        com.finpath.rules.LoanDetail.Result exp = com.finpath.rules.LoanDetail.compute(
+                com.finpath.rules.LoanType.EMI, Money.ofPaise(HOME_PRINCIPAL), HOME_RATE, Money.ofPaise(HOME_STATED),
+                HOME_LEFT, null, null, REF, 1);
+        assertThat(d.get("emiUsedPaise").asLong()).isEqualTo(HOME_STATED);
+        assertThat(d.get("emiDerived").asBoolean()).isFalse();
+        assertThat(d.get("interestRemainingPaise").asLong()).isEqualTo(exp.interestRemaining().paise());
+        assertThat(d.get("totalRemainingPayablePaise").asLong()).isEqualTo(exp.totalRemainingPayable().paise());
+        assertThat(d.get("instalmentsRemaining").asInt()).isEqualTo(exp.instalmentsRemaining());
+        assertThat(d.get("instalments")).hasSize(exp.instalmentsRemaining());
+        assertThat(d.get("instalments").get(0).get("paymentPaise").asLong()).isEqualTo(HOME_STATED);
+        assertThat(d.get("payoffCycle").get("start").asText())
+                .isEqualTo(exp.payoffCycle().orElseThrow().start().toString());
+        assertThat(d.get("payoffCycle").get("endExclusive").asText())
+                .isEqualTo(exp.payoffCycle().orElseThrow().endExclusive().toString());
+        assertThat(new BigDecimal(d.get("effectiveAnnualRate").asText())).isEqualByComparingTo(HOME_RATE);
+        JsonNode cmp = d.get("computedEmiComparison");
+        assertThat(cmp.get("emiPaise").asLong())
+                .isEqualTo(AmortisingLoan.emi(Money.ofPaise(HOME_PRINCIPAL), HOME_RATE, HOME_LEFT).paise())
+                .isNotEqualTo(HOME_STATED);
+        assertThat(cmp.get("label").asText()).isNotBlank();
+    }
+
+    @Test
+    void detailOfADerivedEmiLoanIsMarkedDerivedWithoutComparison() throws Exception {
+        as(a);
+        JsonNode v = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, null, HOME_LEFT, null,
+                null), 201);
+        JsonNode d = send(get("/loans/" + v.get("id").asText() + "/detail"), null, 200);
+        assertThat(d.get("emiDerived").asBoolean()).isTrue();
+        assertThat(d.get("emiUsedPaise").asLong())
+                .isEqualTo(AmortisingLoan.emi(Money.ofPaise(HOME_PRINCIPAL), HOME_RATE, HOME_LEFT).paise());
+        assertThat(d.has("computedEmiComparison") && !d.get("computedEmiComparison").isNull()).isFalse();
+    }
+
+    @Test
+    void detailOfABulletLoanHasGoldEffectiveRate() throws Exception {
+        as(a);
+        JsonNode v = send(post("/loans"), body("Gold Lender", "bullet", GOLD_PRINCIPAL, GOLD_RATE,
+                FX.paise(GoldenKeys.LOAN_GOLD_MONTHLY_INTEREST), null, DUE, null), 201);
+        JsonNode d = send(get("/loans/" + v.get("id").asText() + "/detail"), null, 200);
+        com.finpath.rules.LoanDetail.Result exp = com.finpath.rules.LoanDetail.compute(
+                com.finpath.rules.LoanType.BULLET, Money.ofPaise(GOLD_PRINCIPAL), GOLD_RATE,
+                Money.ofPaise(FX.paise(GoldenKeys.LOAN_GOLD_MONTHLY_INTEREST)), null,
+                java.time.LocalDate.parse(DUE), null, REF, 1);
+        assertThat(new BigDecimal(d.get("effectiveAnnualRate").asText()))
+                .isEqualByComparingTo(exp.effectiveAnnualRate());
+        assertThat(d.get("interestRemainingPaise").asLong()).isEqualTo(exp.interestRemaining().paise());
+        assertThat(d.get("emiDerived").asBoolean()).isFalse();
+    }
+
+    @Test
+    void detailRulesRejectionIs400AndAnotherUsersLoanIs404() throws Exception {
+        as(a);
+        // A stated EMI far below the first month's interest is accepted by CRUD but rejected by the rules.
+        JsonNode v = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, 1L, HOME_LEFT, null,
+                null), 201);
+        String path = "/loans/" + v.get("id").asText() + "/detail";
+        assertThat(send(get(path), null, 400).get("error").asText()).isEqualTo("invalid_request");
+        JsonNode ok = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT,
+                null, null), 201);
+        String okPath = "/loans/" + ok.get("id").asText() + "/detail";
+        as(b);
+        assertThat(send(get(okPath), null, 404).get("error").asText()).isEqualTo("not_found");
+        send(get("/loans/" + UUID.randomUUID() + "/detail"), null, 404);
+    }
+
+    @Test
+    void tenureAndBulletHorizonAreCappedAtTheApi() throws Exception {
+        as(a);
+        send(post("/loans"), body("Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, LoanDetail.MAX_EMIS_LEFT + 1,
+                null, null), 400);
+        send(post("/loans"), body("Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, LoanDetail.MAX_EMIS_LEFT,
+                null, null), 201);
+        String farDue = REF.plusYears(LoanDetail.MAX_BULLET_YEARS).plusDays(1).toString();
+        send(post("/loans"), body("Gold", "bullet", GOLD_PRINCIPAL, GOLD_RATE, null, null, farDue, null), 400);
+        String edge = REF.plusYears(LoanDetail.MAX_BULLET_YEARS).toString();
+        send(post("/loans"), body("Gold", "bullet", GOLD_PRINCIPAL, GOLD_RATE, null, null, edge, null), 201);
+        assertThat(loanCount(a)).isEqualTo(2);
+    }
+
+    @Test
+    void detailExposesBalloonFlagForAnUnderstatedEmi() throws Exception {
+        as(a);
+        long under = AmortisingLoan.emi(Money.ofPaise(HOME_PRINCIPAL), HOME_RATE, HOME_LEFT).paise() - 1000L;
+        JsonNode v = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, under, HOME_LEFT, null,
+                null), 201);
+        JsonNode d = send(get("/loans/" + v.get("id").asText() + "/detail"), null, 200);
+        assertThat(d.get("balloonFinalPayment").asBoolean()).isTrue();
+        JsonNode ok = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, null, HOME_LEFT, null,
+                null), 201);
+        assertThat(send(get("/loans/" + ok.get("id").asText() + "/detail"), null, 200).get("balloonFinalPayment")
+                .asBoolean()).isFalse();
     }
 
     @Test

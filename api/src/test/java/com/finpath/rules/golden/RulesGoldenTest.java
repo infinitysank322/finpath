@@ -2,6 +2,7 @@ package com.finpath.rules.golden;
 
 import static com.finpath.rules.golden.GoldenAssert.assertWithinOnePercent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.finpath.rules.AmortisingLoan;
@@ -415,5 +416,36 @@ class RulesGoldenTest {
         Money derived = BulletLoan.monthlyInterest(Money.ofPaise(fx.paise(GoldenKeys.LOAN_GOLD_PRINCIPAL)),
                 fx.decimal(GoldenKeys.LOAN_GOLD_RATE));
         expectPaise(GoldenKeys.LOAN_GOLD_MONTHLY_INTEREST, derived.paise());
+    }
+
+    /** T49: home-loan interest remaining comes from the STATED EMI, not the computed one. */
+    @Test
+    void loanDetailHomeUsesStatedEmiForScheduleAndInterest() {
+        Money principal = Money.ofPaise(fx.paise(GoldenKeys.LOAN_HOME_PRINCIPAL));
+        BigDecimal rate = fx.decimal(GoldenKeys.LOAN_HOME_RATE);
+        int left = fx.integer(GoldenKeys.LOAN_HOME_EMIS_LEFT);
+        Money stated = Money.ofPaise(fx.paise(GoldenKeys.LOAN_HOME_EMI_STATED));
+        com.finpath.rules.LoanDetail.Result r = com.finpath.rules.LoanDetail.compute(
+                com.finpath.rules.LoanType.EMI, principal, rate, stated, left, null, null, REFERENCE, START_DAY);
+        assertEquals(stated, r.emiUsed());
+        assertFalse(r.emiDerived());
+        assertEquals(AmortisingLoan.emi(principal, rate, left), r.computedEmi().orElseThrow());
+        assertEquals(AmortisingLoan.schedule(principal, rate, stated, left).totalInterest(), r.interestRemaining());
+        // Persona-specific: the stated home-loan EMI is within 1% of the computed one, so its interest is too.
+        assertWithinOnePercent(AmortisingLoan.schedule(principal, rate, left).totalInterest().paise(),
+                r.interestRemaining().paise());
+    }
+
+    /** T49: gold-loan effective annual rate through the facade equals the bullet golden rate. */
+    @Test
+    void loanDetailGoldEffectiveRate() {
+        Money principal = Money.ofPaise(fx.paise(GoldenKeys.LOAN_GOLD_PRINCIPAL));
+        Money interest = Money.ofPaise(fx.paise(GoldenKeys.LOAN_GOLD_MONTHLY_INTEREST));
+        com.finpath.rules.LoanDetail.Result r = com.finpath.rules.LoanDetail.compute(
+                com.finpath.rules.LoanType.BULLET, principal, fx.decimal(GoldenKeys.LOAN_GOLD_RATE), interest,
+                null, REFERENCE.plusYears(10), null, REFERENCE, START_DAY);
+        expectDecimal(GoldenKeys.BULLET_EFFECTIVE_RATE_PCT, r.effectiveAnnualRate().movePointRight(2));
+        assertWithinOnePercent(fx.decimal(GoldenKeys.LOAN_GOLD_RATE), r.effectiveAnnualRate());
+        assertEquals(interest, r.emiUsed());
     }
 }

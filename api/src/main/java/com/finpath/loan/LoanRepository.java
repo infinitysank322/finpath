@@ -82,6 +82,13 @@ public class LoanRepository {
                 (rs, n) -> map(rs), id, userId).stream().findFirst());
     }
 
+    /** The user's cycle start day, or empty if the user row is not visible. */
+    public Optional<Integer> cycleStartDay(UUID userId) {
+        JdbcTemplate j = jdbc.get();
+        return tx.get().execute(status -> j.query("SELECT cycle_start_day FROM users WHERE id = ?",
+                (rs, n) -> rs.getInt(1), userId).stream().findFirst());
+    }
+
     /** The user's loans ordered by type, then creation time. */
     public List<Row> list(UUID userId) {
         JdbcTemplate j = jdbc.get();

@@ -1,6 +1,7 @@
 package com.finpath.loan;
 
 import com.finpath.auth.CurrentUserId;
+import com.finpath.loan.LoanService.LoanDetailView;
 import com.finpath.loan.LoanService.LoanInput;
 import com.finpath.loan.LoanService.LoanView;
 import java.util.List;
@@ -42,6 +43,11 @@ public class LoanController {
     @GetMapping("/{id}")
     public ResponseEntity<LoanView> get(@CurrentUserId UUID userId, @PathVariable UUID id) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.get(userId, id));
+    }
+
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<LoanDetailView> detail(@CurrentUserId UUID userId, @PathVariable UUID id) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.detail(userId, id));
     }
 
     @PutMapping("/{id}")
