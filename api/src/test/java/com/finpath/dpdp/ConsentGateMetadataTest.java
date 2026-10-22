@@ -24,7 +24,7 @@ class ConsentGateMetadataTest {
     static List<String> tablesMissingTheGate(String code) {
         List<String> failures = new ArrayList<>();
         for (String table : MigrationScanAccess.tableNames(code)) {
-            if (EXEMPT.contains(table)) {
+            if (EXEMPT.contains(table) || DataSubjectRegistry.sharedTables().contains(table)) {
                 continue;
             }
             Matcher m = Pattern.compile("create\\s+policy\\s+\\w+\\s+on\\s+" + Pattern.quote(table) + "\\b[^;]*;").matcher(code);

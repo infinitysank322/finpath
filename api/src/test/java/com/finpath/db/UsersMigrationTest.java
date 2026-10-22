@@ -56,6 +56,9 @@ class UsersMigrationTest {
     void everyTableEnablesForcesAndPoliciesRowLevelSecurity() throws IOException {
         String code = MigrationScan.allCode().toLowerCase();
         for (var t : MigrationScan.tables(MigrationScan.allCode())) {
+            if (com.finpath.dpdp.DataSubjectRegistry.sharedTables().contains(t.name())) {
+                continue;   // shared reference data: no personal data, access-tested in CategoryAccessTest
+            }
             assertThat(code).as("RLS enabled on %s", t.name())
                     .containsPattern("alter\\s+table\\s+" + t.name() + "\\s+enable\\s+row\\s+level\\s+security");
             assertThat(code).as("RLS forced on %s", t.name())

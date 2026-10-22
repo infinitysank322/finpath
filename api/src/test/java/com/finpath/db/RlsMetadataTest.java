@@ -31,6 +31,9 @@ class RlsMetadataTest {
         String code = MigrationScan.allCode().toLowerCase();
         List<String> failures = new ArrayList<>();
         for (MigrationScan.Table t : MigrationScan.tables(code)) {
+            if (com.finpath.dpdp.DataSubjectRegistry.sharedTables().contains(t.name())) {
+                continue;   // reviewed exemption: shared reference data, no personal data
+            }
             String n = Pattern.quote(t.name());
             if (!Pattern.compile("alter\\s+table\\s+" + n + "\\s+enable\\s+row\\s+level\\s+security").matcher(code).find()) {
                 failures.add(t.name() + ": ENABLE ROW LEVEL SECURITY missing");
@@ -101,6 +104,7 @@ class RlsMetadataTest {
         void everyTableIsForcedAndHasAPolicy() throws SQLException {
             assertThat(column("SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
                     + "WHERE n.nspname = 'public' AND c.relkind IN ('r','p') AND c.relname <> 'flyway_schema_history' "
+                    + "AND c.relname NOT IN ('" + String.join("','", com.finpath.dpdp.DataSubjectRegistry.sharedTables()) + "') "
                     + "AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity "
                     + "OR NOT EXISTS (SELECT 1 FROM pg_policy p WHERE p.polrelid = c.oid))"))
                     .as("tables lacking forced RLS or a policy").isEmpty();

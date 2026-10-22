@@ -59,6 +59,10 @@ public class DataSubjectService {
         if (!IDENTIFIER.matcher(ref.table()).matches() || !IDENTIFIER.matcher(ref.ownerColumn()).matches()) {
             throw new IllegalStateException("registry entry is not a plain SQL identifier");
         }
+        if (!DataSubjectRegistry.PLAIN_ROW.equals(ref.exportRow())
+                && !DataSubjectRegistry.ROW_WITH_CATEGORY_CODE.equals(ref.exportRow())) {
+            throw new IllegalStateException("registry export fragment is not on the allowlist");
+        }
     }
 
     /**
@@ -73,7 +77,7 @@ public class DataSubjectService {
             root.put("exportedAt", clock.instant().toString());
             ObjectNode tables = root.putObject("tables");
             for (TableRef ref : exportTables) {
-                String json = jdbc.queryForObject("SELECT coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb)::text FROM "
+                String json = jdbc.queryForObject("SELECT coalesce(jsonb_agg(" + ref.exportRow() + "), '[]'::jsonb)::text FROM "
                         + ref.table() + " t WHERE t." + ref.ownerColumn() + " = ?", String.class, userId);
                 try {
                     tables.set(ref.table(), mapper.readTree(json));

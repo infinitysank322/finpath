@@ -39,6 +39,19 @@ class DataSubjectRightsDbTest {
         seedPlanCycle(b);
         seedIncomeSource(a);
         seedIncomeSource(b);
+        seedTransaction(a);
+        seedTransaction(b);
+    }
+
+    /** One transaction row per user (superuser insert). */
+    private static void seedTransaction(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); java.sql.PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO transaction (user_id, txn_date, amount_paise, direction, category_id, mode, "
+                        + "dedupe_hash, idempotency_key) VALUES (?, DATE '2026-10-01', 4000, 'OUT', "
+                        + "(SELECT id FROM category WHERE code = 'DINING'), 'UPI', repeat('a', 64), 'seed-key-0001')")) {
+            ps.setObject(1, user);
+            ps.executeUpdate();
+        }
     }
 
     /** One income_source row per user (superuser insert). */
@@ -67,7 +80,9 @@ class DataSubjectRightsDbTest {
                 ResultSet rs = s.executeQuery("SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
                         + "AND tablename <> 'flyway_schema_history' ORDER BY 1")) {
             while (rs.next()) {
-                out.add(rs.getString(1));
+                if (!DataSubjectRegistry.sharedTables().contains(rs.getString(1))) {
+                    out.add(rs.getString(1));   // shared reference tables hold no user data
+                }
             }
         }
         return out;
@@ -101,6 +116,10 @@ class DataSubjectRightsDbTest {
         assertThat(reparsed.at("/tables/consent")).hasSize(1);
         assertThat(reparsed.at("/tables/consent/0/user_id").asText()).isEqualTo(a.toString());
         assertThat(reparsed.toString()).doesNotContain(b.toString());
+        assertThat(reparsed.at("/tables/transaction")).hasSize(1);
+        assertThat(reparsed.at("/tables/transaction/0/category_code").asText()).isEqualTo("DINING");
+        assertThat(reparsed.at("/tables/transaction/0/amount_paise").asLong()).isEqualTo(4000);
+        assertThat(reparsed.get("tables").has("category")).isFalse();
     }
 
     @Test
@@ -125,7 +144,8 @@ class DataSubjectRightsDbTest {
                 ResultSet rs = s.executeQuery("SELECT (SELECT count(*) FROM users WHERE id = '" + a + "') "
                         + "+ (SELECT count(*) FROM consent WHERE user_id = '" + a + "') "
                         + "+ (SELECT count(*) FROM plan_cycle WHERE user_id = '" + a + "') "
-                        + "+ (SELECT count(*) FROM income_source WHERE user_id = '" + a + "')")) {
+                        + "+ (SELECT count(*) FROM income_source WHERE user_id = '" + a + "') "
+                        + "+ (SELECT count(*) FROM transaction WHERE user_id = '" + a + "')")) {
             rs.next();
             assertThat(rs.getLong(1)).isZero();
         }
@@ -155,6 +175,7 @@ class DataSubjectRightsDbTest {
     void deleteWorksWithConsentRowsPresentBecauseChildrenGoFirst() throws Exception {
         DpdpFixture.actAs(a);
         f.data.delete(a);
+        assertThat(rows("category")).as("shared taxonomy is never deleted").isPositive();
         assertThat(rows("consent")).isEqualTo(1);
         assertThat(rows("users")).isEqualTo(1);
     }

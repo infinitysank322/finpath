@@ -54,6 +54,9 @@ class DataSubjectRegistryTest {
     /** Fails with a message naming each migrated table that the registry lacks. */
     static void assertRegistryCovers(String label, List<TableRef> registry, List<String> migrated) {
         for (String table : migrated) {
+            if (DataSubjectRegistry.sharedTables().contains(table)) {
+                continue;
+            }
             assertThat(registry).extracting(TableRef::table)
                     .as("%s registry must list table %s", label, table).contains(table);
         }
@@ -68,6 +71,9 @@ class DataSubjectRegistryTest {
     @Test
     void removingATableFromEitherRegistryFailsTheCheckAndNamesTheTable() throws IOException {
         for (String victim : migratedTables()) {
+            if (DataSubjectRegistry.sharedTables().contains(victim)) {
+                continue;
+            }
             List<TableRef> export = DataSubjectRegistry.exportTables().stream()
                     .filter(t -> !t.table().equals(victim)).toList();
             List<TableRef> delete = DataSubjectRegistry.deleteTables().stream()
@@ -82,7 +88,7 @@ class DataSubjectRegistryTest {
     @Test
     void consentIsRegisteredAndDeletedBeforeUsers() {
         assertThat(DataSubjectRegistry.exportTables()).extracting(TableRef::table).contains("consent");
-        assertThat(DataSubjectRegistry.deleteTables()).extracting(TableRef::table).containsExactly("consent", "plan_cycle", "income_source", "users");
+        assertThat(DataSubjectRegistry.deleteTables()).extracting(TableRef::table).containsExactly("consent", "plan_cycle", "income_source", "transaction", "users");
     }
 
     @Test
@@ -90,7 +96,7 @@ class DataSubjectRegistryTest {
         // Children before parents: any table declared REFERENCES users must precede users.
         List<String> order = DataSubjectRegistry.deleteTables().stream().map(TableRef::table).toList();
         for (String child : migratedTables()) {
-            if (!child.equals("users")) {
+            if (!child.equals("users") && !DataSubjectRegistry.sharedTables().contains(child)) {
                 assertThat(order.indexOf(child)).as("delete order of %s", child).isLessThan(order.indexOf("users"));
             }
         }
@@ -101,5 +107,28 @@ class DataSubjectRegistryTest {
         List<String> migrated = migratedTables();
         assertThat(DataSubjectRegistry.exportTables()).extracting(TableRef::table).isSubsetOf(migrated);
         assertThat(DataSubjectRegistry.deleteTables()).extracting(TableRef::table).isSubsetOf(migrated);
+        assertThat(DataSubjectRegistry.sharedTables()).isSubsetOf(migrated);
+    }
+
+    @Test
+    void aSharedTableIsInNeitherRegistryAndHasNoUserColumn() throws IOException {
+        assertThat(DataSubjectRegistry.exportTables()).extracting(TableRef::table)
+                .doesNotContainAnyElementsOf(DataSubjectRegistry.sharedTables());
+        assertThat(DataSubjectRegistry.deleteTables()).extracting(TableRef::table)
+                .doesNotContainAnyElementsOf(DataSubjectRegistry.sharedTables());
+        String code = com.finpath.db.MigrationScanAccess.allCode();
+        for (String shared : DataSubjectRegistry.sharedTables()) {
+            Matcher m = Pattern.compile("(?is)create\\s+table\\s+" + Pattern.quote(shared) + "\\s*\\((.*?)\\n\\)\\s*;")
+                    .matcher(code);
+            assertThat(m.find()).as("CREATE TABLE %s found", shared).isTrue();
+            assertThat(m.group(1)).as("shared table %s must not carry a user column", shared)
+                    .doesNotContainPattern("(?i)\\buser_id\\b");
+        }
+    }
+
+    /** Adding a shared table switches off RLS/export/delete checks for it, so changing the set must be deliberate. */
+    @Test
+    void sharedTableSetIsPinned() {
+        org.assertj.core.api.Assertions.assertThat(DataSubjectRegistry.sharedTables()).containsExactly("category");
     }
 }
