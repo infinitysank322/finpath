@@ -83,4 +83,12 @@ class EmiGuardTest {
         assertEquals(EmiGuard.Status.WARN, EmiGuard.evaluate(Money.ofPaise(2_500_000L), INCOME, tight).status());
         assertEquals(EmiGuard.Status.BLOCK, EmiGuard.evaluate(Money.ofPaise(3_500_000L), INCOME, tight).status());
     }
+
+    @Test
+    void totalSumsInstalments() {
+        assertEquals(0L, EmiGuard.total(java.util.List.of()).paise());
+        assertEquals(3_500_000L, EmiGuard.total(java.util.List.of(Money.ofPaise(2_000_000L),
+                Money.ofPaise(1_500_000L))).paise());
+        assertThrows(NullPointerException.class, () -> EmiGuard.total(null));
+    }
 }

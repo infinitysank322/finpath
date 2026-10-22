@@ -27,6 +27,7 @@ request. Clients switch on `error`; the HTTP status is repeated in `status` for 
 | 405 | `method_not_allowed` | |
 | 406 | `not_acceptable` | |
 | 409 | `idempotency_conflict` | an `Idempotency-Key` was reused with a different payload (T37) |
+| 409 | `debt_trap_blocked` | `POST /loans` would push EMI-to-income past the block threshold; resend with `?confirmBlock=true` to override (T54) |
 | 415 | `unsupported_media_type` | |
 | 500 | `server_error` | anything unexpected |
 
@@ -70,3 +71,10 @@ or body. Row-level security is the backstop (T30).
   failure path, token and refresh failures, bad bearers and a 500, and assert none of it matches an
   amount, email or token pattern or contains the planted secret values. New logging that handles user
   data must be added to those tests.
+
+## Debt-trap guard (T54)
+`GET /loans/debt-trap-guard` returns `{ratio, status, headroomPaise, totalEmiPaise, monthlyIncomePaise}` (`ratio` is a
+decimal-fraction string, null when current-cycle income is zero; `status` is OK/WARN/BLOCK from `EmiGuard`).
+`POST /loans` runs the same guard on existing EMIs plus the new one; BLOCK returns 409 `debt_trap_blocked` with a
+`guard` object of the same shape and writes nothing, unless `?confirmBlock=true`. With no income recorded any EMI is
+BLOCK (rules-defined), so the client shows the null ratio as "add income first". Income is the current-cycle total.

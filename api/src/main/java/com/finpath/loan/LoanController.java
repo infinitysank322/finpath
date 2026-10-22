@@ -35,9 +35,15 @@ public class LoanController {
     }
 
     @PostMapping
-    public ResponseEntity<LoanView> create(@CurrentUserId UUID userId, @RequestBody LoanInput body) {
+    public ResponseEntity<LoanView> create(@CurrentUserId UUID userId, @RequestBody LoanInput body,
+            @RequestParam(required = false, defaultValue = "false") boolean confirmBlock) {
         return ResponseEntity.status(HttpStatus.CREATED).cacheControl(CacheControl.noStore())
-                .body(service.create(userId, body));
+                .body(service.create(userId, body, confirmBlock));
+    }
+
+    @GetMapping("/debt-trap-guard")
+    public ResponseEntity<LoanService.GuardView> guard(@CurrentUserId UUID userId) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.guard(userId));
     }
 
     @GetMapping

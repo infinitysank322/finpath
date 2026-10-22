@@ -81,6 +81,9 @@ class LoanApiDbTest {
         ConsentService consents = new ConsentService(bf.getBeanProvider(JdbcTemplate.class),
                 bf.getBeanProvider(TransactionTemplate.class));
         service = new LoanService(new LoanRepository(() -> jdbc, () -> tx), consents,
+                new com.finpath.income.IncomeService(bf.getBeanProvider(JdbcTemplate.class),
+                        bf.getBeanProvider(TransactionTemplate.class), consents),
+                com.finpath.rules.RuleConfig.defaults(),
                 java.time.Clock.fixed(REF.atStartOfDay(java.time.ZoneId.of("Asia/Kolkata")).toInstant(),
                         java.time.ZoneId.of("Asia/Kolkata")));
         om = new ObjectMapper().findAndRegisterModules()

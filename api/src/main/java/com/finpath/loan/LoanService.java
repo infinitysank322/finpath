@@ -2,11 +2,13 @@ package com.finpath.loan;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.finpath.dpdp.ConsentService;
+import com.finpath.income.IncomeService;
 import com.finpath.loan.LoanRepository.Draft;
 import com.finpath.loan.LoanRepository.Row;
 import com.finpath.rules.AmortisingLoan;
 import com.finpath.rules.BulletLoan;
 import com.finpath.rules.CycleCalendar;
+import com.finpath.rules.EmiGuard;
 import com.finpath.rules.EmiRollOff;
 import com.finpath.rules.LoanDetail;
 import com.finpath.rules.LoanType;
@@ -20,6 +22,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -114,19 +117,48 @@ public class LoanService {
     static final String PREPAY_NOTE = "Schedule maths on the stated outstanding, rate and tenure; instalments are"
             + " counted from this cycle; no prepayment charges or fees are modelled.";
 
+    /** FR-18 verdict; ratio is a decimal fraction string, null when there is no income. */
+    public record GuardView(String ratio, String status, long headroomPaise, long totalEmiPaise,
+            long monthlyIncomePaise) {
+    }
+
     private final LoanRepository loans;
     private final ConsentService consents;
+    private final IncomeService income;
+    private final RuleConfig config;
     private final Clock clock;
 
     @Autowired
-    public LoanService(LoanRepository loans, ConsentService consents) {
-        this(loans, consents, Clock.system(CYCLE_ZONE));
+    public LoanService(LoanRepository loans, ConsentService consents, IncomeService income, RuleConfig config) {
+        this(loans, consents, income, config, Clock.system(CYCLE_ZONE));
     }
 
-    LoanService(LoanRepository loans, ConsentService consents, Clock clock) {
+    LoanService(LoanRepository loans, ConsentService consents, IncomeService income, RuleConfig config,
+            Clock clock) {
         this.loans = loans;
         this.consents = consents;
+        this.income = income;
+        this.config = config;
         this.clock = clock;
+    }
+
+    /** The guard over the caller's current loans and current-cycle income (no new loan). */
+    public GuardView guard(UUID userId) {
+        return evaluate(userId, null);
+    }
+
+    private GuardView evaluate(UUID userId, Long extraEmiPaise) {
+        List<Money> emis = new ArrayList<>();
+        loans.list(userId).stream().filter(r -> r.principalOutstandingPaise() > 0)
+                .forEach(r -> emis.add(Money.ofPaise(r.emiPaise() == null ? 0L : r.emiPaise())));
+        if (extraEmiPaise != null) {
+            emis.add(Money.ofPaise(extraEmiPaise));
+        }
+        Money total = EmiGuard.total(emis);
+        Money monthlyIncome = Money.ofPaise(income.cycleTotal(userId).totalPaise());
+        EmiGuard.Result g = EmiGuard.evaluate(total, monthlyIncome, config);
+        return new GuardView(g.ratio() == null ? null : g.ratio().toPlainString(), g.status().name(),
+                g.headroom().paise(), total.paise(), monthlyIncome.paise());
     }
 
     /** FR-13 detail. Every figure comes from LoanDetail.compute; the stated EMI drives cash flow. */
@@ -316,9 +348,17 @@ public class LoanService {
         };
     }
 
-    public LoanView create(UUID userId, LoanInput in) {
+    /**
+     * Creates a loan. The debt-trap guard runs on the existing EMIs plus this one: BLOCK refuses the
+     * write (409) unless the client explicitly confirms.
+     */
+    public LoanView create(UUID userId, LoanInput in, boolean confirmBlock) {
         Draft d = draft(in, LocalDate.now(clock));
         consents.require(userId);
+        GuardView g = evaluate(userId, d.emiPaise());
+        if (!confirmBlock && EmiGuard.Status.BLOCK.name().equals(g.status())) {
+            throw new DebtTrapBlockedException(g);
+        }
         return view(loans.insert(userId, d));
     }
 

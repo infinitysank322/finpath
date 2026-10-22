@@ -25,12 +25,18 @@ class LoanExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("status", 400, "error", ErrorCode.INVALID_REQUEST));
     }
 
+    @ExceptionHandler(DebtTrapBlockedException.class)
+    ResponseEntity<Map<String, Object>> debtTrap(DebtTrapBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("status", 409, "error", "debt_trap_blocked", "guard", ex.guard()));
+    }
+
     @ExceptionHandler(ConsentRequiredException.class)
     ResponseEntity<Map<String, Object>> consentRequired() {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("status", 403, "error", "consent_required"));
     }
 
-    @ExceptionHandler(LoanNotFoundException.class)
+    @ExceptionHandler({LoanNotFoundException.class, com.finpath.income.IncomeNotFoundException.class})
     ResponseEntity<Map<String, Object>> notFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("status", 404, "error", ErrorCode.NOT_FOUND));
     }

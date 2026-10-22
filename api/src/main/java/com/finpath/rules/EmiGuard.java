@@ -2,6 +2,7 @@ package com.finpath.rules;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -24,6 +25,16 @@ public final class EmiGuard {
      * DOWN to whole paise; zero once the block threshold is reached or passed.
      */
     public record Result(BigDecimal ratio, Status status, Money headroom) {
+    }
+
+    /** Sum of monthly instalments; the numerator the guard is evaluated on. */
+    public static Money total(Collection<Money> emis) {
+        Objects.requireNonNull(emis, "emis");
+        Money sum = Money.ZERO;
+        for (Money m : emis) {
+            sum = sum.plus(Objects.requireNonNull(m, "emi"));
+        }
+        return sum;
     }
 
     /** Evaluate total monthly EMIs against monthly income. */
