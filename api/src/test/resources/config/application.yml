@@ -7,8 +7,24 @@
 # com.finpath.config.ProdDatasourceTest, which loads the main application.yml directly and
 # runs the real post-processor, so it does not depend on this exclusion. The post-processor
 # also stays out of the way when DataSourceAutoConfiguration is excluded, as it is here.
+#
+# T29: auth settings for every profile under test. No real credential is needed or present: the
+# Google client values are dummies (no test talks to Google) and the JWT key is random per run
+# (two random UUIDs, 72 bytes), so nothing key-shaped is tracked.
 spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-client-id.invalid
+            client-secret: ${random.uuid}
+
+finpath:
+  auth:
+    jwt-secret: ${random.uuid}${random.uuid}
+    allowed-redirects: http://localhost:4200/auth/callback,com.finpath.app://auth/callback
