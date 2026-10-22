@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.finpath.rules.AmortisingLoan;
 import com.finpath.rules.BulletLoan;
+import com.finpath.rules.EmiGuard;
 import com.finpath.rules.Loan;
 import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
 import com.finpath.rules.PrepaymentSimulator;
+import com.finpath.rules.RuleConfig;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -82,5 +84,22 @@ class RulesGoldenTest {
         PrepaymentSimulator.Outcome o = PrepaymentSimulator.closeIn(homePrincipal(), homeRate(),
                 fx.integer(GoldenKeys.HOME_TENURE_MONTHS), fx.integer(GoldenKeys.HOME_CLOSE_MONTHS));
         assertWithinOnePercent(fx.paise(GoldenKeys.HOME_INTEREST_SAVED), o.interestSaved().paise());
+    }
+
+    @Test
+    void emiToIncomeRatioMatchesFixture() {
+        EmiGuard.Result r = EmiGuard.evaluate(Money.ofPaise(fx.paise(GoldenKeys.EMI_TOTAL)),
+                Money.ofPaise(fx.paise(GoldenKeys.INCOME_MONTHLY)), RuleConfig.defaults());
+        assertWithinOnePercent(GoldenKeys.EMI_RATIO, fx.decimal(GoldenKeys.EMI_RATIO), r.ratio());
+    }
+
+    @Test
+    void extraEmiTripsTheGuard() {
+        Money income = Money.ofPaise(fx.paise(GoldenKeys.INCOME_MONTHLY));
+        EmiGuard.Result base = EmiGuard.evaluate(Money.ofPaise(fx.paise(GoldenKeys.EMI_TOTAL)), income,
+                RuleConfig.defaults());
+        // Take on exactly the headroom plus one paise: the guard must block.
+        Money tripped = Money.ofPaise(fx.paise(GoldenKeys.EMI_TOTAL) + base.headroom().paise() + 1);
+        assertEquals(EmiGuard.Status.BLOCK, EmiGuard.evaluate(tripped, income, RuleConfig.defaults()).status());
     }
 }
