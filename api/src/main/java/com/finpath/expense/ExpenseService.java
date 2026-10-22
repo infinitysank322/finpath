@@ -5,6 +5,7 @@ import com.finpath.expense.TransactionRepository.Draft;
 import com.finpath.expense.TransactionRepository.InsertResult;
 import com.finpath.expense.TransactionRepository.Transaction;
 import com.finpath.rules.CycleCalendar;
+import com.finpath.rules.TagSplit;
 import com.finpath.rules.TransactionHash;
 import com.finpath.rules.TransactionHash.Direction;
 import java.time.Clock;
@@ -49,6 +50,11 @@ public class ExpenseService {
     }
 
     public record CreateResult(ExpenseView expense, boolean created) {
+    }
+
+    /** Per-period need/want/waste totals; the four buckets add up to {@code totalPaise}. */
+    public record TagSummary(LocalDate from, LocalDate toExclusive, long needPaise, long wantPaise, long wastePaise,
+            long untaggedPaise, long totalPaise) {
     }
 
     public record ListResult(LocalDate from, LocalDate toExclusive, List<ExpenseView> items) {
@@ -100,24 +106,50 @@ public class ExpenseService {
 
     /** Expenses with {@code from <= date <= to}; with neither bound, the current cycle. */
     public ListResult list(UUID userId, LocalDate from, LocalDate to) {
+        LocalDate[] r = range(userId, from, to);
+        List<Transaction> rows = outflow(userId, r);
+        return new ListResult(r[0], r[1], views(userId, rows));
+    }
+
+    /** Need/want/waste/untagged totals over the same range rules as {@link #list}; the sums are the rules'. */
+    public TagSummary tagSummary(UUID userId, LocalDate from, LocalDate to) {
+        LocalDate[] r = range(userId, from, to);
+        TagSplit.Split s = TagSplit.split(outflow(userId, r).stream()
+                .map(t -> new TagSplit.Entry(t.amountPaise(), t.tag() == null ? null : TagSplit.Tag.valueOf(t.tag())))
+                .toList());
+        return new TagSummary(r[0], r[1], s.needPaise(), s.wantPaise(), s.wastePaise(), s.untaggedPaise(),
+                s.totalPaise());
+    }
+
+    /** Sets (NEED/WANT/WASTE) or clears (null) the tag of one expense. */
+    public ExpenseView setTag(UUID userId, UUID id, String rawTag) {
+        String tag = rawTag == null ? null : rawTag.trim().toUpperCase(java.util.Locale.ROOT);
+        if (tag != null && !TAGS.contains(tag)) {
+            throw new InvalidExpenseException();
+        }
+        consents.require(userId);
+        Transaction row = repo.updateTag(userId, id, tag).orElseThrow(ExpenseNotFoundException::new);
+        return views(userId, List.of(row)).get(0);
+    }
+
+    private List<Transaction> outflow(UUID userId, LocalDate[] range) {
+        return repo.listBetween(userId, range[0], range[1]).stream().filter(t -> t.direction() == Direction.OUT)
+                .toList();
+    }
+
+    /** {start, endExclusive}: the explicit inclusive range, or the current cycle when neither bound is given. */
+    private LocalDate[] range(UUID userId, LocalDate from, LocalDate to) {
         if ((from == null) != (to == null)) {
             throw new InvalidExpenseException();
         }
-        LocalDate start = from;
-        LocalDate endExclusive;
         if (from == null) {
             CycleCalendar.Cycle c = currentCycle(userId);
-            start = c.start();
-            endExclusive = c.endExclusive();
-        } else {
-            if (to.isBefore(from) || ChronoUnit.DAYS.between(from, to) >= MAX_RANGE_DAYS) {
-                throw new InvalidExpenseException();
-            }
-            endExclusive = to.plusDays(1);
+            return new LocalDate[] {c.start(), c.endExclusive()};
         }
-        List<Transaction> rows = repo.listBetween(userId, start, endExclusive).stream()
-                .filter(t -> t.direction() == Direction.OUT).toList();
-        return new ListResult(start, endExclusive, views(userId, rows));
+        if (to.isBefore(from) || ChronoUnit.DAYS.between(from, to) >= MAX_RANGE_DAYS) {
+            throw new InvalidExpenseException();
+        }
+        return new LocalDate[] {from, to.plusDays(1)};
     }
 
     public ExpenseView replace(UUID userId, UUID id, ExpenseInput in) {

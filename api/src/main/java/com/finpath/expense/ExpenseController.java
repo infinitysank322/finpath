@@ -5,6 +5,7 @@ import com.finpath.expense.ExpenseService.CreateResult;
 import com.finpath.expense.ExpenseService.ExpenseInput;
 import com.finpath.expense.ExpenseService.ExpenseView;
 import com.finpath.expense.ExpenseService.ListResult;
+import com.finpath.expense.ExpenseService.TagSummary;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -51,6 +53,25 @@ public class ExpenseController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.list(userId, from, to));
+    }
+
+    /** Need/want/waste/untagged totals for the range (neither bound = current cycle). */
+    @GetMapping("/tag-summary")
+    public ResponseEntity<TagSummary> tagSummary(@CurrentUserId UUID userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.tagSummary(userId, from, to));
+    }
+
+    /** Body {@code {"tag":"NEED"|"WANT"|"WASTE"|null}}; null clears the tag back to untagged. */
+    @PatchMapping("/{id}/tag")
+    public ResponseEntity<ExpenseView> tag(@CurrentUserId UUID userId, @PathVariable UUID id,
+            @RequestBody TagInput body) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(service.setTag(userId, id, body == null ? null : body.tag()));
+    }
+
+    public record TagInput(String tag) {
     }
 
     @PutMapping("/{id}")

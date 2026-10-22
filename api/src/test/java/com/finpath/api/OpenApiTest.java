@@ -42,6 +42,8 @@ class OpenApiTest {
                 .andExpect(jsonPath("$.paths['/expenses'].get").exists())
                 .andExpect(jsonPath("$.paths['/expenses/{id}'].put").exists())
                 .andExpect(jsonPath("$.paths['/expenses/{id}'].delete").exists())
+                .andExpect(jsonPath("$.paths['/expenses/{id}/tag'].patch").exists())
+                .andExpect(jsonPath("$.paths['/expenses/tag-summary'].get").exists())
                 .andExpect(jsonPath("$.paths['/expenses'].post.parameters[?(@.name=='Idempotency-Key')]").exists())
                 .andExpect(jsonPath("$.paths['/recurring-templates'].post").exists())
                 .andExpect(jsonPath("$.paths['/recurring-templates'].get").exists())

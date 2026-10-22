@@ -3,6 +3,7 @@ package com.finpath.expense;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -326,6 +327,42 @@ class ExpenseEndpointDbTest {
             }
             assertThat(logs.text()).doesNotContain("secret-note-xyz");
         }
+    }
+
+    @Test
+    void tagPatchSetsClearsAndRejectsAndTheSummaryAddsUpWithUntaggedSeparate() throws Exception {
+        as(a);
+        String need = idOf(mvc.perform(create("key-00000001", body(1000, ",\"tag\":\"NEED\""))).andReturn());
+        String untagged = idOf(mvc.perform(create("key-00000002", body(400, ""))).andReturn());
+        String waste = idOf(mvc.perform(create("key-00000003", body(75, ""))).andReturn());
+        mvc.perform(patch("/expenses/" + waste + "/tag").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tag\":\"waste\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.tag").value("WASTE"));
+        mvc.perform(get("/expenses/tag-summary")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.needPaise").value(1000)).andExpect(jsonPath("$.wantPaise").value(0))
+                .andExpect(jsonPath("$.wastePaise").value(75)).andExpect(jsonPath("$.untaggedPaise").value(400))
+                .andExpect(jsonPath("$.totalPaise").value(1475));
+        mvc.perform(patch("/expenses/" + need + "/tag").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tag\":null}")).andExpect(status().isOk()).andExpect(jsonPath("$.tag").doesNotExist());
+        mvc.perform(get("/expenses/tag-summary")).andExpect(jsonPath("$.needPaise").value(0))
+                .andExpect(jsonPath("$.untaggedPaise").value(1400)).andExpect(jsonPath("$.totalPaise").value(1475));
+        mvc.perform(patch("/expenses/" + untagged + "/tag").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tag\":\"LUXURY\"}")).andExpect(status().isBadRequest());
+        mvc.perform(get("/expenses/tag-summary").param("from", "2026-10-01")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void tagPatchAndSummaryAreTenantScopedAndNeedConsent() throws Exception {
+        as(a);
+        String id = idOf(mvc.perform(create("key-00000001", body(1000, ""))).andReturn());
+        as(b);
+        mvc.perform(patch("/expenses/" + id + "/tag").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tag\":\"NEED\"}")).andExpect(status().isNotFound());
+        mvc.perform(get("/expenses/tag-summary")).andExpect(jsonPath("$.totalPaise").value(0));
+        as(a);
+        mvc.perform(get("/expenses/tag-summary")).andExpect(jsonPath("$.untaggedPaise").value(1000));
+        consents.withdraw(a);
+        mvc.perform(patch("/expenses/" + id + "/tag").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tag\":\"NEED\"}")).andExpect(status().isForbidden());
     }
 
     /** T37 acceptance: warm p95 of POST /expenses under 500 ms. The measured figure is printed and asserted. */

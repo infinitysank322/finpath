@@ -125,6 +125,17 @@ public class TransactionRepository {
         });
     }
 
+    /** Sets or clears the tag of an OUT row only; the dedupe hash does not cover the tag. */
+    public Optional<Transaction> updateTag(UUID userId, UUID id, String tag) {
+        JdbcTemplate j = jdbc.get();
+        return tx.get().execute(status -> {
+            int n = j.update("UPDATE transaction SET tag = ? WHERE id = ? AND user_id = ? AND direction = 'OUT'",
+                    tag, id, userId);
+            return n == 0 ? Optional.<Transaction>empty()
+                    : j.query(SELECT + "WHERE t.id = ?", MAP, id).stream().findFirst();
+        });
+    }
+
     public boolean delete(UUID userId, UUID id) {
         JdbcTemplate j = jdbc.get();
         return tx.get().execute(status -> j.update("DELETE FROM transaction WHERE id = ? AND user_id = ?", id,

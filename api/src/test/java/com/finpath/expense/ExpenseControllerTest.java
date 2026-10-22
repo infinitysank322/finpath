@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -69,6 +70,23 @@ class ExpenseControllerTest {
         mvc.perform(put("/expenses/" + id).contentType(MediaType.APPLICATION_JSON).content(body("")))
                 .andExpect(status().isUnauthorized());
         mvc.perform(delete("/expenses/" + id)).andExpect(status().isUnauthorized());
+        mvc.perform(patch("/expenses/" + id + "/tag").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/expenses/tag-summary")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void tagPatchUsesThePrincipalAndSummaryReturnsIntegerPaise() throws Exception {
+        UUID me = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+        when(service.setTag(me, id, "NEED")).thenReturn(new ExpenseView(id, LocalDate.of(2026, 10, 22), 4000,
+                "DINING", "UPI", "NEED", "MANUAL", null, false));
+        mvc.perform(json(patch("/expenses/" + id + "/tag"), me, "{\"tag\":\"NEED\"}")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.tag").value("NEED"));
+        when(service.tagSummary(me, null, null)).thenReturn(new ExpenseService.TagSummary(LocalDate.of(2026, 9, 25),
+                LocalDate.of(2026, 10, 25), 1, 2, 3, 4, 10));
+        mvc.perform(get("/expenses/tag-summary").header("Authorization", bearer(me))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalPaise").value(10)).andExpect(jsonPath("$.untaggedPaise").value(4));
     }
 
     @Test
