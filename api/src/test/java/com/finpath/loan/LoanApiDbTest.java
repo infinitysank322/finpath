@@ -349,6 +349,32 @@ class LoanApiDbTest {
     }
 
     @Test
+    void rollOffReturnsTheFreedEmiStepsMatchingTheRulesAndIsScopedToTheCaller() throws Exception {
+        as(a);
+        JsonNode home = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED,
+                HOME_LEFT, null, null), 201);
+        JsonNode gold = send(post("/loans"), body("Gold Lender", "bullet", GOLD_PRINCIPAL, GOLD_RATE, null, null,
+                DUE, null), 201);
+        JsonNode j = send(get("/loans/roll-off"), null, 200);
+        com.finpath.rules.CycleCalendar.Cycle first = com.finpath.rules.CycleCalendar.cycleFor(REF, 1);
+        java.time.LocalDate homeFreed = first.start().plusMonths(HOME_LEFT);
+        assertThat(j.get("steps")).hasSize(2);
+        JsonNode s0 = j.get("steps").get(0);
+        JsonNode s1 = j.get("steps").get(1);
+        assertThat(s0.get("cycleId").asText()).isEqualTo(homeFreed.toString());
+        assertThat(s0.get("loanIds").get(0).asText()).isEqualTo(home.get("id").asText());
+        assertThat(s0.get("freedPaise").asLong()).isEqualTo(HOME_STATED);
+        assertThat(s1.get("cycleId").asText()).isEqualTo(java.time.LocalDate.parse(DUE).withDayOfMonth(1)
+                .plusMonths(1).toString());
+        assertThat(s1.get("loanIds").get(0).asText()).isEqualTo(gold.get("id").asText());
+        assertThat(s1.get("cumulativeFreedPaise").asLong())
+                .isEqualTo(HOME_STATED + s1.get("freedPaise").asLong());
+        assertThat(s1.get("cumulativeRedirectedPaise").asLong()).isEqualTo(s1.get("cumulativeFreedPaise").asLong());
+        as(b);
+        assertThat(send(get("/loans/roll-off"), null, 200).get("steps")).isEmpty();
+    }
+
+    @Test
     void payoffPlanOnlyIncludesTheCallersLoans() throws Exception {
         as(a);
         send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT, null, null),

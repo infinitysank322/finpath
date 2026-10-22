@@ -7,11 +7,13 @@ import com.finpath.loan.LoanRepository.Row;
 import com.finpath.rules.AmortisingLoan;
 import com.finpath.rules.BulletLoan;
 import com.finpath.rules.CycleCalendar;
+import com.finpath.rules.EmiRollOff;
 import com.finpath.rules.LoanDetail;
 import com.finpath.rules.LoanType;
 import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
 import com.finpath.rules.PrepaymentSimulator;
+import com.finpath.rules.RuleConfig;
 import com.finpath.rules.SinkingFund;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -81,6 +83,15 @@ public class LoanService {
 
     public record PayoffPlanView(String strategy, List<PayoffStepView> order, long totalInterestPaise,
             long totalPaidPaise, int cycles) {
+    }
+
+    /** One freed-EMI step; cycleId is the start date of the cycle in which the EMI no longer falls due. */
+    public record RollOffStepView(LocalDate cycleId, LocalDate cycleEndExclusive, int cycleIndex,
+            List<UUID> loanIds, long freedPaise, long cumulativeFreedPaise, long redirectedPaise,
+            long cumulativeRedirectedPaise) {
+    }
+
+    public record RollOffView(String redirectPct, List<RollOffStepView> steps) {
     }
 
     /** FR-16 sinking-fund status for a bullet loan; paise throughout, status is BEHIND / PAST_DUE etc. */
@@ -168,6 +179,29 @@ public class LoanService {
         }).toList();
         return new PayoffPlanView(strategy.name().toLowerCase(java.util.Locale.ROOT), steps,
                 plan.totalInterest().paise(), plan.totalPaid().paise(), plan.cycles());
+    }
+
+    /** FR-15 timeline over the caller's open loans; every figure comes from EmiRollOff. */
+    public RollOffView rollOff(UUID userId) {
+        int startDay = loans.cycleStartDay(userId).orElseThrow(LoanNotFoundException::new);
+        LocalDate today = LocalDate.now(clock);
+        List<EmiRollOff.Debt> debts = loans.list(userId).stream().map(r -> {
+            try {
+                LoanDetail.Result d = LoanDetail.compute(loanType(r.type()),
+                        Money.ofPaise(r.principalOutstandingPaise()), r.rate(),
+                        r.emiDerived() || r.emiPaise() == null ? null : Money.ofPaise(r.emiPaise()), r.emisLeft(),
+                        r.bulletDueDate(), Money.ofPaise(r.upfrontFeePaise()), today, startDay);
+                return new EmiRollOff.Debt(r.id().toString(), d.emiUsed(), d.instalmentsRemaining());
+            } catch (IllegalArgumentException | ArithmeticException e) {
+                throw new InvalidLoanException();
+            }
+        }).toList();
+        List<EmiRollOff.Step> steps = EmiRollOff.timeline(debts, today, startDay);
+        return new RollOffView(RuleConfig.DEFAULT_EMI_REDIRECT.stripTrailingZeros().toPlainString(),
+                steps.stream().map(s -> new RollOffStepView(s.cycleId(), s.cycle().endExclusive(), s.cycleIndex(),
+                        s.debtIds().stream().map(UUID::fromString).toList(), s.freed().paise(),
+                        s.cumulativeFreed().paise(), s.redirected().paise(), s.cumulativeRedirected().paise()))
+                        .toList());
     }
 
     private static PayoffPlanner.DebtEntry debtEntry(Row r, LocalDate today, int startDay) {

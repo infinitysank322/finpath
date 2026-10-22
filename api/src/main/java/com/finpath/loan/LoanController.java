@@ -51,6 +51,11 @@ public class LoanController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.payoffPlan(userId, strategy));
     }
 
+    @GetMapping("/roll-off")
+    public ResponseEntity<LoanService.RollOffView> rollOff(@CurrentUserId UUID userId) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.rollOff(userId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<LoanView> get(@CurrentUserId UUID userId, @PathVariable UUID id) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.get(userId, id));
