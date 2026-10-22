@@ -1,0 +1,83 @@
+<h1>Add expense</h1>
+
+<section aria-labelledby="amt-h">
+  <h2 id="amt-h" class="sr-only">Amount</h2>
+  <p class="amount" role="status">
+    <span class="sr-only">Amount {{ amountLabel() }}</span>
+    <span aria-hidden="true">₹{{ amountShown() }}</span>
+  </p>
+  <div class="keypad" role="group" aria-label="Amount keypad">
+    @for (k of keys; track k) {
+      <button type="button" class="key" [attr.aria-label]="keyLabel(k)" (click)="press(k)">
+        {{ k === 'back' ? '⌫' : k }}
+      </button>
+    }
+  </div>
+</section>
+
+<section>
+  <fieldset class="chips">
+    <legend id="cat-h">Category</legend>
+    @for (x of categories; track x.code) {
+      <label class="chip">
+        <input type="radio" name="category" [value]="x.code" [checked]="category() === x.code"
+          [attr.aria-label]="'Category ' + x.name" (change)="category.set(x.code)" />
+        <span>{{ x.name }}</span>
+      </label>
+    }
+  </fieldset>
+</section>
+
+<section>
+  <fieldset class="chips">
+    <legend id="mode-h">Paid by</legend>
+    @for (x of modes; track x.code) {
+      <label class="chip">
+        <input type="radio" name="mode" [value]="x.code" [checked]="mode() === x.code"
+          [attr.aria-label]="'Payment mode ' + x.label" (change)="mode.set(x.code)" />
+        <span>{{ x.label }}</span>
+      </label>
+    }
+  </fieldset>
+</section>
+
+<section aria-labelledby="more-h">
+  <h2 id="more-h">Optional</h2>
+  <div class="chips" role="group" aria-label="Tag, optional">
+    @for (t of tags; track t.code) {
+      <button
+        type="button"
+        class="chip"
+        [attr.aria-pressed]="tag() === t.code"
+        [attr.aria-label]="'Tag ' + t.label"
+        (click)="toggleTag(t.code)"
+      >{{ t.label }}</button>
+    }
+  </div>
+  <label class="field">
+    <span>Note</span>
+    <input
+      type="text"
+      maxlength="140"
+      autocomplete="off"
+      aria-label="Note"
+      aria-describedby="note-hint"
+      [value]="note()"
+      (input)="onNote($event)"
+    />
+  </label>
+  <p id="note-hint" class="muted hint">Do not enter account, card or ID numbers.</p>
+</section>
+
+<p class="error" role="alert">{{ error() }}</p>
+<p class="ok" role="status">{{ message() }}</p>
+
+<div class="savebar">
+  <button
+    type="button"
+    class="save"
+    aria-label="Save expense"
+    [disabled]="!canSave()"
+    (click)="save()"
+  >Save</button>
+</div>
