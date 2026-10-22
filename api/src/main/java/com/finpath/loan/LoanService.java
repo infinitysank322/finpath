@@ -81,7 +81,7 @@ public class LoanService {
 
     /** One loan in payoff order; payoffCycle is the 0-based cycle offset in which it closes. */
     public record PayoffStepView(UUID loanId, String lender, long outstandingPaise, String annualRate,
-            long monthlyPaymentPaise, int payoffCycle) {
+            long monthlyPaymentPaise, int payoffCycle, PayoffCycle payoffCycleDates) {
     }
 
     public record PayoffPlanView(String strategy, List<PayoffStepView> order, long totalInterestPaise,
@@ -205,9 +205,14 @@ public class LoanService {
         List<PayoffStepView> steps = plan.order().stream().map(id -> {
             Row r = byId.get(id);
             PayoffPlanner.DebtEntry e = entries.get(id);
+            int offset = plan.payoffCycle().get(id);
+            CycleCalendar.Cycle c = CycleCalendar.cycleFor(today, startDay);
+            for (int i = 0; i < offset; i++) {
+                c = CycleCalendar.next(c, startDay);
+            }
             return new PayoffStepView(r.id(), r.lender(), e.outstanding().paise(),
                     e.annualRate().stripTrailingZeros().toPlainString(), e.monthlyPayment().paise(),
-                    plan.payoffCycle().get(id));
+                    offset, payoff(c));
         }).toList();
         return new PayoffPlanView(strategy.name().toLowerCase(java.util.Locale.ROOT), steps,
                 plan.totalInterest().paise(), plan.totalPaid().paise(), plan.cycles());

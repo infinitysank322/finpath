@@ -12,6 +12,7 @@ export const routes: Routes = [
   },
   { path: 'spending/budget', loadComponent: () => import('./budget/budget.component').then((m) => m.BudgetComponent), title: 'Budget - FinPath' },
   { path: 'spending', loadComponent: page, title: 'Spending - FinPath', data: { heading: 'Spending' } },
+  { path: 'debt/payoff', loadComponent: () => import('./debt/payoff.component').then((m) => m.PayoffComponent), title: 'Payoff timeline - FinPath' },
   { path: 'debt', loadComponent: page, title: 'Debt - FinPath', data: { heading: 'Debt' } },
   { path: 'goals', loadComponent: page, title: 'Goals - FinPath', data: { heading: 'Goals' } },
   { path: 'more', pathMatch: 'full', loadComponent: () => import('./plan/more.component').then((m) => m.MoreComponent), title: 'More - FinPath' },
