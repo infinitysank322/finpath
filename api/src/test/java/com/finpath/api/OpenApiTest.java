@@ -37,6 +37,12 @@ class OpenApiTest {
                 .andExpect(jsonPath("$.paths['/income-sources']").exists())
                 .andExpect(jsonPath("$.paths['/income-sources/{id}']").exists())
                 .andExpect(jsonPath("$.paths['/income-sources/cycle-total']").exists())
+                .andExpect(jsonPath("$.paths['/expenses']").exists())
+                .andExpect(jsonPath("$.paths['/expenses'].post").exists())
+                .andExpect(jsonPath("$.paths['/expenses'].get").exists())
+                .andExpect(jsonPath("$.paths['/expenses/{id}'].put").exists())
+                .andExpect(jsonPath("$.paths['/expenses/{id}'].delete").exists())
+                .andExpect(jsonPath("$.paths['/expenses'].post.parameters[?(@.name=='Idempotency-Key')]").exists())
                 .andExpect(jsonPath("$.components.securitySchemes.bearer.scheme").value("bearer"));
     }
 

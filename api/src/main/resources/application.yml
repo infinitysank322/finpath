@@ -47,6 +47,10 @@ management:
 logging:
   level:
     org.springframework.web: INFO
+    # T37: TransactionTemplate logs "Initiating transaction rollback on application exception" with the
+    # exception at DEBUG, and a constraint violation's message carries the failing row (the note).
+    org.springframework.transaction: INFO
+    org.springframework.jdbc: INFO
 
 server:
   error:

@@ -26,6 +26,7 @@ request. Clients switch on `error`; the HTTP status is repeated in `status` for 
 | 404 | `not_found` | unknown route or resource, including another user's row (RLS makes it indistinguishable) |
 | 405 | `method_not_allowed` | |
 | 406 | `not_acceptable` | |
+| 409 | `idempotency_conflict` | an `Idempotency-Key` was reused with a different payload (T37) |
 | 415 | `unsupported_media_type` | |
 | 500 | `server_error` | anything unexpected |
 

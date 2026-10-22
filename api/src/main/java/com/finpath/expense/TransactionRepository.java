@@ -126,6 +126,24 @@ public class TransactionRepository {
                 userId) > 0);
     }
 
+    /** The subset of {@code hashes} that more than one of the user's rows carries (a duplicate hint only). */
+    public java.util.Set<String> repeatedHashes(UUID userId, java.util.Collection<String> hashes) {
+        if (hashes.isEmpty()) {
+            return java.util.Set.of();
+        }
+        JdbcTemplate j = jdbc.get();
+        String marks = String.join(",", java.util.Collections.nCopies(hashes.size(), "?"));
+        Object[] args = new Object[hashes.size() + 1];
+        args[0] = userId;
+        int i = 1;
+        for (String h : hashes) {
+            args[i++] = h;
+        }
+        return tx.get().execute(status -> new java.util.HashSet<>(j.queryForList("SELECT dedupe_hash FROM "
+                + "transaction WHERE user_id = ? AND dedupe_hash IN (" + marks + ") GROUP BY dedupe_hash "
+                + "HAVING count(*) > 1", String.class, args)));
+    }
+
     private static String hash(Draft d) {
         return TransactionHash.dedupeHash(d.txnDate(), d.amountPaise(), d.direction(), d.categoryCode(), d.mode());
     }
