@@ -1,0 +1,64 @@
+<h1>Principal vs interest</h1>
+<p class="edu">Educational view of your own loan. It is not advice to take, prepay or change any loan or investment.</p>
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+  <button type="button" class="btn" (click)="load()">Retry</button>
+}
+@if (loading()) {
+  <p class="muted" role="status">Loading loan...</p>
+} @else {
+  @if (loan(); as l) {
+    <p class="muted small">{{ l.lender }}</p>
+    @if (l.closed || l.instalments.length === 0) {
+      <p class="muted">{{ l.closed ? 'This loan is closed, so there are no remaining instalments to chart.' : 'No remaining instalments, so there is no chart.' }}</p>
+    } @else {
+      <h2>Each remaining instalment, split</h2>
+      <div role="img" [attr.aria-label]="description()" class="chart-wrap">
+        @if (chartOptions(); as o) {
+          <div echarts [options]="o" [merge]="o" class="chart" aria-hidden="true"></div>
+        }
+      </div>
+      <p class="muted small">Principal is the solid-outlined lower band; interest is the dashed-outlined, hatched band stacked on top.</p>
+
+      <table>
+        <caption>Totals over {{ l.instalments.length }} remaining instalments</caption>
+        <thead><tr><th scope="col">Measure</th><th scope="col" class="num">Amount</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Principal (sum of instalments)</th><td class="num" data-total="principal">{{ fmt(totals().principalPaise) }}</td></tr>
+          <tr><th scope="row">Interest (sum of instalments)</th><td class="num" data-total="interest">{{ fmt(totals().interestPaise) }}</td></tr>
+          <tr><th scope="row">Interest remaining (loan summary)</th><td class="num" data-total="interest-remaining">{{ fmt(l.interestRemainingPaise) }}</td></tr>
+          <tr><th scope="row">Total remaining payable (loan summary)</th><td class="num" data-total="payable">{{ fmt(l.totalRemainingPayablePaise) }}</td></tr>
+        </tbody>
+      </table>
+
+      <div class="rows-wrap" tabindex="0" role="region" aria-label="Instalment breakdown">
+        <table>
+          <caption>Instalment by instalment</caption>
+          <thead><tr><th scope="col">No.</th><th scope="col" class="num">Principal</th><th scope="col" class="num">Interest</th></tr></thead>
+          <tbody>
+            @for (r of l.instalments; track r.number) {
+              <tr><th scope="row">{{ r.number }}</th><td class="num">{{ fmt(r.principalPaise) }}</td><td class="num">{{ fmt(r.interestPaise) }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    <section aria-label="Assumptions" class="assumptions">
+      <h2>Assumptions</h2>
+      <ul>
+        <li>Effective annual rate: {{ l.effectiveAnnualRate }}%. Figures assume every remaining payment is made on time and the rate does not change.</li>
+        @if (l.emiDerived) {
+          <li>The EMI was calculated from the balance, rate and instalments left, not recorded from your lender.</li>
+        }
+        @if (l.balloonFinalPayment) {
+          <li>The last payment is larger than the others.</li>
+        }
+        @if (l.pastDue) {
+          <li>Not every payment has been on time, so the actual schedule may differ from this one.</li>
+        }
+        <li>This is an educational projection, not advice to take, prepay or change any loan or investment.</li>
+      </ul>
+    </section>
+  }
+}
