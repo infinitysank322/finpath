@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.finpath.rules.AmortisingLoan;
 import com.finpath.rules.BulletLoan;
+import com.finpath.rules.EmergencyFund;
 import com.finpath.rules.EmiGuard;
 import com.finpath.rules.Loan;
 import com.finpath.rules.Money;
@@ -101,5 +102,20 @@ class RulesGoldenTest {
         // Take on exactly the headroom plus one paise: the guard must block.
         Money tripped = Money.ofPaise(fx.paise(GoldenKeys.EMI_TOTAL) + base.headroom().paise() + 1);
         assertEquals(EmiGuard.Status.BLOCK, EmiGuard.evaluate(tripped, income, RuleConfig.defaults()).status());
+    }
+
+    @Test
+    void emergencyFundTargets() {
+        Money outflow = Money.ofPaise(fx.paise(GoldenKeys.OUTFLOW_MONTHLY));
+        assertWithinOnePercent(fx.paise(GoldenKeys.EMERGENCY_ONE_MONTH), EmergencyFund.target(outflow, 1).paise());
+        assertWithinOnePercent(fx.paise(GoldenKeys.EMERGENCY_THREE_MONTH), EmergencyFund.target(outflow, 3).paise());
+    }
+
+    @Test
+    void emergencyFundMonthsCovered() {
+        BigDecimal covered = EmergencyFund.monthsCovered(Money.ofPaise(fx.paise(GoldenKeys.EMERGENCY_CURRENT)),
+                Money.ofPaise(fx.paise(GoldenKeys.OUTFLOW_MONTHLY)));
+        assertWithinOnePercent(GoldenKeys.EMERGENCY_MONTHS_COVERED, fx.decimal(GoldenKeys.EMERGENCY_MONTHS_COVERED),
+                covered);
     }
 }
