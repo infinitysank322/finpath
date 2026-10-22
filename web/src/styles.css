@@ -11,6 +11,12 @@
   --fp-border: #d3d9e0;
   --fp-border-strong: #6b7685;
   --fp-focus: #0b5cad;
+  --fp-warn-bg: #fff3cd;
+  --fp-warn-text: #5c3d00;
+  --fp-warn-bar: #8a5a00;
+  --fp-breach-bg: #fde7e7;
+  --fp-breach-text: #8a1111;
+  --fp-breach-bar: #b42318;
 }
 
 :root[data-theme='dark'] {
@@ -25,6 +31,12 @@
   --fp-border: #333c48;
   --fp-border-strong: #8b97a5;
   --fp-focus: #7db7f5;
+  --fp-warn-bg: #3b2e08;
+  --fp-warn-text: #f7dc8e;
+  --fp-warn-bar: #e0a526;
+  --fp-breach-bg: #421619;
+  --fp-breach-text: #ffb8b8;
+  --fp-breach-bar: #ff7b72;
 }
 
 *, *::before, *::after { box-sizing: border-box; }

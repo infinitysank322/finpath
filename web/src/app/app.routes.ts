@@ -10,6 +10,7 @@ export const routes: Routes = [
     loadComponent: () => import('./expense/add-expense.component').then((m) => m.AddExpenseComponent),
     title: 'Add expense - FinPath',
   },
+  { path: 'spending/budget', loadComponent: () => import('./budget/budget.component').then((m) => m.BudgetComponent), title: 'Budget - FinPath' },
   { path: 'spending', loadComponent: page, title: 'Spending - FinPath', data: { heading: 'Spending' } },
   { path: 'debt', loadComponent: page, title: 'Debt - FinPath', data: { heading: 'Debt' } },
   { path: 'goals', loadComponent: page, title: 'Goals - FinPath', data: { heading: 'Goals' } },

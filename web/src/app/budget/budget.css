@@ -1,0 +1,29 @@
+:host { display: block; max-width: 32rem; margin: 0 auto; padding-bottom: 5rem; }
+h1 { margin: 0 0 .5rem; font-size: 1.5rem; }
+button, input, select { font: inherit; color: var(--fp-text); }
+ul { list-style: none; margin: 0 0 .75rem; padding: 0; }
+.line { padding: .5rem .75rem; margin-bottom: .5rem; background: var(--fp-surface); border: 1px solid var(--fp-border); border-radius: 8px; overflow-wrap: anywhere; }
+.top { display: flex; flex-wrap: wrap; gap: .25rem .75rem; justify-content: space-between; align-items: center; }
+.badge { font-size: .875rem; padding: 0 .5rem; border: 1px solid var(--fp-border-strong); border-radius: 12px; color: var(--fp-text-muted); }
+.badge.warn { background: var(--fp-warn-bg); color: var(--fp-warn-text); border-color: var(--fp-warn-text); }
+.badge.breach { background: var(--fp-breach-bg); color: var(--fp-breach-text); border-color: var(--fp-breach-text); }
+.bar { height: .75rem; margin: .5rem 0 .25rem; border: 1px solid var(--fp-border-strong); border-radius: 6px; background: var(--fp-bg); overflow: hidden; }
+.fill { height: 100%; background: var(--fp-primary); }
+.fill.warn { background: var(--fp-warn-bar); }
+.fill.breach { background: var(--fp-breach-bar); }
+.pct { font-weight: 700; }
+.nums { display: flex; flex-wrap: wrap; gap: 0 .75rem; justify-content: space-between; font-size: .9375rem; }
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+.btn { min-height: 44px; padding: 0 .875rem; border: 1px solid var(--fp-border-strong); border-radius: 22px; background: transparent; }
+.btn.primary { background: var(--fp-primary); color: var(--fp-on-primary); border-color: var(--fp-primary); font-weight: 700; }
+.btn:disabled { background: var(--fp-surface); color: var(--fp-text-muted); }
+.banner { margin: 0 0 .5rem; padding: .625rem .75rem; border: 1px solid; border-radius: 8px; border-left-width: 6px; }
+.banner.warn { background: var(--fp-warn-bg); color: var(--fp-warn-text); border-color: var(--fp-warn-text); }
+.banner.breach { background: var(--fp-breach-bg); color: var(--fp-breach-text); border-color: var(--fp-breach-text); }
+.error, .ok { margin: .5rem 0; }
+.error { border-left: 4px solid; padding-left: .5rem; }
+.scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, .5); }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 32rem; margin: 0 auto; display: flex; flex-direction: column; gap: .75rem; padding: 1rem; background: var(--fp-bg); border: 1px solid var(--fp-border-strong); border-radius: 16px 16px 0 0; max-height: 90vh; overflow-y: auto; }
+.field { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+input, select { min-height: 44px; padding: 0 .75rem; border: 1px solid var(--fp-border-strong); border-radius: 8px; background: var(--fp-surface); width: 100%; }
+.notice { margin: 0 0 .5rem; padding: .5rem .75rem; border: 1px solid var(--fp-border-strong); border-radius: 8px; background: var(--fp-surface); }

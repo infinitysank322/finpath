@@ -12,6 +12,7 @@ import { RouterLink } from '@angular/router';
       <ul>
         <li><a routerLink="/more/income">Income sources</a></li>
         <li><a routerLink="/more/recurring">Recurring bills</a></li>
+        <li><a routerLink="/spending/budget">Category budgets</a></li>
       </ul>
     </nav>
   `,

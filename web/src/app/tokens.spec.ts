@@ -7,12 +7,18 @@ const TEXT_ON_BG: [string, string][] = [
   ['--fp-primary-text', '--fp-bg'],
   ['--fp-primary-text', '--fp-surface'],
   ['--fp-on-primary', '--fp-primary'],
+  ['--fp-warn-text', '--fp-warn-bg'],
+  ['--fp-breach-text', '--fp-breach-bg'],
 ];
 const NON_TEXT_ON_BG: [string, string][] = [
   ['--fp-border-strong', '--fp-bg'],
   ['--fp-border-strong', '--fp-surface'],
   ['--fp-focus', '--fp-bg'],
   ['--fp-focus', '--fp-surface'],
+  ['--fp-warn-bar', '--fp-bg'],
+  ['--fp-breach-bar', '--fp-bg'],
+  ['--fp-warn-bar', '--fp-surface'],
+  ['--fp-breach-bar', '--fp-surface'],
 ];
 
 function channel(c: number): number {
