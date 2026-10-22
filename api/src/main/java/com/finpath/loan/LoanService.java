@@ -11,6 +11,7 @@ import com.finpath.rules.LoanDetail;
 import com.finpath.rules.LoanType;
 import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
+import com.finpath.rules.PrepaymentSimulator;
 import com.finpath.rules.SinkingFund;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -87,6 +88,20 @@ public class LoanService {
             long finalCycleAmountPaise, long expectedSavedByNowPaise, long savedDeltaPaise, long catchUpPaise,
             String status, boolean behindSchedule) {
     }
+
+    /** The inputs the simulation ran on, so the client can show them. */
+    public record PrepaymentAssumptions(String mode, String annualRate, long principalOutstandingPaise,
+            long currentEmiPaise, int tenureMonths, LocalDate firstInstalmentFrom, String note) {
+    }
+
+    public record PrepaymentView(UUID loanId, PrepaymentAssumptions assumptions, long newEmiPaise,
+            int baselineInstalments, int newInstalments, int instalmentsSaved, long baselineInterestPaise,
+            long newInterestPaise, long interestSavedPaise, PayoffCycle baselinePayoffCycle,
+            PayoffCycle newPayoffCycle) {
+    }
+
+    static final String PREPAY_NOTE = "Schedule maths on the stated outstanding, rate and tenure; instalments are"
+            + " counted from this cycle; no prepayment charges or fees are modelled.";
 
     private final LoanRepository loans;
     private final ConsentService consents;
@@ -199,6 +214,59 @@ public class LoanService {
         return new SinkingFundView(r.id(), f.cyclesRemaining(), f.outstanding().paise(), f.setAsidePerCycle().paise(),
                 f.finalCycleAmount().paise(), f.expectedSavedByNow().paise(), f.savedDelta().paise(),
                 f.catchUp().paise(), f.status().name(), behind);
+    }
+
+    /**
+     * FR-17 what-if for an amortising (emi) loan. mode is one of lump_sum (lumpPaise, optional afterInstalment),
+     * increase_emi (newEmiPaise) or close_in (closeMonths); anything else is 400.
+     */
+    public PrepaymentView prepayment(UUID userId, UUID id, String mode, Long lumpPaise, Integer afterInstalment,
+            Long newEmiPaise, Integer closeMonths) {
+        Row r = loans.find(userId, id).orElseThrow(LoanNotFoundException::new);
+        int startDay = loans.cycleStartDay(userId).orElseThrow(LoanNotFoundException::new);
+        if (!EMI.equals(r.type()) || mode == null || r.emisLeft() == null || r.emiPaise() == null
+                || r.emisLeft() <= 0 || r.principalOutstandingPaise() <= 0) {
+            throw new InvalidLoanException();
+        }
+        Money principal = Money.ofPaise(r.principalOutstandingPaise());
+        Money emi = Money.ofPaise(r.emiPaise());
+        int tenure = r.emisLeft();
+        LocalDate today = LocalDate.now(clock);
+        PrepaymentSimulator.Outcome o;
+        try {
+            o = switch (mode) {
+                case "lump_sum" -> {
+                    if (lumpPaise == null) {
+                        throw new InvalidLoanException();
+                    }
+                    yield PrepaymentSimulator.lumpSum(principal, r.rate(), emi, tenure,
+                            afterInstalment == null ? 0 : afterInstalment, Money.ofPaise(lumpPaise));
+                }
+                case "increase_emi" -> {
+                    if (newEmiPaise == null) {
+                        throw new InvalidLoanException();
+                    }
+                    yield PrepaymentSimulator.increaseEmi(principal, r.rate(), emi, tenure,
+                            Money.ofPaise(newEmiPaise));
+                }
+                case "close_in" -> {
+                    if (closeMonths == null) {
+                        throw new InvalidLoanException();
+                    }
+                    yield PrepaymentSimulator.closeIn(principal, r.rate(), tenure, closeMonths);
+                }
+                default -> throw new InvalidLoanException();
+            };
+        } catch (IllegalArgumentException | ArithmeticException | IllegalStateException e) {
+            throw new InvalidLoanException();
+        }
+        return new PrepaymentView(r.id(),
+                new PrepaymentAssumptions(mode, r.rate().stripTrailingZeros().toPlainString(),
+                        r.principalOutstandingPaise(), r.emiPaise(), tenure, today, PREPAY_NOTE),
+                o.newEmi().paise(), o.baselineInstalments(), o.newInstalments(), o.instalmentsSaved(),
+                o.baselineInterest().paise(), o.newInterest().paise(), o.interestSaved().paise(),
+                o.baselinePayoffCycle(today, startDay).map(LoanService::payoff).orElse(null),
+                o.newPayoffCycle(today, startDay).map(LoanService::payoff).orElse(null));
     }
 
     private static PayoffCycle payoff(CycleCalendar.Cycle c) {

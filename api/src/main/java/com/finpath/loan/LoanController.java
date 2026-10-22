@@ -5,6 +5,7 @@ import com.finpath.loan.LoanService.LoanDetailView;
 import com.finpath.loan.LoanService.LoanInput;
 import com.finpath.loan.LoanService.LoanView;
 import com.finpath.loan.LoanService.PayoffPlanView;
+import com.finpath.loan.LoanService.PrepaymentView;
 import com.finpath.loan.LoanService.SinkingFundView;
 import java.time.LocalDate;
 import java.util.List;
@@ -67,6 +68,15 @@ public class LoanController {
                     iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fundStart) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(service.sinkingFund(userId, id, savedPaise, fundStart));
+    }
+
+    @GetMapping("/{id}/prepayment")
+    public ResponseEntity<PrepaymentView> prepayment(@CurrentUserId UUID userId, @PathVariable UUID id,
+            @RequestParam(required = false) String mode, @RequestParam(required = false) Long lumpPaise,
+            @RequestParam(required = false) Integer afterInstalment,
+            @RequestParam(required = false) Long newEmiPaise, @RequestParam(required = false) Integer closeMonths) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(service.prepayment(userId, id, mode, lumpPaise, afterInstalment, newEmiPaise, closeMonths));
     }
 
     @PutMapping("/{id}")

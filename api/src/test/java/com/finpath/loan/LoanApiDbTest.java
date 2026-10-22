@@ -398,6 +398,52 @@ class LoanApiDbTest {
     }
 
     @Test
+    void prepaymentVariantsMatchTheRulesAndCarryAssumptions() throws Exception {
+        as(a);
+        JsonNode h = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT,
+                null, null), 201);
+        String url = "/loans/" + h.get("id").asText() + "/prepayment";
+        Money p = Money.ofPaise(HOME_PRINCIPAL);
+        int close = HOME_LEFT - 12;
+        var exp = com.finpath.rules.PrepaymentSimulator.closeIn(p, HOME_RATE, HOME_LEFT, close);
+        JsonNode j = send(get(url).param("mode", "close_in").param("closeMonths", String.valueOf(close)), null, 200);
+        assertThat(j.get("newEmiPaise").asLong()).isEqualTo(exp.newEmi().paise());
+        assertThat(j.get("interestSavedPaise").asLong()).isEqualTo(exp.interestSaved().paise());
+        assertThat(j.get("newInstalments").asInt()).isEqualTo(close);
+        assertThat(j.get("assumptions").get("mode").asText()).isEqualTo("close_in");
+        assertThat(j.get("assumptions").get("note").asText()).isNotBlank();
+        var lump = com.finpath.rules.PrepaymentSimulator.lumpSum(p, HOME_RATE, Money.ofPaise(HOME_STATED), HOME_LEFT,
+                0, Money.ofPaise(50_000_000L));
+        JsonNode l = send(get(url).param("mode", "lump_sum").param("lumpPaise", "50000000"), null, 200);
+        assertThat(l.get("interestSavedPaise").asLong()).isEqualTo(lump.interestSaved().paise());
+        long more = HOME_STATED + 1_000_000L;
+        var inc = com.finpath.rules.PrepaymentSimulator.increaseEmi(p, HOME_RATE, Money.ofPaise(HOME_STATED),
+                HOME_LEFT, Money.ofPaise(more));
+        JsonNode e = send(get(url).param("mode", "increase_emi").param("newEmiPaise", String.valueOf(more)), null,
+                200);
+        assertThat(e.get("newInstalments").asInt()).isEqualTo(inc.newInstalments());
+    }
+
+    @Test
+    void prepaymentBadInputsAreRejectedAndOtherUsersLoanIs404() throws Exception {
+        as(a);
+        JsonNode h = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT,
+                null, null), 201);
+        JsonNode g = send(post("/loans"), body("Gold Lender", "bullet", GOLD_PRINCIPAL, GOLD_RATE, null, null, DUE,
+                null), 201);
+        String url = "/loans/" + h.get("id").asText() + "/prepayment";
+        send(get(url), null, 400);
+        send(get(url).param("mode", "teleport"), null, 400);
+        send(get(url).param("mode", "lump_sum"), null, 400);
+        send(get(url).param("mode", "close_in").param("closeMonths", "0"), null, 400);
+        send(get(url).param("mode", "increase_emi").param("newEmiPaise", "1"), null, 400);
+        send(get("/loans/" + g.get("id").asText() + "/prepayment").param("mode", "lump_sum").param("lumpPaise", "1"),
+                null, 400);
+        as(b);
+        send(get(url).param("mode", "lump_sum").param("lumpPaise", "1"), null, 404);
+    }
+
+    @Test
     void detailReportsStatedEmiAndRulesFiguresWithLabelledComparison() throws Exception {
         as(a);
         JsonNode v = send(post("/loans"), body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT,
