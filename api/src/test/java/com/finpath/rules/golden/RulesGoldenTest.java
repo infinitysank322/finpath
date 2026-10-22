@@ -8,6 +8,7 @@ import com.finpath.rules.BulletLoan;
 import com.finpath.rules.DatedGoal;
 import com.finpath.rules.EmergencyFund;
 import com.finpath.rules.EmiGuard;
+import com.finpath.rules.FiCorpus;
 import com.finpath.rules.Loan;
 import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
@@ -128,5 +129,15 @@ class RulesGoldenTest {
                 Money.ZERO, ref, due, 25, RuleConfig.defaults());
         assertEquals(fx.integer(GoldenKeys.GOAL_CYCLES), r.cyclesRemaining());
         assertWithinOnePercent(fx.paise(GoldenKeys.GOAL_MONTHLY), r.monthlyNeed().paise());
+    }
+
+    @Test
+    void fiCorpusInflatedExpenseGrossAndNet() {
+        int years = fx.integer(GoldenKeys.FI_HORIZON_YEARS);
+        FiCorpus.Result r = FiCorpus.corpus(Money.ofPaise(fx.paise(GoldenKeys.FI_TODAY_EXPENSE)),
+                Money.ofPaise(fx.paise(GoldenKeys.FI_PASSIVE_MONTHLY)), years, RuleConfig.defaults());
+        assertWithinOnePercent(fx.paise(GoldenKeys.FI_INFLATED_EXPENSE), r.inflatedMonthlyExpense().paise());
+        assertWithinOnePercent(fx.paise(GoldenKeys.FI_GROSS_CORPUS), r.grossCorpus().paise());
+        assertWithinOnePercent(fx.paise(GoldenKeys.FI_NET_CORPUS), r.netCorpus().paise());
     }
 }
