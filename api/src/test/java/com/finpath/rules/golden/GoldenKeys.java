@@ -40,6 +40,9 @@ public final class GoldenKeys {
 
     // Income and EMI ratio (T17)
     public static final String INCOME_MONTHLY = "income.monthly_paise";
+    public static final String INCOME_SALARY = "income.salary_paise";
+    public static final String INCOME_RENTAL = "income.rental_paise";
+    public static final String INCOME_BONUS = "income.bonus_paise";
     public static final String EMI_TOTAL = "emi.total_paise";
     public static final String EMI_RATIO = "emi.ratio";
     public static final String EMI_BLOCKED_RATIO = "emi.blocked_ratio";
@@ -77,7 +80,7 @@ public final class GoldenKeys {
             BULLET_PRINCIPAL, BULLET_MONTHLY_INTEREST, BULLET_EFFECTIVE_RATE_PCT, BULLET_DUE_CYCLE,
             BULLET_CYCLES_REMAINING, SINKING_MONTHLY,
             ROLLOFF_1, ROLLOFF_1_CYCLE, ROLLOFF_2, ROLLOFF_2_CYCLE, ROLLOFF_3, ROLLOFF_3_CYCLE,
-            INCOME_MONTHLY, EMI_TOTAL, EMI_RATIO, EMI_BLOCKED_RATIO,
+            INCOME_MONTHLY, INCOME_SALARY, INCOME_RENTAL, INCOME_BONUS, EMI_TOTAL, EMI_RATIO, EMI_BLOCKED_RATIO,
             OUTFLOW_MONTHLY, EMERGENCY_CURRENT, EMERGENCY_ONE_MONTH, EMERGENCY_THREE_MONTH,
             EMERGENCY_MONTHS_COVERED,
             GOAL_TARGET, GOAL_CYCLES, GOAL_MONTHLY,

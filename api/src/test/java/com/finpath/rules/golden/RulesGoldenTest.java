@@ -12,6 +12,7 @@ import com.finpath.rules.EmergencyFund;
 import com.finpath.rules.EmiGuard;
 import com.finpath.rules.EmiRollOff;
 import com.finpath.rules.FiCorpus;
+import com.finpath.rules.IncomeCalculator;
 import com.finpath.rules.Loan;
 import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
@@ -54,7 +55,8 @@ class RulesGoldenTest {
     private static final Set<String> INPUT_KEYS = Set.of(
             GoldenKeys.HOME_PRINCIPAL, GoldenKeys.HOME_RATE_PCT, GoldenKeys.HOME_TENURE_MONTHS,
             GoldenKeys.HOME_CLOSE_MONTHS, GoldenKeys.BULLET_PRINCIPAL, GoldenKeys.BULLET_MONTHLY_INTEREST,
-            GoldenKeys.INCOME_MONTHLY, GoldenKeys.EMI_TOTAL, GoldenKeys.OUTFLOW_MONTHLY,
+            GoldenKeys.INCOME_MONTHLY, GoldenKeys.INCOME_SALARY, GoldenKeys.INCOME_RENTAL,
+            GoldenKeys.INCOME_BONUS, GoldenKeys.EMI_TOTAL, GoldenKeys.OUTFLOW_MONTHLY,
             GoldenKeys.EMERGENCY_CURRENT, GoldenKeys.GOAL_TARGET, GoldenKeys.FI_TODAY_EXPENSE,
             GoldenKeys.FI_HORIZON_YEARS, GoldenKeys.FI_PASSIVE_MONTHLY);
 
@@ -306,6 +308,43 @@ class RulesGoldenTest {
         expectPaise(GoldenKeys.FI_INFLATED_EXPENSE, r.inflatedMonthlyExpense().paise());
         expectPaise(GoldenKeys.FI_GROSS_CORPUS, r.grossCorpus().paise());
         expectPaise(GoldenKeys.FI_NET_CORPUS, r.netCorpus().paise());
+    }
+
+    private List<IncomeCalculator.Source> incomeSources(boolean withBonus) {
+        LocalDate longAgo = REFERENCE.minusYears(3);
+        List<IncomeCalculator.Source> list = new ArrayList<>(List.of(
+                new IncomeCalculator.Source(IncomeCalculator.Type.SALARY, fx.paise(GoldenKeys.INCOME_SALARY),
+                        IncomeCalculator.Frequency.MONTHLY, longAgo, null),
+                new IncomeCalculator.Source(IncomeCalculator.Type.RENTAL, fx.paise(GoldenKeys.INCOME_RENTAL),
+                        IncomeCalculator.Frequency.MONTHLY, longAgo, null)));
+        if (withBonus) {
+            list.add(new IncomeCalculator.Source(IncomeCalculator.Type.BONUS, fx.paise(GoldenKeys.INCOME_BONUS),
+                    IncomeCalculator.Frequency.ONE_OFF, REFERENCE.plusDays(1), null));
+        }
+        return list;
+    }
+
+    @Test
+    void salaryPlusRentalEqualsMonthlyIncome() {
+        assertEquals(fx.paise(GoldenKeys.INCOME_MONTHLY),
+                fx.paise(GoldenKeys.INCOME_SALARY) + fx.paise(GoldenKeys.INCOME_RENTAL),
+                "fixture salary + rental must equal income.monthly_paise");
+        CycleCalendar.Cycle cycle = CycleCalendar.cycleFor(REFERENCE, START_DAY);
+        long total = IncomeCalculator.cycleTotal(incomeSources(false), cycle);
+        assertWithinOnePercent(fx.paise(GoldenKeys.INCOME_MONTHLY), total);
+    }
+
+    @Test
+    void oneOffBonusLiftsOnlyItsOwnCycle() {
+        CycleCalendar.Cycle cycle = CycleCalendar.cycleFor(REFERENCE, START_DAY);
+        CycleCalendar.Cycle prev = CycleCalendar.cycleFor(cycle.start().minusDays(1), START_DAY);
+        CycleCalendar.Cycle next = CycleCalendar.next(cycle, START_DAY);
+        List<IncomeCalculator.Source> sources = incomeSources(true);
+        long monthly = fx.paise(GoldenKeys.INCOME_MONTHLY);
+        assertWithinOnePercent(monthly + fx.paise(GoldenKeys.INCOME_BONUS),
+                IncomeCalculator.cycleTotal(sources, cycle));
+        assertWithinOnePercent(monthly, IncomeCalculator.cycleTotal(sources, prev));
+        assertWithinOnePercent(monthly, IncomeCalculator.cycleTotal(sources, next));
     }
 
     @Test
