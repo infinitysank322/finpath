@@ -61,7 +61,9 @@ class RulesGoldenTest {
             GoldenKeys.EMERGENCY_CURRENT, GoldenKeys.GOAL_TARGET, GoldenKeys.FI_TODAY_EXPENSE,
             GoldenKeys.FI_HORIZON_YEARS, GoldenKeys.FI_PASSIVE_MONTHLY,
             GoldenKeys.BUDGET_CATEGORY, GoldenKeys.BUDGET_SPENT, GoldenKeys.BUDGET_SPENT_WARN,
-            GoldenKeys.BUDGET_SPENT_BREACH);
+            GoldenKeys.BUDGET_SPENT_BREACH,
+            GoldenKeys.LOAN_HOME_PRINCIPAL, GoldenKeys.LOAN_HOME_RATE, GoldenKeys.LOAN_HOME_EMIS_LEFT,
+            GoldenKeys.LOAN_GOLD_PRINCIPAL, GoldenKeys.LOAN_GOLD_RATE);
 
     private static final Set<String> ASSERTED = new HashSet<>();
     private static int testsRun;
@@ -394,5 +396,24 @@ class RulesGoldenTest {
             ASSERTED.add((String) c[0]);
         }
         ASSERTED.add(GoldenKeys.BUDGET_CATEGORY);
+    }
+
+    /** T48: the stated home EMI is close to, but not equal to, the computed EMI; the stated figure wins. */
+    @Test
+    void loanStatedHomeEmiDiffersFromTheComputedEmi() {
+        Money computed = AmortisingLoan.emi(Money.ofPaise(fx.paise(GoldenKeys.LOAN_HOME_PRINCIPAL)),
+                fx.decimal(GoldenKeys.LOAN_HOME_RATE), fx.integer(GoldenKeys.LOAN_HOME_EMIS_LEFT));
+        assertTrue(computed.paise() != fx.paise(GoldenKeys.LOAN_HOME_EMI_STATED),
+                "fixture must keep the stated EMI different from the computed one (values withheld)");
+        expectPaise(GoldenKeys.LOAN_HOME_EMI_STATED, computed.paise());
+        ASSERTED.add(GoldenKeys.LOAN_HOME_EMIS_LEFT);
+    }
+
+    /** T48: derived bullet interest matches the stated monthly interest of the gold loan. */
+    @Test
+    void loanGoldMonthlyInterestMatchesTheDerivedInterest() {
+        Money derived = BulletLoan.monthlyInterest(Money.ofPaise(fx.paise(GoldenKeys.LOAN_GOLD_PRINCIPAL)),
+                fx.decimal(GoldenKeys.LOAN_GOLD_RATE));
+        expectPaise(GoldenKeys.LOAN_GOLD_MONTHLY_INTEREST, derived.paise());
     }
 }

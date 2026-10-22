@@ -45,6 +45,18 @@ class DataSubjectRightsDbTest {
         seedRecurringTemplate(b);
         seedCategoryBudget(a);
         seedCategoryBudget(b);
+        seedLoan(a);
+        seedLoan(b);
+    }
+
+    /** One loan row per user (superuser insert). */
+    private static void seedLoan(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); java.sql.PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO loan (user_id, lender, type, principal_outstanding_paise, rate, emi_paise, emis_left) "
+                        + "VALUES (?, 'Test Lender', 'emi', 1000000, 0.08, 20000, 60)")) {
+            ps.setObject(1, user);
+            ps.executeUpdate();
+        }
     }
 
     /** One category_budget row per user (superuser insert). */
@@ -150,6 +162,8 @@ class DataSubjectRightsDbTest {
         assertThat(reparsed.at("/tables/category_budget")).hasSize(1);
         assertThat(reparsed.at("/tables/category_budget/0/category_code").asText()).isEqualTo("DINING");
         assertThat(reparsed.at("/tables/category_budget/0/budget_paise").asLong()).isEqualTo(500000);
+        assertThat(reparsed.at("/tables/loan")).hasSize(1);
+        assertThat(reparsed.at("/tables/loan/0/principal_outstanding_paise").asLong()).isEqualTo(1000000);
         assertThat(reparsed.get("tables").has("category")).isFalse();
     }
 

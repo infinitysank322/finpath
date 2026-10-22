@@ -36,6 +36,26 @@ public final class BulletLoan {
     }
 
     /**
+     * Monthly interest on an interest-only loan: {@code principal * annualRate / 12}, rounded
+     * once, HALF_UP, to paise. The inverse of {@link #effectiveAnnualRate(Loan.Bullet)}. Rejects
+     * a negative principal or rate.
+     */
+    public static Money monthlyInterest(Money principal, BigDecimal annualRate) {
+        Objects.requireNonNull(principal, "principal");
+        Objects.requireNonNull(annualRate, "annualRate");
+        if (principal.isNegative()) {
+            throw new IllegalArgumentException("principal must not be negative");
+        }
+        if (annualRate.signum() < 0) {
+            throw new IllegalArgumentException("rate must not be negative");
+        }
+        BigDecimal paise = BigDecimal.valueOf(principal.paise())
+                .multiply(annualRate)
+                .divide(MONTHS_PER_YEAR, 0, MathPolicy.MONEY_ROUNDING);
+        return Money.ofPaise(paise.longValueExact());
+    }
+
+    /**
      * Interest still to pay from the cycle containing {@code reference} up to and including the
      * cycle of the due date: one monthly interest per cycle. Zero once the due date's cycle has
      * passed (past due, nothing further accrues in this model) or for a zero principal.

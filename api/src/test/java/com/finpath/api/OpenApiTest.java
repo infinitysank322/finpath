@@ -54,6 +54,11 @@ class OpenApiTest {
                 .andExpect(jsonPath("$.paths['/budgets/{categoryCode}'].delete").exists())
                 .andExpect(jsonPath("$.paths['/budgets/status'].get").exists())
                 .andExpect(jsonPath("$.paths['/budgets/evaluate'].post").exists())
+                .andExpect(jsonPath("$.paths['/loans'].post").exists())
+                .andExpect(jsonPath("$.paths['/loans'].get").exists())
+                .andExpect(jsonPath("$.paths['/loans/{id}'].get").exists())
+                .andExpect(jsonPath("$.paths['/loans/{id}'].put").exists())
+                .andExpect(jsonPath("$.paths['/loans/{id}'].delete").exists())
                 .andExpect(jsonPath("$.paths['/plan/rebalance'].post").exists())
                 .andExpect(jsonPath("$.components.securitySchemes.bearer.scheme").value("bearer"));
     }

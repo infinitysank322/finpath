@@ -83,6 +83,15 @@ public final class GoldenKeys {
     public static final String BUDGET_SPENT_WARN = "budget.spent_warn_paise";
     public static final String BUDGET_SPENT_BREACH = "budget.spent_breach_paise";
 
+    // Loan table (T48): a stated home EMI that differs from the computed one, and a bullet (gold) loan
+    public static final String LOAN_HOME_EMI_STATED = "loan.home_emi_stated_paise";
+    public static final String LOAN_HOME_PRINCIPAL = "loan.home_principal_paise";
+    public static final String LOAN_HOME_RATE = "loan.home_rate";
+    public static final String LOAN_HOME_EMIS_LEFT = "loan.home_emis_left";
+    public static final String LOAN_GOLD_MONTHLY_INTEREST = "loan.gold_monthly_interest_paise";
+    public static final String LOAN_GOLD_PRINCIPAL = "loan.gold_principal_paise";
+    public static final String LOAN_GOLD_RATE = "loan.gold_rate";
+
     public static final List<String> ALL = List.of(
             HOME_PRINCIPAL, HOME_RATE_PCT, HOME_TENURE_MONTHS, HOME_STATED_EMI, HOME_INTEREST_REMAINING,
             HOME_CLOSE_MONTHS, HOME_CLOSE_EMI, HOME_INTEREST_SAVED,
@@ -96,5 +105,7 @@ public final class GoldenKeys {
             FI_TODAY_EXPENSE, FI_HORIZON_YEARS, FI_INFLATED_EXPENSE, FI_GROSS_CORPUS, FI_PASSIVE_MONTHLY,
             FI_NET_CORPUS,
             SURPLUS_MONTHLY, SURPLUS_LATER, SURPLUS_LATER_CYCLE, SAVINGS_RATE_PCT, QUARTERLY_BILL,
-            BUDGET_CATEGORY, BUDGET_SPENT, BUDGET_SPENT_WARN, BUDGET_SPENT_BREACH);
+            BUDGET_CATEGORY, BUDGET_SPENT, BUDGET_SPENT_WARN, BUDGET_SPENT_BREACH,
+            LOAN_HOME_EMI_STATED, LOAN_HOME_PRINCIPAL, LOAN_HOME_RATE, LOAN_HOME_EMIS_LEFT,
+            LOAN_GOLD_MONTHLY_INTEREST, LOAN_GOLD_PRINCIPAL, LOAN_GOLD_RATE);
 }

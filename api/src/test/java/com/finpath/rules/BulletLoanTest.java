@@ -93,6 +93,45 @@ class BulletLoanTest {
     }
 
     @Test
+    void monthlyInterestIsPrincipalTimesRateOverTwelve() {
+        // 2,00,000 at 15% = 2,500 a month
+        assertEquals(250_000L, BulletLoan.monthlyInterest(PRINCIPAL, new BigDecimal("0.15")).paise());
+    }
+
+    @Test
+    void monthlyInterestZeroPrincipalOrZeroRateIsZero() {
+        assertEquals(0L, BulletLoan.monthlyInterest(Money.ZERO, new BigDecimal("0.15")).paise());
+        assertEquals(0L, BulletLoan.monthlyInterest(PRINCIPAL, BigDecimal.ZERO).paise());
+        assertEquals(0L, BulletLoan.monthlyInterest(Money.ZERO, BigDecimal.ZERO).paise());
+    }
+
+    @Test
+    void monthlyInterestRoundsHalfUpAtTheHalfPaiseBoundary() {
+        // 6 paise x 0.12 / 12 = 0.06 -> 0; 50 x 0.12 / 12 = 0.5 -> 1 (exact half rounds up)
+        assertEquals(0L, BulletLoan.monthlyInterest(Money.ofPaise(5L), new BigDecimal("0.12")).paise());
+        assertEquals(1L, BulletLoan.monthlyInterest(Money.ofPaise(50L), new BigDecimal("0.12")).paise());
+        // 49 x 0.12 / 12 = 0.49 -> 0; 150 x 0.12 / 12 = 1.5 -> 2; 149 -> 1.49 -> 1
+        assertEquals(0L, BulletLoan.monthlyInterest(Money.ofPaise(49L), new BigDecimal("0.12")).paise());
+        assertEquals(2L, BulletLoan.monthlyInterest(Money.ofPaise(150L), new BigDecimal("0.12")).paise());
+        assertEquals(1L, BulletLoan.monthlyInterest(Money.ofPaise(149L), new BigDecimal("0.12")).paise());
+    }
+
+    @Test
+    void monthlyInterestRejectsNegatives() {
+        assertThrows(IllegalArgumentException.class,
+                () -> BulletLoan.monthlyInterest(Money.ofPaise(-1L), new BigDecimal("0.15")));
+        assertThrows(IllegalArgumentException.class,
+                () -> BulletLoan.monthlyInterest(PRINCIPAL, new BigDecimal("-0.01")));
+    }
+
+    @Test
+    void monthlyInterestRoundTripsWithEffectiveAnnualRate() {
+        Money interest = BulletLoan.monthlyInterest(PRINCIPAL, new BigDecimal("0.153"));
+        Loan.Bullet l = new Loan.Bullet(PRINCIPAL, interest, LocalDate.of(2030, 1, 1));
+        assertEquals(0, new BigDecimal("0.153").compareTo(BulletLoan.effectiveAnnualRate(l)));
+    }
+
+    @Test
     void cardEmiWithoutFeeMatchesAmortisingRate() {
         // Instalment from the amortising EMI at 12%/12 months; IRR must recover 12%.
         Money emi = AmortisingLoan.emi(Money.ofPaise(10_000_000L), new BigDecimal("0.12"), 12);
