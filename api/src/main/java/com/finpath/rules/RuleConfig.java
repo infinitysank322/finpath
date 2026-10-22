@@ -24,6 +24,12 @@ public record RuleConfig(
     /** Share of a freed EMI that rolls into goals by default (100%). Not a record component. */
     public static final BigDecimal DEFAULT_EMI_REDIRECT = BigDecimal.ONE;
 
+    /** Debt above this annual rate is cleared before goals and SIPs (12%). Not a record component. */
+    public static final BigDecimal HIGH_INTEREST_DEBT_RATE = new BigDecimal("0.12");
+
+    /** Default share of the step-7 remainder aimed at prepaying sub-12% debt (30%; OQ-3). Not a record component. */
+    public static final BigDecimal DEFAULT_PREPAY_SHARE = new BigDecimal("0.30");
+
     public RuleConfig {
         Objects.requireNonNull(emiToIncomeWarn, "emiToIncomeWarn");
         Objects.requireNonNull(emiToIncomeBlock, "emiToIncomeBlock");
