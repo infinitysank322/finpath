@@ -2,6 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { formatExactPaise, formatTyped, pressKey, toPaise } from './amount-entry';
 import { ExpenseApiService } from './expense-api.service';
+import { ExpenseQueueService } from './expense-queue.service';
+import { PendingExpensesComponent } from './pending-expenses.component';
 import { MODES, PaymentMode, SpendTag, TAGS } from './expense.models';
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'];
@@ -18,13 +20,14 @@ function newKey(): string {
 @Component({
   selector: 'app-add-expense',
   standalone: true,
-  imports: [],
+  imports: [PendingExpensesComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './add-expense.component.html',
   styleUrl: './add-expense.component.css',
 })
 export class AddExpenseComponent {
   private readonly api = inject(ExpenseApiService);
+  private readonly queue = inject(ExpenseQueueService);
 
   readonly keys = KEYS;
   readonly categories = this.api.categories();
@@ -90,16 +93,33 @@ export class AddExpenseComponent {
     const sig = JSON.stringify(input);
     if (this.failedSig !== null && this.failedSig !== sig) this.key = newKey();
     this.failedSig = null;
+    const name = this.categories.find((c) => c.code === category)?.name ?? category;
+    const queueIt = () => {
+      const persisted = this.queue.enqueue(input, this.key);
+      this.saving.set(false);
+      if (!persisted) {
+        this.error.set('This device could not store the expense for later. Keep the app open until it uploads.');
+      }
+      this.message.set(`Saved ₹${typed} under ${name}. Pending sync: it will upload when you are back online.`);
+      this.reset();
+    };
+    if (!this.queue.isOnline()) {
+      queueIt();
+      return;
+    }
     this.api
       .create(input, this.key)
       .subscribe({
         next: () => {
           this.saving.set(false);
-          const name = this.categories.find((c) => c.code === category)?.name ?? category;
           this.message.set(`Saved ₹${typed} under ${name}.`);
           this.reset();
         },
         error: (e: HttpErrorResponse) => {
+          if (e.status === 0 || (e as Error).name === 'TimeoutError') {
+            queueIt(); // no response at all: keep the entry and let the queue retry with the same key
+            return;
+          }
           this.saving.set(false);
           this.failedSig = sig;
           this.error.set(
@@ -111,7 +131,9 @@ export class AddExpenseComponent {
                 ? 'This entry conflicts with an earlier one. Change something and try again.'
                 : e.status === 403
                   ? 'Consent is needed before expenses can be saved.'
-                  : 'Could not save. Check your connection and try again.',
+                  : e.status >= 500
+                    ? 'The server had a problem and the expense was not saved. Please try again in a moment.'
+                    : 'Could not save. Please try again.',
           );
           if (e.status === 409 || e.status === 400) {
             this.key = newKey();

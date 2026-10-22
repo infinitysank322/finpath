@@ -1,0 +1,32 @@
+@if (queue.consentNeeded()) {
+  <p role="status" class="badge">Uploading is paused until you give consent. Your expenses are kept on this device.</p>
+}
+
+@if (queue.pending().length > 0) {
+  <section class="queue" aria-labelledby="pend-h">
+    <h2 id="pend-h">Pending sync ({{ queue.pending().length }})</h2>
+    <ul>
+      @for (q of queue.pending(); track q.key) {
+        <li class="pending-item">
+          <span>{{ exact(q.input.amountPaise) }} &middot; {{ categoryName(q.input.categoryCode) }} &middot; {{ modeLabel(q.input.mode) }}</span>
+          <span class="badge">Pending sync<span class="sr-only">: saved on this device, not yet uploaded</span></span>
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+@if (queue.needsAttention().length > 0) {
+  <section class="queue" aria-labelledby="attn-h" role="status" aria-live="polite">
+    <h2 id="attn-h">Needs attention ({{ queue.needsAttention().length }})</h2>
+    <ul>
+      @for (q of queue.needsAttention(); track q.key) {
+        <li class="pending-item attention">
+          <span>{{ exact(q.input.amountPaise) }} &middot; {{ categoryName(q.input.categoryCode) }} &middot; {{ modeLabel(q.input.mode) }}</span>
+          <span class="badge">The server rejected this expense{{ q.reason === 409 ? ' as a conflict' : '' }}. It was not saved. Enter it again if it is real.</span>
+          <button type="button" class="dismiss" [attr.aria-label]="'Dismiss rejected expense of ' + exact(q.input.amountPaise) + ' in ' + categoryName(q.input.categoryCode)" (click)="queue.dismiss(q.key)">Dismiss</button>
+        </li>
+      }
+    </ul>
+  </section>
+}

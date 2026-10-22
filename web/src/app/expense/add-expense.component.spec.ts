@@ -4,6 +4,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { AddExpenseComponent, todayIst } from './add-expense.component';
 import { ExpenseApiService } from './expense-api.service';
+import { ExpenseQueueService, QUEUE_STORAGE } from './expense-queue.service';
+import { memoryStorage } from './queue-testing';
 import { ExpenseInput, ExpenseView, OUT_CATEGORIES } from './expense.models';
 
 class FakeApi {
@@ -24,6 +26,7 @@ describe('AddExpenseComponent', () => {
   let root: HTMLElement;
   let fixture: ReturnType<typeof TestBed.createComponent<AddExpenseComponent>>;
   let taps: number;
+  let queue: ExpenseQueueService;
 
   /** Every user interaction goes through here, so `taps` is the literal count of clicks. */
   const tap = (selector: string) => {
@@ -39,8 +42,12 @@ describe('AddExpenseComponent', () => {
     api = new FakeApi();
     TestBed.configureTestingModule({
       imports: [AddExpenseComponent],
-      providers: [{ provide: ExpenseApiService, useValue: api }],
+      providers: [
+        { provide: ExpenseApiService, useValue: api },
+        { provide: QUEUE_STORAGE, useValue: memoryStorage() },
+      ],
     });
+    queue = TestBed.inject(ExpenseQueueService);
     document.documentElement.dataset['theme'] = 'dark';
     fixture = TestBed.createComponent(AddExpenseComponent);
     root = fixture.nativeElement;
@@ -190,7 +197,7 @@ describe('AddExpenseComponent', () => {
   });
 
   it('reuses the key for an identical retry after a failure, but not after any field changes', () => {
-    api.failWith = 0;
+    api.failWith = 500;
     fill('5');
     tap('[aria-label="Save expense"]');
     tap('[aria-label="Save expense"]');
@@ -209,8 +216,47 @@ describe('AddExpenseComponent', () => {
     fill('5');
     tap('[aria-label="Save expense"]');
     expect(errorText()).toContain('Please sign in');
-    api.failWith = 0;
+    api.failWith = 500;
     tap('[aria-label="Save expense"]');
-    expect(errorText()).toContain('Check your connection');
+    expect(errorText()).toContain('server had a problem');
+    expect(errorText()).not.toContain('connection');
+  });
+
+  describe('offline (T43)', () => {
+    const save = () => tap('[aria-label="Save expense"]');
+
+    it('navigator offline: queues without calling the API and shows the item as pending sync', () => {
+      spyOn(queue, 'isOnline').and.returnValue(false);
+      fill('5');
+      save();
+      expect(api.calls.length).toBe(0);
+      expect(queue.pending().length).toBe(1);
+      expect(queue.pending()[0].input.amountPaise).toBe(500);
+      expect(root.querySelector('p.ok')?.textContent).toContain('Pending sync');
+      const item = root.querySelector('.pending-item') as HTMLElement;
+      expect(item.textContent).toContain('₹5');
+      expect(item.textContent).toContain('Pending sync');
+      expect(item.querySelector('.sr-only')?.textContent).toContain('not yet uploaded');
+      expect(root.querySelector('#pend-h')?.textContent).toContain('Pending sync (1)');
+    });
+
+    it('storage failure: the expense is still queued in memory and the user is warned', () => {
+      spyOn(queue, 'isOnline').and.returnValue(false);
+      spyOn(queue, 'enqueue').and.returnValue(false);
+      fill('5');
+      save();
+      expect(errorText()).toContain('could not store the expense');
+      expect(root.querySelector('p.ok')?.textContent).toContain('Pending sync');
+    });
+
+    it('no response (status 0) while the browser claims online also queues, keeping the same key', () => {
+      api.failWith = 0;
+      fill('7');
+      save();
+      expect(api.calls.length).toBe(1);
+      expect(queue.pending().length).toBe(1);
+      expect(queue.pending()[0].key).toBe(api.calls[0].key);
+      expect(errorText()).toBe('');
+    });
   });
 });

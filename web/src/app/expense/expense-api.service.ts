@@ -1,11 +1,13 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Injectable, InjectionToken, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
 import { CategoryOption, ExpenseInput, ExpenseView, OUT_CATEGORIES } from './expense.models';
 
 export const API_BASE = new InjectionToken<string>('API_BASE', { providedIn: 'root', factory: () => '' });
+/** A POST that has not answered in this long fails with rxjs TimeoutError, which callers treat as retryable. */
+export const CREATE_TIMEOUT_MS = 30_000;
 
-/** HTTP edge for expenses. T43 will wrap/replace create() with the offline queue. */
+/** HTTP edge for expenses. The offline queue (ExpenseQueueService) calls create() with its stored keys. */
 @Injectable({ providedIn: 'root' })
 export class ExpenseApiService {
   private readonly http = inject(HttpClient);
@@ -17,9 +19,11 @@ export class ExpenseApiService {
 
   /** 201 = new row, 200 = replay of the same key; both are success. 409/400 surface as HttpErrorResponse. */
   create(input: ExpenseInput, idempotencyKey: string): Observable<HttpResponse<ExpenseView>> {
-    return this.http.post<ExpenseView>(`${this.base}/expenses`, input, {
-      headers: new HttpHeaders({ 'Idempotency-Key': idempotencyKey }),
-      observe: 'response',
-    });
+    return this.http
+      .post<ExpenseView>(`${this.base}/expenses`, input, {
+        headers: new HttpHeaders({ 'Idempotency-Key': idempotencyKey }),
+        observe: 'response',
+      })
+      .pipe(timeout(CREATE_TIMEOUT_MS));
   }
 }

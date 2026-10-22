@@ -1,0 +1,9 @@
+:host { display: block; }
+h2 { margin: 1rem 0 .5rem; font-size: 1rem; color: var(--fp-text-muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+button { font: inherit; color: var(--fp-text); }
+.queue ul { list-style: none; margin: 0; padding: 0; }
+.pending-item { display: flex; flex-wrap: wrap; gap: .25rem .75rem; align-items: center; justify-content: space-between; padding: .5rem .75rem; margin-bottom: .5rem; background: var(--fp-surface); border: 1px solid var(--fp-border); border-radius: 8px; overflow-wrap: anywhere; }
+.pending-item.attention { border-color: var(--fp-border-strong); border-left: 4px solid var(--fp-border-strong); }
+.badge { font-size: .875rem; color: var(--fp-text-muted); }
+.dismiss { min-height: 44px; padding: 0 .875rem; border: 1px solid var(--fp-border-strong); border-radius: 22px; background: transparent; }
