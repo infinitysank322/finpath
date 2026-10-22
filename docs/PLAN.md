@@ -126,7 +126,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 
 | Id | Status | FR | Task | Prereq | Est | Acceptance |
 | --- | --- | --- | --- | --- | --- | --- |
-| T34 | TODO | FR-02 `[+TABLE]` | `plan_cycle` (user_id, cycle_start, surplus, allocations jsonb, status) + materialisation via `CycleCalendar`; cycle-day change endpoint | T10, T31 | 4 h | Changing start day 25 → 1 re-derives the current cycle without orphaning rows; `[+TABLE]` trio satisfied; no code path calls `YearMonth` |
+| T34 | IN-PROGRESS | FR-02 `[+TABLE]` | `plan_cycle` (user_id, cycle_start, surplus, allocations jsonb, status) + materialisation via `CycleCalendar`; cycle-day change endpoint | T10, T31 | 4 h | Changing start day 25 → 1 re-derives the current cycle without orphaning rows; `[+TABLE]` trio satisfied; no code path calls `YearMonth` |
 | T35 | TODO | FR-03 `[+TABLE]` | `income_source` (type, amount, frequency, start/end date) + CRUD; recurring vs one-off semantics | T34 | 3 h | Salary + rental return ₹1,27,000 for the current cycle; a one-off bonus appears only in its own cycle; `[+TABLE]` trio satisfied |
 | T36 | TODO | FR-04 `[+TABLE]` | `category` + seeded taxonomy; `transaction` (date, amount, direction, category_id, mode, tag, source, dedupe_hash, idempotency_key) | T34 | 4 h | `dedupe_hash` stable across two identical inserts and different on a changed amount; unique index on (user_id, idempotency_key); `[+TABLE]` trio satisfied for both tables |
 | T37 | TODO | FR-04 | Expense CRUD endpoints, idempotent create | T36 | 3 h | Replaying a create with the same idempotency key returns the original row and inserts nothing; warm p95 for create under 500 ms, measured and recorded |
