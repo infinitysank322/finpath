@@ -1,5 +1,6 @@
 package com.finpath.expense;
 
+import com.finpath.budget.BudgetAlertService;
 import com.finpath.dpdp.ConsentService;
 import com.finpath.expense.TransactionRepository.Draft;
 import com.finpath.expense.TransactionRepository.InsertResult;
@@ -18,6 +19,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -31,6 +34,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @Service
 public class ExpenseService {
+
+    private static final Logger log = LoggerFactory.getLogger(ExpenseService.class);
 
     static final ZoneId CYCLE_ZONE = ZoneId.of("Asia/Kolkata");
     static final long MAX_RANGE_DAYS = 366;
@@ -65,16 +70,30 @@ public class ExpenseService {
     private final Supplier<TransactionTemplate> tx;
     private final ConsentService consents;
     private final Clock clock;
+    /** Null when budgets are not wired (unit tests); the hook is then a no-op. */
+    private final BudgetAlertService budgetAlerts;
+
+    public ExpenseService(TransactionRepository repo, ObjectProvider<JdbcTemplate> jdbc,
+            ObjectProvider<TransactionTemplate> tx, ConsentService consents) {
+        this(repo, jdbc, tx, consents, null);
+    }
 
     @Autowired
     public ExpenseService(TransactionRepository repo, ObjectProvider<JdbcTemplate> jdbc,
-            ObjectProvider<TransactionTemplate> tx, ConsentService consents) {
+            ObjectProvider<TransactionTemplate> tx, ConsentService consents,
+            ObjectProvider<BudgetAlertService> budgetAlerts) {
         this(repo, () -> required(jdbc.getIfAvailable()), () -> required(tx.getIfAvailable()), consents,
-                Clock.system(CYCLE_ZONE));
+                Clock.system(CYCLE_ZONE), budgetAlerts == null ? null : budgetAlerts.getIfAvailable());
     }
 
     ExpenseService(TransactionRepository repo, Supplier<JdbcTemplate> jdbc, Supplier<TransactionTemplate> tx,
             ConsentService consents, Clock clock) {
+        this(repo, jdbc, tx, consents, clock, null);
+    }
+
+    ExpenseService(TransactionRepository repo, Supplier<JdbcTemplate> jdbc, Supplier<TransactionTemplate> tx,
+            ConsentService consents, Clock clock, BudgetAlertService budgetAlerts) {
+        this.budgetAlerts = budgetAlerts;
         this.repo = repo;
         this.jdbc = jdbc;
         this.tx = tx;
@@ -100,6 +119,9 @@ public class ExpenseService {
         InsertResult r = insert(userId, d);
         if (!r.created() && !samePayload(r.row(), d)) {
             throw new IdempotencyConflictException();
+        }
+        if (r.created()) {
+            evaluateBudgets(userId, r.row().txnDate());
         }
         return new CreateResult(views(userId, List.of(r.row())).get(0), r.created());
     }
@@ -158,6 +180,7 @@ public class ExpenseService {
         Transaction existing = repo.findById(userId, id).filter(t -> t.direction() == Direction.OUT)
                 .orElseThrow(ExpenseNotFoundException::new);
         Transaction row = repo.update(userId, existing.id(), d).orElseThrow(ExpenseNotFoundException::new);
+        evaluateBudgets(userId, existing.txnDate(), row.txnDate());
         return views(userId, List.of(row)).get(0);
     }
 
@@ -167,6 +190,24 @@ public class ExpenseService {
                 .orElseThrow(ExpenseNotFoundException::new);
         if (!repo.delete(userId, existing.id())) {
             throw new ExpenseNotFoundException();
+        }
+        evaluateBudgets(userId, existing.txnDate());
+    }
+
+    /**
+     * Budget threshold hook after an OUT row changed. It must never fail the expense write: every
+     * failure is swallowed and logged by exception class only (no amount, category or note).
+     */
+    private void evaluateBudgets(UUID userId, LocalDate... dates) {
+        if (budgetAlerts == null) {
+            return;
+        }
+        for (LocalDate d : java.util.Arrays.stream(dates).distinct().toList()) {
+            try {
+                budgetAlerts.evaluate(userId, d);
+            } catch (RuntimeException e) {
+                log.warn("Budget evaluation after expense change skipped ({})", e.getClass().getSimpleName());
+            }
         }
     }
 

@@ -3,8 +3,11 @@ package com.finpath.rules;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 
 /**
  * Budget rules for one cycle. Pure and deterministic: no clock, no I/O; the reference date is a
@@ -90,6 +93,30 @@ public final class BudgetRules {
         return Money.ofPaise(BigDecimal.valueOf(remaining)
                 .divide(BigDecimal.valueOf(daysLeft), 0, RoundingMode.DOWN)
                 .longValueExact());
+    }
+
+    /** One transaction reduced to what spend needs. */
+    public record Spend(String categoryCode, TransactionHash.Direction direction, long amountPaise) {
+    }
+
+    /**
+     * Spend per category code: OUT rows only, summed with {@code Math.addExact}; IN rows are ignored.
+     * A category with no OUT rows is absent (callers treat that as {@link Money#ZERO}).
+     */
+    public static Map<String, Money> spentByCategory(List<Spend> rows) {
+        Objects.requireNonNull(rows, "rows");
+        Map<String, Money> totals = new TreeMap<>();
+        for (Spend row : rows) {
+            Objects.requireNonNull(row, "row");
+            Objects.requireNonNull(row.categoryCode(), "categoryCode");
+            Objects.requireNonNull(row.direction(), "direction");
+            if (row.direction() != TransactionHash.Direction.OUT) {
+                continue;
+            }
+            totals.merge(row.categoryCode(), Money.ofPaise(row.amountPaise()),
+                    (a, b) -> Money.ofPaise(Math.addExact(a.paise(), b.paise())));
+        }
+        return totals;
     }
 
     private static void requireNonNegative(Money m, String name) {

@@ -59,7 +59,9 @@ class RulesGoldenTest {
             GoldenKeys.INCOME_MONTHLY, GoldenKeys.INCOME_SALARY, GoldenKeys.INCOME_RENTAL,
             GoldenKeys.INCOME_BONUS, GoldenKeys.EMI_TOTAL, GoldenKeys.OUTFLOW_MONTHLY,
             GoldenKeys.EMERGENCY_CURRENT, GoldenKeys.GOAL_TARGET, GoldenKeys.FI_TODAY_EXPENSE,
-            GoldenKeys.FI_HORIZON_YEARS, GoldenKeys.FI_PASSIVE_MONTHLY);
+            GoldenKeys.FI_HORIZON_YEARS, GoldenKeys.FI_PASSIVE_MONTHLY,
+            GoldenKeys.BUDGET_CATEGORY, GoldenKeys.BUDGET_SPENT, GoldenKeys.BUDGET_SPENT_WARN,
+            GoldenKeys.BUDGET_SPENT_BREACH);
 
     private static final Set<String> ASSERTED = new HashSet<>();
     private static int testsRun;
@@ -370,5 +372,27 @@ class RulesGoldenTest {
         BigDecimal rate = Statistics.savingsRate(Money.ofPaise(fx.paise(GoldenKeys.SURPLUS_MONTHLY)),
                 Money.ofPaise(fx.paise(GoldenKeys.INCOME_MONTHLY)));
         expectDecimal(GoldenKeys.SAVINGS_RATE_PCT, rate);
+    }
+
+    /** Budget status for each fixture spend: level from the thresholds, remaining and fraction exact. */
+    @Test
+    void budgetStatusForFixtureSpends() {
+        Money budget = Money.ofPaise(fx.paise(GoldenKeys.BUDGET_CATEGORY));
+        Object[][] cases = {{GoldenKeys.BUDGET_SPENT, com.finpath.rules.BudgetRules.Level.OK},
+                {GoldenKeys.BUDGET_SPENT_WARN, com.finpath.rules.BudgetRules.Level.WARN},
+                {GoldenKeys.BUDGET_SPENT_BREACH, com.finpath.rules.BudgetRules.Level.BREACH}};
+        for (Object[] c : cases) {
+            long spent = fx.paise((String) c[0]);
+            com.finpath.rules.BudgetRules.Status st = com.finpath.rules.BudgetRules.status(budget,
+                    Money.ofPaise(spent), RuleConfig.defaults());
+            assertEquals(c[1], st.level(), "budget level mismatch for " + c[0]);
+            assertEquals(budget.paise() - spent, st.remaining().paise(), "remaining mismatch for " + c[0]);
+            assertEquals(0, BigDecimal.valueOf(spent)
+                    .divide(BigDecimal.valueOf(budget.paise()), 4, java.math.RoundingMode.HALF_UP)
+                    .compareTo(st.usedFraction().setScale(4, java.math.RoundingMode.HALF_UP)),
+                    "fraction mismatch for " + c[0]);
+            ASSERTED.add((String) c[0]);
+        }
+        ASSERTED.add(GoldenKeys.BUDGET_CATEGORY);
     }
 }

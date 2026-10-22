@@ -89,3 +89,10 @@ bottom sheet calling the PUT. Components render API numbers only; INR lakh/crore
 Covers **T40**. Feeds T41, T45, T77. Additions not in PLAN.md: `BudgetRules.spentByCategory`, `budget.*` fixture keys
 (sample plus owner's local file), `POST /budgets/evaluate`, the `ExpenseService` evaluate hook, `last_alert_level`
 reset on budget change.
+
+## Review follow-up (open, before T45)
+The `ExpenseService` hook advances `last_alert_level` via compare-and-set and discards the returned events, so
+`POST /budgets/evaluate` will not return an alert the hook already fired. Before T45 consumes alerts, either stop the
+hook advancing the level (announce only from `/evaluate`) or persist fired events as pending until read. Needs an
+architect decision; T40 acceptance (80% fires once) holds as built.
+Owner action: add the four `budget.*` keys to `persona.local.properties` (sample has fake values).

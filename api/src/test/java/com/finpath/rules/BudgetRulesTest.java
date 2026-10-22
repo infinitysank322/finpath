@@ -66,6 +66,36 @@ class BudgetRulesTest {
         assertEquals(BudgetRules.Level.WARN, BudgetRules.levelFor(BUDGET, Money.ofPaise(500_000L), strict));
     }
 
+    private static BudgetRules.Spend out(String cat, long paise) {
+        return new BudgetRules.Spend(cat, TransactionHash.Direction.OUT, paise);
+    }
+
+    @Test
+    void spentByCategoryIgnoresInRows() {
+        java.util.Map<String, Money> m = BudgetRules.spentByCategory(java.util.List.of(
+                new BudgetRules.Spend("FOOD", TransactionHash.Direction.IN, 500L), out("FOOD", 200L)));
+        assertEquals(200L, m.get("FOOD").paise());
+        assertEquals(java.util.Map.of(), BudgetRules.spentByCategory(java.util.List.of(
+                new BudgetRules.Spend("FOOD", TransactionHash.Direction.IN, 500L))));
+    }
+
+    @Test
+    void spentByCategorySumsAndKeepsCategoriesApart() {
+        java.util.Map<String, Money> m = BudgetRules.spentByCategory(
+                java.util.List.of(out("FOOD", 200L), out("FOOD", 300L), out("FUEL", 70L)));
+        assertEquals(500L, m.get("FOOD").paise());
+        assertEquals(70L, m.get("FUEL").paise());
+        assertEquals(2, m.size());
+        assertEquals(Money.ZERO, m.getOrDefault("RENT", Money.ZERO));
+    }
+
+    @Test
+    void spentByCategoryEmptyListAndOverflow() {
+        assertEquals(java.util.Map.of(), BudgetRules.spentByCategory(java.util.List.of()));
+        assertThrows(ArithmeticException.class, () -> BudgetRules.spentByCategory(
+                java.util.List.of(out("FOOD", Long.MAX_VALUE), out("FOOD", 1L))));
+    }
+
     @Test
     void safeToSpendOnDayTenOfThirtyOneDayCycle() {
         // cycle 25 Oct -> 25 Nov is 31 days; day 10 of the cycle is 3 Nov (9 elapsed), 22 days left incl. today

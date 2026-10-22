@@ -77,6 +77,12 @@ public final class GoldenKeys {
     // Recurring bills (T38): a quarterly bill spread over three cycles (fixture-only; owner adds to the local file)
     public static final String QUARTERLY_BILL = "fixed.quarterly_bill_paise";
 
+    // Category budget (T40): one budget and three spends (below 80%, 80-100%, at least 100%)
+    public static final String BUDGET_CATEGORY = "budget.category_paise";
+    public static final String BUDGET_SPENT = "budget.spent_paise";
+    public static final String BUDGET_SPENT_WARN = "budget.spent_warn_paise";
+    public static final String BUDGET_SPENT_BREACH = "budget.spent_breach_paise";
+
     public static final List<String> ALL = List.of(
             HOME_PRINCIPAL, HOME_RATE_PCT, HOME_TENURE_MONTHS, HOME_STATED_EMI, HOME_INTEREST_REMAINING,
             HOME_CLOSE_MONTHS, HOME_CLOSE_EMI, HOME_INTEREST_SAVED,
@@ -89,5 +95,6 @@ public final class GoldenKeys {
             GOAL_TARGET, GOAL_CYCLES, GOAL_MONTHLY,
             FI_TODAY_EXPENSE, FI_HORIZON_YEARS, FI_INFLATED_EXPENSE, FI_GROSS_CORPUS, FI_PASSIVE_MONTHLY,
             FI_NET_CORPUS,
-            SURPLUS_MONTHLY, SURPLUS_LATER, SURPLUS_LATER_CYCLE, SAVINGS_RATE_PCT, QUARTERLY_BILL);
+            SURPLUS_MONTHLY, SURPLUS_LATER, SURPLUS_LATER_CYCLE, SAVINGS_RATE_PCT, QUARTERLY_BILL,
+            BUDGET_CATEGORY, BUDGET_SPENT, BUDGET_SPENT_WARN, BUDGET_SPENT_BREACH);
 }

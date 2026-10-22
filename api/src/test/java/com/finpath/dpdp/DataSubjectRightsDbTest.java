@@ -43,6 +43,18 @@ class DataSubjectRightsDbTest {
         seedTransaction(b);
         seedRecurringTemplate(a);
         seedRecurringTemplate(b);
+        seedCategoryBudget(a);
+        seedCategoryBudget(b);
+    }
+
+    /** One category_budget row per user (superuser insert). */
+    private static void seedCategoryBudget(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); java.sql.PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO category_budget (user_id, cycle_start, category_id, budget_paise) "
+                        + "VALUES (?, DATE '2026-10-01', (SELECT id FROM category WHERE code = 'DINING'), 500000)")) {
+            ps.setObject(1, user);
+            ps.executeUpdate();
+        }
     }
 
     /** One recurring_template row per user (superuser insert). */
@@ -135,6 +147,9 @@ class DataSubjectRightsDbTest {
         assertThat(reparsed.at("/tables/recurring_template")).hasSize(1);
         assertThat(reparsed.at("/tables/recurring_template/0/category_code").asText()).isEqualTo("UTILITIES");
         assertThat(reparsed.at("/tables/recurring_template/0/amount_paise").asLong()).isEqualTo(600000);
+        assertThat(reparsed.at("/tables/category_budget")).hasSize(1);
+        assertThat(reparsed.at("/tables/category_budget/0/category_code").asText()).isEqualTo("DINING");
+        assertThat(reparsed.at("/tables/category_budget/0/budget_paise").asLong()).isEqualTo(500000);
         assertThat(reparsed.get("tables").has("category")).isFalse();
     }
 
@@ -162,7 +177,8 @@ class DataSubjectRightsDbTest {
                         + "+ (SELECT count(*) FROM plan_cycle WHERE user_id = '" + a + "') "
                         + "+ (SELECT count(*) FROM income_source WHERE user_id = '" + a + "') "
                         + "+ (SELECT count(*) FROM transaction WHERE user_id = '" + a + "') "
-                        + "+ (SELECT count(*) FROM recurring_template WHERE user_id = '" + a + "')")) {
+                        + "+ (SELECT count(*) FROM recurring_template WHERE user_id = '" + a + "') "
+                        + "+ (SELECT count(*) FROM category_budget WHERE user_id = '" + a + "')")) {
             rs.next();
             assertThat(rs.getLong(1)).isZero();
         }
