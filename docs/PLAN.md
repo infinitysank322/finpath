@@ -160,7 +160,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | T57 | DONE | FR-13 | Web: principal-vs-interest stacked area chart | T49 | 3 h | Series come from the loan detail endpoint; table-equivalent totals match the API to the paise |
 | T58 | DONE | FR-18 | Web: EMI-to-income gauge with the 40% line + guard dialog | T54 | 3 h | Shows 49.87% and the 40% marker; colour is not the only indicator of WARN/BLOCK |
 | T59 | DONE | FR-17 | Web: prepayment simulator screen | T53 | 3 h | Results shown as exact figures from the T53 endpoint (deterministic loan maths), with the assumed loan rate stated beside them and a note that floating rates can change; no single figure presented as a guaranteed outcome beyond that; no named security or product; no web-side money maths. Prepay-vs-invest comparison is out of scope: it belongs to FR-28 (Phase 2) |
-| T60 | TODO | FR-16 | Web: sinking-fund card for bullet loans | T52 | 2 h | Shows set-aside, progress and behind-schedule state; 380 px dark verified |
+| T60 | IN-PROGRESS | FR-16 | Web: sinking-fund card for bullet loans | T52 | 2 h | Shows set-aside, progress and behind-schedule state; 380 px dark verified |
 
 ### Stage 5 — Goals, FI, allocation, investments · 9 tasks · 30 h
 
