@@ -31,6 +31,24 @@ class EmergencyFundTest {
     }
 
     @Test
+    void shortfallIsGapToTargetAndNeverNegative() {
+        Money target = EmergencyFund.target(OUTFLOW, 3);
+        assertEquals(24_000_000L - 1_300_000L, EmergencyFund.shortfall(Money.ofPaise(1_300_000L), target).paise());
+        assertEquals(0L, EmergencyFund.shortfall(target, target).paise());
+        assertEquals(0L, EmergencyFund.shortfall(Money.ofPaise(25_000_000L), target).paise());
+        assertThrows(IllegalArgumentException.class, () -> EmergencyFund.shortfall(Money.ofPaise(-1), target));
+    }
+
+    @Test
+    void monthlyOutflowIsActualFlooredAtCommitments() {
+        assertEquals(9L, EmergencyFund.monthlyOutflow(Money.ofPaise(9), Money.ofPaise(5)).paise());
+        assertEquals(5L, EmergencyFund.monthlyOutflow(Money.ofPaise(2), Money.ofPaise(5)).paise());
+        assertEquals(0L, EmergencyFund.monthlyOutflow(Money.ZERO, Money.ZERO).paise());
+        assertThrows(IllegalArgumentException.class,
+                () -> EmergencyFund.monthlyOutflow(Money.ofPaise(-1), Money.ZERO));
+    }
+
+    @Test
     void rejectsBadInput() {
         assertThrows(IllegalArgumentException.class, () -> EmergencyFund.target(OUTFLOW, 0));
         assertThrows(IllegalArgumentException.class, () -> EmergencyFund.target(Money.ofPaise(-1), 1));

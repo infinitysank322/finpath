@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class GoalService {
 
+    static final String EMERGENCY = "emergency";
     static final Set<String> TYPES = Set.of("emergency", "marriage", "education", "home", "health", "vehicle",
             "travel", "other");
     static final int DEFAULT_PRIORITY = 5;

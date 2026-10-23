@@ -25,9 +25,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class GoalController {
 
     private final GoalService service;
+    private final EmergencyFundService emergencyFund;
 
-    public GoalController(GoalService service) {
+    public GoalController(GoalService service, EmergencyFundService emergencyFund) {
         this.service = service;
+        this.emergencyFund = emergencyFund;
+    }
+
+    /** FR-20: target sized from the caller's actual monthly outflow; targetMonths defaults to 3 (1..6). */
+    @GetMapping("/emergency-fund")
+    public ResponseEntity<EmergencyFundService.EmergencyFundView> emergencyFund(@CurrentUserId UUID userId,
+            @RequestParam(required = false) Integer targetMonths) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(emergencyFund.size(userId, targetMonths));
     }
 
     @PostMapping

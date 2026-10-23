@@ -81,7 +81,7 @@ class GoalApiDbTest {
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        mvc = MockMvcBuilders.standaloneSetup(new GoalController(service))
+        mvc = MockMvcBuilders.standaloneSetup(new GoalController(service, null))
                 .setControllerAdvice(new GoalExceptionHandler())
                 .setCustomArgumentResolvers(new CurrentUserIdArgumentResolver())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(om)).build();

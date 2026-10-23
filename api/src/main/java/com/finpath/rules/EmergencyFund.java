@@ -44,4 +44,27 @@ public final class EmergencyFund {
         return BigDecimal.valueOf(current.paise())
                 .divide(BigDecimal.valueOf(monthlyOutflow.paise()), MONTHS_SCALE, RoundingMode.DOWN);
     }
+
+    /** How far {@code current} is below {@code target}; zero once the target is met. */
+    public static Money shortfall(Money current, Money target) {
+        Objects.requireNonNull(current, "current");
+        Objects.requireNonNull(target, "target");
+        if (current.isNegative() || target.isNegative()) {
+            throw new IllegalArgumentException("amounts must not be negative");
+        }
+        return Money.ofPaise(Math.max(0L, target.paise() - current.paise()));
+    }
+
+    /**
+     * Monthly outflow to size from: what was actually spent last cycle, but never less than the
+     * commitments (EMIs and recurring bills) due now, so a thin history cannot under-size the fund.
+     */
+    public static Money monthlyOutflow(Money actualLastCycle, Money committed) {
+        Objects.requireNonNull(actualLastCycle, "actualLastCycle");
+        Objects.requireNonNull(committed, "committed");
+        if (actualLastCycle.isNegative() || committed.isNegative()) {
+            throw new IllegalArgumentException("amounts must not be negative");
+        }
+        return actualLastCycle.paise() >= committed.paise() ? actualLastCycle : committed;
+    }
 }
