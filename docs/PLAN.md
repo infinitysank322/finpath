@@ -168,7 +168,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 
 | Id | Status | FR | Task | Prereq | Est | Acceptance |
 | --- | --- | --- | --- | --- | --- | --- |
-| T61 | IN-PROGRESS | FR-19 `[+TABLE]` | `goal` (type, target_amount, target_date, current_amount, priority) + CRUD + status endpoint | T34, T19 | 4 h | Marriage goal returns ₹28,846/cycle and an on-track flag matching T19; a sub-3-year horizon returns `SAFE_ONLY`; `[+TABLE]` trio satisfied |
+| T61 | DONE | FR-19 `[+TABLE]` | `goal` (type, target_amount, target_date, current_amount, priority) + CRUD + status endpoint | T34, T19 | 4 h | Marriage goal returns ₹28,846/cycle and an on-track flag matching T19; a sub-3-year horizon returns `SAFE_ONLY`; `[+TABLE]` trio satisfied |
 | T62 | TODO | FR-20 | Emergency-fund goal auto-sized from actual outflow | T61, T18 | 2 h | Target recomputes when outflow changes; 1-month and 3-month figures match T18 |
 | T63 | TODO | FR-21 | FI planner endpoint: corpus, FI date, required step-up SIP, return-range band | T61, T21 | 3 h | Gross corpus ₹3.84 Cr, net of rental ₹2.76 Cr, both ±1%; response includes low/base/high bands and the inflation/equity assumptions; `[?OQ-1]` EPF opening balance is a user-entered field defaulting to ₹0 |
 | T64 | TODO | FR-22 | Allocation endpoint: run the waterfall for the current cycle, persist `plan_cycle.allocations` | T22, T61, T52 | 4 h | Surplus ₹39,835 ±1%; lines sum exactly to surplus; re-running the same cycle is idempotent; `[?OQ-3]` step-7 ratio defaults to 70/30, user-configurable |

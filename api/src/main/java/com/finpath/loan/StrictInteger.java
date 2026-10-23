@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 
 /** Accepts only a JSON integer: a string, decimal or boolean is a 400, never coerced. Used for paise and counts. */
-final class StrictInteger extends JsonDeserializer<Long> {
+public final class StrictInteger extends JsonDeserializer<Long> {
 
     @Override
     public Long deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
