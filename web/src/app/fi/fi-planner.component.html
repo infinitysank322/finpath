@@ -1,0 +1,80 @@
+<h1>FI planner</h1>
+<p class="edu">Educational projection, not investment advice. Returns are assumptions, not guarantees.</p>
+
+<details class="form-box" [open]="!plan()">
+  <summary>Your inputs</summary>
+  <form (submit)="$event.preventDefault(); submit()" novalidate>
+    <label>Monthly expense today (INR)
+      <input inputmode="decimal" autocomplete="off" [value]="expense()" (input)="set('expense', $event)" />
+    </label>
+    <label>Years to FI
+      <input inputmode="numeric" autocomplete="off" [value]="years()" (input)="set('years', $event)" />
+    </label>
+    <label>Monthly passive income today (optional)
+      <input inputmode="decimal" autocomplete="off" [value]="passive()" (input)="set('passive', $event)" />
+    </label>
+    <label>Opening balance, e.g. EPF (optional)
+      <input inputmode="decimal" autocomplete="off" [value]="opening()" (input)="set('opening', $event)" />
+    </label>
+    <label>Current monthly SIP (optional)
+      <input inputmode="decimal" autocomplete="off" [value]="sip()" (input)="set('sip', $event)" />
+    </label>
+    <label>Yearly SIP step-up
+      <select [value]="stepUp()" (change)="set('stepUp', $event)">
+        @for (s of stepUps; track s.value) {
+          <option [value]="s.value" [selected]="s.value === stepUp()">{{ s.label }}</option>
+        }
+      </select>
+    </label>
+    @if (formError()) {
+      <p class="error" role="alert">{{ formError() }}</p>
+    }
+    <button type="submit" class="btn primary" [disabled]="loading()">Show projection</button>
+  </form>
+</details>
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+@if (loading()) {
+  <p class="muted" role="status">Calculating...</p>
+}
+@if (plan(); as p) {
+  <section aria-label="Projection range">
+    <h2>Range after {{ p.yearsToFi }} years</h2>
+    <table>
+      <caption>Low, base and high return cases (corpus needed {{ fmt(p.netCorpusPaise) }})</caption>
+      <thead>
+        <tr><th scope="col">Case (return a year)</th><th scope="col" class="num">First-month SIP needed</th><th scope="col" class="num">Savings at end</th><th scope="col">FI date</th></tr>
+      </thead>
+      <tbody>
+        @for (r of rows(); track r.band) {
+          <tr>
+            <th scope="row">{{ r.band }} ({{ r.returnText }})</th>
+            <td class="num">{{ fmt(r.requiredSipPaise) }}</td>
+            <td class="num">{{ fmt(r.savingsPaise) }}</td>
+            <td>{{ r.fiDate }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <section aria-label="Assumptions" class="assumptions">
+      <h2>Assumptions</h2>
+      <ul>
+        <li>Inflation {{ pct(p.assumptions.inflation) }} a year; corpus is {{ p.assumptions.fiMultiplier }} times yearly expenses, net of passive income.</li>
+        <li>Low case assumes debt-like returns of {{ pct(p.assumptions.debtReturnHigh) }} a year, high case equity-like returns of {{ pct(p.assumptions.equityReturn) }}; base sits between them.</li>
+        <li>SIP step-up {{ pct(p.assumptions.stepUp) }} a year. Actual returns vary and can be negative.</li>
+      </ul>
+      <p class="muted small">{{ p.disclaimer }}</p>
+    </section>
+  </section>
+
+  <h2>Savings against the corpus target</h2>
+  <div class="chart-wrap" role="img" [attr.aria-label]="description()">
+    @if (options(); as o) {
+      <div echarts [options]="o" [merge]="o" class="chart" aria-hidden="true"></div>
+    }
+  </div>
+  <p class="muted small">Only the three API cases are plotted; the lines between them are not projections. The table above has the same figures.</p>
+  <p class="headline">Corpus needed <strong>{{ fmt(p.netCorpusPaise) }}</strong> <span class="muted small">net of passive income; {{ fmt(p.grossCorpusPaise) }} before it</span></p>
+}

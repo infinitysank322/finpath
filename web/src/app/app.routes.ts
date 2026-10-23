@@ -18,6 +18,7 @@ export const routes: Routes = [
   { path: 'debt/loans/:id/sinking-fund', loadComponent: () => import('./debt/sinking-fund.component').then((m) => m.SinkingFundComponent), title: 'Sinking fund - FinPath' },
   { path: 'debt/emi-guard', loadComponent: () => import('./debt/emi-guard.component').then((m) => m.EmiGuardComponent), title: 'EMI to income - FinPath' },
   { path: 'debt', loadComponent: page, title: 'Debt - FinPath', data: { heading: 'Debt' } },
+  { path: 'goals/fi-planner', loadComponent: () => import('./fi/fi-planner.component').then((m) => m.FiPlannerComponent), title: 'FI planner - FinPath' },
   { path: 'goals', loadComponent: page, title: 'Goals - FinPath', data: { heading: 'Goals' } },
   { path: 'more', pathMatch: 'full', loadComponent: () => import('./plan/more.component').then((m) => m.MoreComponent), title: 'More - FinPath' },
   { path: 'more/income', loadComponent: () => import('./plan/income.component').then((m) => m.IncomeComponent), title: 'Income sources - FinPath' },
