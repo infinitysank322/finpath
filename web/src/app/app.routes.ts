@@ -14,6 +14,7 @@ export const routes: Routes = [
   { path: 'spending', loadComponent: page, title: 'Spending - FinPath', data: { heading: 'Spending' } },
   { path: 'debt/payoff', loadComponent: () => import('./debt/payoff.component').then((m) => m.PayoffComponent), title: 'Payoff timeline - FinPath' },
   { path: 'debt/loans/:id/interest', loadComponent: () => import('./debt/loan-interest.component').then((m) => m.LoanInterestComponent), title: 'Principal vs interest - FinPath' },
+  { path: 'debt/loans/:id/prepay', loadComponent: () => import('./debt/prepay.component').then((m) => m.PrepayComponent), title: 'Prepayment simulator - FinPath' },
   { path: 'debt/emi-guard', loadComponent: () => import('./debt/emi-guard.component').then((m) => m.EmiGuardComponent), title: 'EMI to income - FinPath' },
   { path: 'debt', loadComponent: page, title: 'Debt - FinPath', data: { heading: 'Debt' } },
   { path: 'goals', loadComponent: page, title: 'Goals - FinPath', data: { heading: 'Goals' } },

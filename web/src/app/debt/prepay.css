@@ -1,0 +1,17 @@
+:host { display: block; max-width: 32rem; margin: 0 auto; }
+h1 { margin: 0 0 .5rem; font-size: 1.5rem; }
+h2 { margin: 1rem 0 .5rem; font-size: 1rem; color: var(--fp-text-muted); }
+.edu, .small { font-size: .875rem; }
+.edu { color: var(--fp-text-muted); margin: 0 0 .75rem; }
+label { display: block; margin-top: .75rem; font-weight: 600; }
+select, input { display: block; width: 100%; min-height: 44px; margin-top: .25rem; padding: 0 .625rem; box-sizing: border-box; font: inherit; color: var(--fp-text); background: var(--fp-surface); border: 1px solid var(--fp-border-strong); border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; margin-top: .75rem; font-size: .9375rem; }
+caption { text-align: left; color: var(--fp-text-muted); padding-bottom: .25rem; }
+th, td { text-align: left; padding: .5rem .375rem; border-bottom: 1px solid var(--fp-border); overflow-wrap: anywhere; vertical-align: top; }
+thead th { border-bottom-color: var(--fp-border-strong); }
+th[scope='row'] { font-weight: 600; }
+.num { text-align: right; white-space: nowrap; }
+.assumptions ul { margin: 0; padding-left: 1.25rem; }
+.error { margin: .5rem 0 0; border-left: 4px solid; padding-left: .5rem; }
+.muted { color: var(--fp-text-muted); }
+.btn { min-height: 44px; padding: 0 .875rem; margin-top: .75rem; border: 1px solid var(--fp-border-strong); border-radius: 22px; background: transparent; font: inherit; color: var(--fp-text); }
