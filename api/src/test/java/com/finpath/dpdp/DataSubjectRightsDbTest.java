@@ -53,6 +53,18 @@ class DataSubjectRightsDbTest {
         seedHolding(b);
         seedNetWorthSnapshot(a);
         seedNetWorthSnapshot(b);
+        seedChecklistItem(a);
+        seedChecklistItem(b);
+    }
+
+    /** One checklist item per user on its plan_cycle (superuser insert). */
+    private static void seedChecklistItem(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); java.sql.PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO checklist_item (user_id, plan_cycle_id, type, source_ref, amount_paise) "
+                        + "SELECT user_id, id, 'SIP', 'HABIT_SIP', 700 FROM plan_cycle WHERE user_id = ?")) {
+            ps.setObject(1, user);
+            ps.executeUpdate();
+        }
     }
 
     /** One snapshot per user on its plan_cycle (superuser insert). */
@@ -207,6 +219,8 @@ class DataSubjectRightsDbTest {
         assertThat(reparsed.at("/tables/holding/0/current_value_paise").asLong()).isEqualTo(3300000);
         assertThat(reparsed.at("/tables/net_worth_snapshot")).hasSize(1);
         assertThat(reparsed.at("/tables/net_worth_snapshot/0/net_worth_paise").asLong()).isEqualTo(500);
+        assertThat(reparsed.at("/tables/checklist_item")).hasSize(1);
+        assertThat(reparsed.at("/tables/checklist_item/0/amount_paise").asLong()).isEqualTo(700);
         assertThat(reparsed.get("tables").has("category")).isFalse();
     }
 
