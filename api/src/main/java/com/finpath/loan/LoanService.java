@@ -16,6 +16,7 @@ import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
 import com.finpath.rules.PrepaymentSimulator;
 import com.finpath.rules.RuleConfig;
+import com.finpath.rules.WaterfallAllocator;
 import com.finpath.rules.SinkingFund;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -261,6 +262,30 @@ public class LoanService {
             return PayoffPlanner.Strategy.SNOWBALL;
         }
         throw new InvalidLoanException();
+    }
+
+    /**
+     * Open debts as waterfall targets (FR-22). A bullet loan absorbs its sinking-fund deposit (the whole
+     * balance once past due); any other loan absorbs its outstanding balance.
+     */
+    public List<WaterfallAllocator.DebtTarget> debtTargets(UUID userId) {
+        List<WaterfallAllocator.DebtTarget> out = new ArrayList<>();
+        for (Row r : loans.list(userId)) {
+            if (r.principalOutstandingPaise() <= 0) {
+                continue;
+            }
+            boolean bullet = BULLET.equals(r.type());
+            long absorbable = r.principalOutstandingPaise();
+            if (bullet) {
+                try {
+                    absorbable = sinkingFund(userId, r.id(), 0L, null).setAsidePerCyclePaise();
+                } catch (InvalidLoanException e) {
+                    // no usable due date or already past it: fall back to the outstanding balance
+                }
+            }
+            out.add(new WaterfallAllocator.DebtTarget(r.id().toString(), r.rate(), bullet, Money.ofPaise(absorbable)));
+        }
+        return out;
     }
 
     /**

@@ -8,6 +8,7 @@ import com.finpath.loan.StrictInteger;
 import com.finpath.rules.DatedGoal;
 import com.finpath.rules.Money;
 import com.finpath.rules.RuleConfig;
+import com.finpath.rules.WaterfallAllocator;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -116,6 +117,15 @@ public class GoalService {
         boolean onTrack = res.status() == DatedGoal.Status.ACHIEVED || res.status() == DatedGoal.Status.ON_TRACK;
         return new GoalStatusView(r.id(), res.cyclesRemaining(), res.shortfall().paise(), res.monthlyNeed().paise(),
                 plannedMonthlyPaise, res.status().name(), onTrack, res.instrumentClass().name());
+    }
+
+    /** Non-emergency goals in priority order as waterfall targets (FR-22); the emergency fund has its own steps. */
+    public List<WaterfallAllocator.GoalTarget> goalTargets(UUID userId) {
+        return goals.list(userId).stream().filter(g -> !EMERGENCY.equals(g.type()))
+                .map(g -> status(userId, g.id(), 0L))
+                .map(st -> new WaterfallAllocator.GoalTarget(st.id().toString(), Money.ofPaise(st.monthlyNeedPaise()),
+                        DatedGoal.InstrumentClass.valueOf(st.instrumentClass())))
+                .toList();
     }
 
     /** Validates; throws InvalidGoalException before any write (the DB CHECKs are the second line). */
