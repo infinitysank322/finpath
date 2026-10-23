@@ -1,0 +1,20 @@
+<div class="gauge" [attr.data-status]="guard().status">
+  <p class="figure"><span class="pct" data-testid="ratio">{{ ratioText() }}</span>
+    <span class="status" data-testid="status"><span aria-hidden="true">{{ icon() }}</span> {{ label() }}</span></p>
+  <div class="track" role="meter" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="fill()"
+       [attr.aria-valuetext]="summary()" aria-label="EMI to income ratio">
+    <div class="fill" [style.width.%]="fill()"></div>
+    <div class="marker warn" [style.left.%]="warnLine" data-testid="warn-marker"></div>
+    <div class="marker block" [style.left.%]="blockLine" data-testid="block-marker"></div>
+  </div>
+  <div class="scale" aria-hidden="true">
+    <span class="tick" [style.left.%]="warnLine">{{ warnLine }}%</span>
+    <span class="tick" [style.left.%]="blockLine">{{ blockLine }}%</span>
+  </div>
+  <p class="explain">{{ explanation() }}</p>
+  <dl class="facts">
+    <div><dt>Monthly EMIs</dt><dd data-testid="emi">{{ emi() }}</dd></div>
+    <div><dt>Monthly income</dt><dd data-testid="income">{{ income() }}</dd></div>
+    <div><dt>Room before the {{ blockLine }}% line</dt><dd data-testid="headroom">{{ headroom() }}</dd></div>
+  </dl>
+</div>

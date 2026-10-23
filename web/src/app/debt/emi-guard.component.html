@@ -1,0 +1,24 @@
+<h1>EMI to income</h1>
+<p class="edu">Educational view of your own figures. It is not advice to take, prepay or change any loan.</p>
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+  <button type="button" class="btn" (click)="load()">Retry</button>
+}
+@if (loading()) {
+  <p class="muted" role="status">Loading...</p>
+}
+@if (!loading() && guard(); as g) {
+  @if (g.ratio === null && g.totalEmiPaise === 0) {
+    <p class="muted">No loans or income recorded yet, so there is no ratio to show.</p>
+  } @else {
+    <app-emi-gauge [guard]="g" />
+  }
+  <section aria-label="Assumptions" class="assumptions">
+    <h2>About this check</h2>
+    <ul>
+      <li>Ratio = total monthly EMIs of open loans divided by this cycle's total income.</li>
+      <li>Above 40% is a warning. Above 50%, adding a new loan is blocked unless you confirm.</li>
+    </ul>
+  </section>
+}

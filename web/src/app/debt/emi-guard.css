@@ -1,0 +1,8 @@
+:host { display: block; max-width: 32rem; margin: 0 auto; }
+h1 { margin: 0 0 .5rem; font-size: 1.5rem; }
+h2 { margin: 1rem 0 .5rem; font-size: 1rem; color: var(--fp-text-muted); }
+.edu { font-size: .875rem; color: var(--fp-text-muted); margin: 0 0 .75rem; }
+.assumptions ul { margin: 0; padding-left: 1.25rem; }
+.error { margin: .5rem 0 0; border-left: 4px solid; padding-left: .5rem; }
+.muted { color: var(--fp-text-muted); }
+.btn { min-height: 44px; padding: 0 .875rem; margin-top: .5rem; border: 1px solid var(--fp-border-strong); border-radius: 22px; background: transparent; font: inherit; color: var(--fp-text); }
