@@ -49,6 +49,18 @@ class DataSubjectRightsDbTest {
         seedLoan(b);
         seedGoal(a);
         seedGoal(b);
+        seedHolding(a);
+        seedHolding(b);
+    }
+
+    /** One holding row per user (superuser insert). */
+    private static void seedHolding(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); java.sql.PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO holding (user_id, asset_class, name, invested_paise, current_value_paise, "
+                        + "monthly_contribution_paise) VALUES (?, 'mf', 'Index fund', 3000000, 3300000, 500000)")) {
+            ps.setObject(1, user);
+            ps.executeUpdate();
+        }
     }
 
     /** One goal row per user (superuser insert). */
@@ -178,6 +190,8 @@ class DataSubjectRightsDbTest {
         assertThat(reparsed.at("/tables/loan/0/principal_outstanding_paise").asLong()).isEqualTo(1000000);
         assertThat(reparsed.at("/tables/goal")).hasSize(1);
         assertThat(reparsed.at("/tables/goal/0/target_amount_paise").asLong()).isEqualTo(2000000);
+        assertThat(reparsed.at("/tables/holding")).hasSize(1);
+        assertThat(reparsed.at("/tables/holding/0/current_value_paise").asLong()).isEqualTo(3300000);
         assertThat(reparsed.get("tables").has("category")).isFalse();
     }
 
