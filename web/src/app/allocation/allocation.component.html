@@ -1,0 +1,91 @@
+<h1>Cycle allocation</h1>
+<p class="edu">Educational view of how this cycle's surplus is split, in priority order. It is not advice about any security or product.</p>
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+@if (loading()) {
+  <p class="muted" role="status">Loading the allocation...</p>
+}
+@if (missing()) {
+  <p class="muted" data-f="missing">No allocation has been run for this cycle yet.</p>
+}
+@if (!loading()) {
+  <button type="button" class="btn" (click)="run()">{{ view() ? 'Re-run allocation' : 'Run allocation' }}</button>
+}
+
+@if (view(); as v) {
+  <section class="card" aria-label="Cycle surplus">
+    <p class="small muted">Cycle starting {{ v.cycleStart }}</p>
+    <p class="big" data-f="surplus"><span class="muted">Surplus</span> {{ fmt(v.surplusPaise) }}</p>
+    @if (v.shortfallPaise > 0) {
+      <p class="warn" role="status" data-f="shortfall">Shortfall: mandatory outflows exceed income by {{ v.shortfallPaise | paiseInr }}. Nothing is allocated.</p>
+    }
+  </section>
+
+  @if (v.lines.length > 0) {
+    <table aria-label="Allocation steps in priority order">
+      <caption class="sr-only">Where the surplus goes, step by step</caption>
+      <thead><tr><th scope="col">Step</th><th scope="col" class="num">Amount</th></tr></thead>
+      <tbody>
+        @for (l of v.lines; track $index) {
+          <tr data-row>
+            <th scope="row">{{ name(l.step) }}</th>
+            <td class="num" data-f="amount">{{ fmt(l.amountPaise) }}</td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr><th scope="row">Allocated (lines add up to this; the surplus is shown above)</th><td class="num" data-f="total">{{ fmt(v.allocatedPaise) }}</td></tr>
+      </tfoot>
+    </table>
+  }
+
+  <section aria-label="Unplanned spend check" class="check">
+    <h2>If an unplanned spend lands</h2>
+    <form (submit)="$event.preventDefault(); check()">
+      <label for="spend">Unplanned spend (₹)</label>
+      <input id="spend" inputmode="decimal" autocomplete="off" [value]="spend()" (input)="spend.set($any($event.target).value)" />
+      <button type="submit" class="btn" [disabled]="previewing()">See which step absorbs it</button>
+    </form>
+    @if (previewError()) {
+      <p class="error" role="alert">{{ previewError() }}</p>
+    }
+    @if (preview(); as p) {
+      <div class="card absorbed" aria-label="Absorbing step">
+        @if (p.primaryAbsorbingStep) {
+          <p class="state" data-f="absorber">Absorbed first by: {{ name(p.primaryAbsorbingStep) }}</p>
+        } @else {
+          <p class="state" data-f="absorber">No step absorbs this spend.</p>
+        }
+        @if (p.absorbed.length > 0) {
+          <ul>
+            @for (a of p.absorbed; track $index) {
+              <li data-absorbed>{{ name(a.step) }}: {{ a.amountPaise | paiseInr }} less</li>
+            }
+          </ul>
+        }
+        @if (p.uncoveredPaise > 0) {
+          <p data-f="uncovered">Not covered by any step: {{ p.uncoveredPaise | paiseInr }}</p>
+        }
+        <dl>
+          <div><dt>Surplus after</dt><dd data-f="surplus-after">{{ p.surplusAfterPaise | paiseInr }}</dd></div>
+          <div><dt>Safe to spend before</dt><dd>{{ p.safeToSpendBeforePaise | paiseInr }}</dd></div>
+          <div><dt>Safe to spend after</dt><dd data-f="sts-after">{{ p.safeToSpendAfterPaise | paiseInr }}</dd></div>
+        </dl>
+      </div>
+    }
+  </section>
+
+  <section aria-label="Assumptions" class="assumptions">
+    <h2>Assumptions</h2>
+    <ul>
+      <li>Surplus is income less mandatory outflows, as calculated by FinPath's rules engine.</li>
+      <li>Steps are funded in priority order; each takes what it needs or what is left.</li>
+      @if (v.prepayShare) {
+        <li>The share of the final remainder aimed at debt prepayment is {{ v.prepayShare }} (a fraction of 1).</li>
+      }
+      <li>This is an educational illustration, not advice.</li>
+    </ul>
+  </section>
+}

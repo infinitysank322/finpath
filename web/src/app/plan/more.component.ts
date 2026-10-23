@@ -14,6 +14,7 @@ import { RouterLink } from '@angular/router';
         <li><a routerLink="/more/recurring">Recurring bills</a></li>
         <li><a routerLink="/spending/budget">Category budgets</a></li>
         <li><a routerLink="/goals/fi-planner">FI planner</a></li>
+        <li><a routerLink="/more/allocation">Cycle allocation</a></li>
       </ul>
     </nav>
   `,
