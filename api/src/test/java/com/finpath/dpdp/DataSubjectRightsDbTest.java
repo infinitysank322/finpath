@@ -51,6 +51,19 @@ class DataSubjectRightsDbTest {
         seedGoal(b);
         seedHolding(a);
         seedHolding(b);
+        seedNetWorthSnapshot(a);
+        seedNetWorthSnapshot(b);
+    }
+
+    /** One snapshot per user on its plan_cycle (superuser insert). */
+    private static void seedNetWorthSnapshot(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); java.sql.PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO net_worth_snapshot (user_id, plan_cycle_id, cycle_start, assets_paise, "
+                        + "liabilities_paise, net_worth_paise) SELECT user_id, id, cycle_start, 900, 400, 500 "
+                        + "FROM plan_cycle WHERE user_id = ?")) {
+            ps.setObject(1, user);
+            ps.executeUpdate();
+        }
     }
 
     /** One holding row per user (superuser insert). */
@@ -192,6 +205,8 @@ class DataSubjectRightsDbTest {
         assertThat(reparsed.at("/tables/goal/0/target_amount_paise").asLong()).isEqualTo(2000000);
         assertThat(reparsed.at("/tables/holding")).hasSize(1);
         assertThat(reparsed.at("/tables/holding/0/current_value_paise").asLong()).isEqualTo(3300000);
+        assertThat(reparsed.at("/tables/net_worth_snapshot")).hasSize(1);
+        assertThat(reparsed.at("/tables/net_worth_snapshot/0/net_worth_paise").asLong()).isEqualTo(500);
         assertThat(reparsed.get("tables").has("category")).isFalse();
     }
 

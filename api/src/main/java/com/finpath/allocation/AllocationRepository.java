@@ -51,9 +51,10 @@ public class AllocationRepository {
         JdbcTemplate j = jdbc.get();
         return tx.get().execute(status -> j.query("SELECT cycle_start, surplus, allocations::text FROM plan_cycle "
                 + "WHERE user_id = ? AND status = 'OPEN'", (rs, n) -> {
+                    LocalDate start = rs.getObject(1, LocalDate.class);
                     long surplus = rs.getLong(2);
-                    return new Stored(rs.getObject(1, LocalDate.class), rs.wasNull() ? null : surplus,
-                            rs.getString(3));
+                    Long surplusPaise = rs.wasNull() ? null : surplus;
+                    return new Stored(start, surplusPaise, rs.getString(3));
                 }, userId).stream().findFirst());
     }
 }

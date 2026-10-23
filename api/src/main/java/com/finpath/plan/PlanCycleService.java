@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpath.dpdp.ConsentService;
+import com.finpath.networth.NetWorthSnapshots;
 import com.finpath.rules.CycleCalendar;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -38,6 +39,9 @@ public class PlanCycleService {
      */
     public record PlanCycleView(LocalDate cycleStart, LocalDate cycleEndExclusive, int startDay, String status,
             Long surplusPaise, JsonNode allocations, int daysElapsed, int daysLeft) {
+    }
+
+    private record Retired(UUID id, LocalDate cycleStart, String status) {
     }
 
     private final Supplier<JdbcTemplate> jdbc;
@@ -112,8 +116,12 @@ public class PlanCycleService {
         LocalDate end = cycle.endExclusive();
 
         // Retire any other open cycle first (the partial unique index allows one OPEN row per user).
-        j.update("UPDATE plan_cycle SET status = CASE WHEN cycle_end <= ? THEN 'CLOSED' ELSE 'SUPERSEDED' END "
-                + "WHERE user_id = ? AND status = 'OPEN' AND cycle_start <> ?", today, userId, start);
+        j.query("UPDATE plan_cycle SET status = CASE WHEN cycle_end <= ? THEN 'CLOSED' ELSE 'SUPERSEDED' END "
+                + "WHERE user_id = ? AND status = 'OPEN' AND cycle_start <> ? RETURNING id, cycle_start, status",
+                (rs, n) -> new Retired(rs.getObject(1, UUID.class), rs.getObject(2, LocalDate.class),
+                        rs.getString(3)), today, userId, start)
+                .stream().filter(r -> "CLOSED".equals(r.status()))
+                .forEach(r -> NetWorthSnapshots.recordAtClose(j, userId, r.id(), r.cycleStart()));
 
         // Create, or revive a row for the same start date. If the end moved (day 30 vs 31 in February),
         // the stored surplus and allocations were computed for other bounds, so they are cleared.
