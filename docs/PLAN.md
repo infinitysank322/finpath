@@ -184,7 +184,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 
 | Id | Status | FR | Task | Prereq | Est | Acceptance |
 | --- | --- | --- | --- | --- | --- | --- |
-| T70 | TODO | FR-26 `[+TABLE]` | `net_worth_snapshot` written at cycle close (assets − liabilities as at that cycle) | T65, T48 | 3 h | Closing a cycle writes exactly one snapshot; backfilling a closed cycle is rejected; value equals the rules-engine result; `[+TABLE]` trio satisfied |
+| T70 | IN-PROGRESS | FR-26 `[+TABLE]` | `net_worth_snapshot` written at cycle close (assets − liabilities as at that cycle) | T65, T48 | 3 h | Closing a cycle writes exactly one snapshot; backfilling a closed cycle is rejected; value equals the rules-engine result; `[+TABLE]` trio satisfied |
 | T71 | TODO | FR-26 `[+TABLE]` | `checklist_item` (plan_cycle_id, type, amount, done_at) + per-cycle generation + mark-done + streak from T25 | T34, T25 | 4 h | Generation produces one item per EMI, SIP and goal transfer; marking done twice is idempotent; streak matches T25; `[+TABLE]` trio satisfied |
 | T72 | TODO | FR-27 | Reminder scheduling: due-date and cycle-day events, the 5-days-before card rule, cold-start-tolerant scheduler | T71, T48 | 3 h | A loan due on the 5th generates a reminder dated the 31st/1st per the rule; a simulated 12 s first query does not cause a double-send |
 | T73 | TODO | FR-27 | `[LOCAL]` Web Push subscription + free-tier SMTP fallback | T72 | 3 h | Push delivered to a subscribed browser; with push denied the email path fires; notification bodies contain no amount or merchant text |
