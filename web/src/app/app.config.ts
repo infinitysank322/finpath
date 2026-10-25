@@ -7,7 +7,7 @@ import { SwRegistrationOptions, provideServiceWorker } from '@angular/service-wo
 
 import { routes } from './app.routes';
 
-/** Registration only. Caching strategy beyond ngsw defaults is T79. */
+/** Registration only. Shell caching is ngsw-config.json; the last dashboard is cached by DashboardCacheService (T79). */
 export function serviceWorkerOptions(production: boolean): SwRegistrationOptions {
   return { enabled: production, registrationStrategy: 'registerWhenStable:30000' };
 }

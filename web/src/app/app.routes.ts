@@ -7,7 +7,7 @@ const page = () => import('./placeholder.component').then((m) => m.PlaceholderCo
 const appRoutes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'home' },
   { path: 'onboarding', loadChildren: () => import('./onboarding/onboarding.routes').then((m) => m.ONBOARDING_ROUTES) },
-  { path: 'home', loadComponent: page, title: 'Home - FinPath', data: { heading: 'Home' } },
+  { path: 'home', loadComponent: () => import('./dashboard/home.component').then((m) => m.HomeComponent), title: 'Home - FinPath' },
   {
     path: 'spending/add',
     loadComponent: () => import('./expense/add-expense.component').then((m) => m.AddExpenseComponent),

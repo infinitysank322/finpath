@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { ExpenseQueueService } from '../expense/expense-queue.service';
+import { InstallPromptService } from '../pwa/install-prompt.service';
 
 @Component({
   selector: 'app-more',
@@ -20,6 +21,9 @@ import { ExpenseQueueService } from '../expense/expense-queue.service';
         <li><a routerLink="/more/investments">Investments</a></li>
       </ul>
     </nav>
+    @if (installer.canInstall()) {
+      <button type="button" class="btn" data-f="install" (click)="installer.install()">Install FinPath on this device</button>
+    }
     <section aria-labelledby="acct-h">
       <h2 id="acct-h">Account</h2>
       @if (unsent() !== null) {
@@ -53,6 +57,7 @@ import { ExpenseQueueService } from '../expense/expense-queue.service';
 export class MoreComponent {
   private readonly auth = inject(AuthService);
   private readonly queue = inject(ExpenseQueueService);
+  readonly installer = inject(InstallPromptService);
   /** Count shown in the sign-out warning; null = no warning open. */
   readonly unsent = signal<number | null>(null);
 
