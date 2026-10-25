@@ -68,12 +68,35 @@ public class LoanRepository {
 
     public Optional<Row> update(UUID userId, UUID id, Draft d) {
         JdbcTemplate j = jdbc.get();
-        return tx.get().execute(status -> j.query("UPDATE loan SET lender = ?, type = ?, "
-                + "principal_outstanding_paise = ?, rate = ?, emi_paise = ?, emi_derived = ?, emis_left = ?, "
-                + "bullet_due_date = ?, upfront_fee_paise = ?, updated_at = now() WHERE id = ? AND user_id = ? "
-                + "RETURNING " + COLUMNS, (rs, n) -> map(rs), d.lender(), d.type(),
-                d.principalOutstandingPaise(), d.rate(), d.emiPaise(), d.emiDerived(), d.emisLeft(),
-                d.bulletDueDate(), d.upfrontFeePaise(), id, userId).stream().findFirst());
+        return tx.get().execute(status -> {
+            Optional<Row> row = j.query("UPDATE loan SET lender = ?, type = ?, "
+                    + "principal_outstanding_paise = ?, rate = ?, emi_paise = ?, emi_derived = ?, emis_left = ?, "
+                    + "bullet_due_date = ?, upfront_fee_paise = ?, updated_at = now() WHERE id = ? AND user_id = ? "
+                    + "RETURNING " + COLUMNS, (rs, n) -> map(rs), d.lender(), d.type(),
+                    d.principalOutstandingPaise(), d.rate(), d.emiPaise(), d.emiDerived(), d.emisLeft(),
+                    d.bulletDueDate(), d.upfrontFeePaise(), id, userId).stream().findFirst();
+            if (row.isPresent()) {
+                syncOpenChecklistItems(j, userId, id, d);
+            }
+            return row;
+        });
+    }
+
+    /**
+     * Keeps the loan's checklist items in step with an edit: items still open (not done, cycle OPEN) take the
+     * new EMI, or are dropped when the loan no longer has an EMI or is paid off. Done items and closed cycles
+     * stay frozen (the V14 trigger also enforces this).
+     */
+    private static void syncOpenChecklistItems(JdbcTemplate j, UUID userId, UUID id, Draft d) {
+        String open = " FROM plan_cycle p WHERE p.id = i.plan_cycle_id AND p.status = 'OPEN' AND i.type = 'EMI' "
+                + "AND i.source_ref = ? AND i.user_id = ? AND i.done_at IS NULL";
+        if (d.emiPaise() == null || d.emiPaise() <= 0 || d.principalOutstandingPaise() == 0) {
+            j.update("DELETE FROM checklist_item i USING plan_cycle p WHERE p.id = i.plan_cycle_id "
+                    + "AND p.status = 'OPEN' AND i.type = 'EMI' AND i.source_ref = ? AND i.user_id = ? "
+                    + "AND i.done_at IS NULL", id.toString(), userId);
+        } else {
+            j.update("UPDATE checklist_item i SET amount_paise = ?" + open, d.emiPaise(), id.toString(), userId);
+        }
     }
 
     public Optional<Row> find(UUID userId, UUID id) {

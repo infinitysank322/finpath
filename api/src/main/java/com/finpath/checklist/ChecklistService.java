@@ -44,7 +44,7 @@ public class ChecklistService {
     public record StreakView(int streak, List<CycleFlag> history) {
     }
 
-    private record CycleRow(LocalDate cycleStart, String status) {
+    private record CycleRow(LocalDate cycleStart, LocalDate cycleEnd, String status) {
     }
 
     private static final String ITEM_SELECT = "SELECT i.id, i.type, i.source_ref, "
@@ -97,7 +97,7 @@ public class ChecklistService {
             UUID cycleId = cycleId(j, userId, start);
             j.update("INSERT INTO checklist_item (user_id, plan_cycle_id, type, source_ref, amount_paise) "
                     + "SELECT l.user_id, ?, 'EMI', l.id::text, l.emi_paise FROM loan l "
-                    + "WHERE l.user_id = ? AND l.emi_paise > 0 ON CONFLICT DO NOTHING", cycleId, userId);
+                    + "WHERE l.user_id = ? AND l.emi_paise > 0 AND l.principal_outstanding_paise > 0 ON CONFLICT DO NOTHING", cycleId, userId);
             j.update("INSERT INTO checklist_item (user_id, plan_cycle_id, type, source_ref, amount_paise) "
                     + "SELECT g.user_id, p.id, 'GOAL_TRANSFER', g.id::text, (a.line ->> 'amountPaise')::bigint "
                     + "FROM plan_cycle p CROSS JOIN LATERAL jsonb_array_elements(p.allocations) AS a(line) "
@@ -121,13 +121,19 @@ public class ChecklistService {
         return tx.get().execute(status -> view(j, cycleId(j, userId, start), start));
     }
 
-    /** Marks the item done. The first done_at is kept on repeat calls. Unknown or foreign id: not found. */
+    /** Marks the item done. The first done_at is kept on repeat calls. Unknown or foreign id: not found;
+     * an item of a CLOSED cycle is rejected (409) and keeps a null done_at, so the streak cannot be back-filled. */
     public ItemView markDone(UUID userId, UUID itemId) {
         consents.require(userId);
         JdbcTemplate j = jdbc.get();
         return tx.get().execute(status -> {
-            j.update("UPDATE checklist_item SET done_at = COALESCE(done_at, now()) WHERE id = ? AND user_id = ?",
+            int open = j.update("UPDATE checklist_item i SET done_at = COALESCE(i.done_at, now()) FROM plan_cycle p "
+                    + "WHERE i.id = ? AND i.user_id = ? AND p.id = i.plan_cycle_id AND p.status <> 'CLOSED'",
                     itemId, userId);
+            if (open == 0 && j.queryForObject("SELECT count(*) FROM checklist_item WHERE id = ? AND user_id = ?",
+                    Integer.class, itemId, userId) > 0) {
+                throw new ChecklistCycleClosedException();
+            }
             return j.query(ITEM_SELECT + "WHERE i.id = ? AND i.user_id = ?", ITEM, itemId, userId).stream()
                     .findFirst().orElseThrow(ChecklistNotFoundException::new);
         });
@@ -135,7 +141,7 @@ public class ChecklistService {
 
     /**
      * Streak over closed cycles plus the open one only when complete (an unfinished current month does
-     * not reset it), via {@link Statistics#consistencyStreak}. History: the last cycles, oldest first,
+     * not reset it), via {@link Statistics#consistencyStreak}. A gap with no cycle row counts as missed. History: the last cycles, oldest first,
      * the open cycle shown with its true state.
      */
     public StreakView streak(UUID userId) {
@@ -143,9 +149,9 @@ public class ChecklistService {
         cycles.current(userId);
         JdbcTemplate j = jdbc.get();
         return tx.get().execute(status -> {
-            List<CycleRow> rows = j.query("SELECT cycle_start, status FROM plan_cycle WHERE user_id = ? "
+            List<CycleRow> rows = j.query("SELECT cycle_start, cycle_end, status FROM plan_cycle WHERE user_id = ? "
                     + "AND status IN ('OPEN', 'CLOSED') ORDER BY cycle_start",
-                    (rs, n) -> new CycleRow(rs.getObject(1, LocalDate.class), rs.getString(2)), userId);
+                    (rs, n) -> new CycleRow(rs.getObject(1, LocalDate.class), rs.getObject(2, LocalDate.class), rs.getString(3)), userId);
             Map<LocalDate, List<Boolean>> flags = new LinkedHashMap<>();
             j.query("SELECT p.cycle_start, i.done_at IS NOT NULL FROM checklist_item i "
                     + "JOIN plan_cycle p ON p.id = i.plan_cycle_id WHERE i.user_id = ?", rs -> {
@@ -154,7 +160,17 @@ public class ChecklistService {
                     }, userId);
             List<CycleFlag> history = new ArrayList<>();
             List<Boolean> forStreak = new ArrayList<>();
+            LocalDate expected = null;
             for (CycleRow r : rows) {
+                // A month with no plan_cycle row is a missed cycle: shown as not done and breaking the streak.
+                // Only a whole missing cycle counts, so a shifted boundary (start day changed, or day 29-31
+                // clamping) is never read as a miss.
+                while (expected != null && !expected.plusMonths(1).isAfter(r.cycleStart())) {
+                    history.add(new CycleFlag(expected, false));
+                    forStreak.add(false);
+                    expected = expected.plusMonths(1);
+                }
+                expected = r.cycleEnd();
                 boolean done = Checklist.cycleComplete(flags.getOrDefault(r.cycleStart(), List.of()));
                 history.add(new CycleFlag(r.cycleStart(), done));
                 if (done || !"OPEN".equals(r.status())) {

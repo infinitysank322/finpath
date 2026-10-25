@@ -30,6 +30,11 @@ class ChecklistExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("status", 404, "error", ErrorCode.NOT_FOUND));
     }
 
+    @ExceptionHandler(ChecklistCycleClosedException.class)
+    ResponseEntity<Map<String, Object>> cycleClosed() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("status", 409, "error", "cycle_closed"));
+    }
+
     @ExceptionHandler(DataAccessException.class)
     ResponseEntity<Map<String, Object>> dataAccess(DataAccessException ex) {
         log.error("Checklist data access failed ({})", ex.getClass().getSimpleName());
