@@ -87,9 +87,12 @@ describe('PayoffComponent', () => {
     const { fixture } = setup();
     const c = fixture.componentInstance;
     const before = c.timelineOptions();
-    TestBed.inject(ThemeService).set('dark');
+    const theme = TestBed.inject(ThemeService);
+    // the starting theme follows the host's prefers-color-scheme, so flip to whichever is not active
+    const start = theme.theme();
+    theme.set(start === 'dark' ? 'light' : 'dark');
     expect(c.timelineOptions()).not.toBe(before);
-    TestBed.inject(ThemeService).set('light');
+    theme.set(start);
   });
 
   it('keeps end dates and static assumptions when roll-off fails', () => {

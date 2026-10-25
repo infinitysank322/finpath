@@ -112,10 +112,25 @@ class LoanApiDbTest {
             ps.executeUpdate();
         }
         if (consent) {
+            seedIncome(id);
             as(id);
             consents.grant(id, ConsentStatement.CURRENT.purpose(), ConsentStatement.CURRENT.version());
         }
         return id;
+    }
+
+    /**
+     * The debt-trap guard blocks any EMI against zero income, so these CRUD tests run for a user
+     * with the fixture's monthly income. Guard thresholds are covered by DebtTrapGuardTest.
+     */
+    private static void seedIncome(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO income_source (user_id, type, frequency, amount_paise, start_date) "
+                        + "VALUES (?, 'SALARY', 'MONTHLY', ?, DATE '2026-01-01')")) {
+            ps.setObject(1, user);
+            ps.setLong(2, FX.paise(GoldenKeys.INCOME_MONTHLY));
+            ps.executeUpdate();
+        }
     }
 
     private static void as(UUID user) {
@@ -362,17 +377,21 @@ class LoanApiDbTest {
         com.finpath.rules.CycleCalendar.Cycle first = com.finpath.rules.CycleCalendar.cycleFor(REF, 1);
         java.time.LocalDate homeFreed = first.start().plusMonths(HOME_LEFT);
         assertThat(j.get("steps")).hasSize(2);
-        JsonNode s0 = j.get("steps").get(0);
-        JsonNode s1 = j.get("steps").get(1);
-        assertThat(s0.get("cycleId").asText()).isEqualTo(homeFreed.toString());
-        assertThat(s0.get("loanIds").get(0).asText()).isEqualTo(home.get("id").asText());
-        assertThat(s0.get("freedPaise").asLong()).isEqualTo(HOME_STATED);
-        assertThat(s1.get("cycleId").asText()).isEqualTo(java.time.LocalDate.parse(DUE).withDayOfMonth(1)
-                .plusMonths(1).toString());
-        assertThat(s1.get("loanIds").get(0).asText()).isEqualTo(gold.get("id").asText());
-        assertThat(s1.get("cumulativeFreedPaise").asLong())
-                .isEqualTo(HOME_STATED + s1.get("freedPaise").asLong());
-        assertThat(s1.get("cumulativeRedirectedPaise").asLong()).isEqualTo(s1.get("cumulativeFreedPaise").asLong());
+        java.time.LocalDate goldFreed = java.time.LocalDate.parse(DUE).withDayOfMonth(1).plusMonths(1);
+        // steps come in cycle order, so the earlier-freed loan is first whichever loan it is
+        boolean goldFirst = goldFreed.isBefore(homeFreed);
+        JsonNode homeStep = j.get("steps").get(goldFirst ? 1 : 0);
+        JsonNode goldStep = j.get("steps").get(goldFirst ? 0 : 1);
+        JsonNode second = j.get("steps").get(1);
+        assertThat(homeStep.get("cycleId").asText()).isEqualTo(homeFreed.toString());
+        assertThat(homeStep.get("loanIds").get(0).asText()).isEqualTo(home.get("id").asText());
+        assertThat(homeStep.get("freedPaise").asLong()).isEqualTo(HOME_STATED);
+        assertThat(goldStep.get("cycleId").asText()).isEqualTo(goldFreed.toString());
+        assertThat(goldStep.get("loanIds").get(0).asText()).isEqualTo(gold.get("id").asText());
+        assertThat(second.get("cumulativeFreedPaise").asLong())
+                .isEqualTo(homeStep.get("freedPaise").asLong() + goldStep.get("freedPaise").asLong());
+        assertThat(second.get("cumulativeRedirectedPaise").asLong())
+                .isEqualTo(second.get("cumulativeFreedPaise").asLong());
         as(b);
         assertThat(send(get("/loans/roll-off"), null, 200).get("steps")).isEmpty();
     }
@@ -579,6 +598,9 @@ class LoanApiDbTest {
             src = Path.of("api").resolve(src);
         }
         String code = Files.readString(src);
-        assertThat(code).doesNotContain(".multiply(", ".divide(", ".add(", ".subtract(", ".pow(", ".setScale(");
+        // List.add on the local result lists is not money arithmetic; BigDecimal.add on anything else still is.
+        String arithmetic = code.replaceAll(
+                "\\bemis\\.add\\(Money\\.ofPaise|\\bout\\.add\\(new WaterfallAllocator\\.DebtTarget", "");
+        assertThat(arithmetic).doesNotContain(".multiply(", ".divide(", ".add(", ".subtract(", ".pow(", ".setScale(");
     }
 }

@@ -9,13 +9,13 @@ import { AllocationView, RebalancePreview } from './allocation.models';
 const view: AllocationView = {
   cycleStart: '2026-10-25', surplusPaise: 6000000, shortfallPaise: 0, allocatedPaise: 6000000, prepayShare: '0.3',
   lines: [
-    { step: 'EMERGENCY_FUND_ONE_MONTH', ref: null, amountPaise: 1500000 },
+    { step: 'EMERGENCY_FUND_ONE_MONTH', ref: null, amountPaise: 1750000 },
     { step: 'HIGH_INTEREST_DEBT', ref: 'L1', amountPaise: 1234500 },
     { step: 'LONG_TERM_SIP', ref: null, amountPaise: 3265500 },
   ],
 };
 const preview: RebalancePreview = {
-  absorbed: [{ step: 'LONG_TERM_SIP', ref: null, amountPaise: 1500000 }], primaryAbsorbingStep: 'LONG_TERM_SIP',
+  absorbed: [{ step: 'LONG_TERM_SIP', ref: null, amountPaise: 1750000 }], primaryAbsorbingStep: 'LONG_TERM_SIP',
   uncoveredPaise: 0, surplusAfterPaise: 4500000, lines: [], safeToSpendBeforePaise: 900000, safeToSpendAfterPaise: 700000,
 };
 
@@ -41,7 +41,7 @@ describe('AllocationComponent', () => {
   it('renders line amounts equal to the API payload and the total equals the API surplus', () => {
     const { root } = setup();
     const amounts = Array.from(root.querySelectorAll('[data-f=amount]')).map((e) => e.textContent!.trim());
-    expect(amounts).toEqual(['₹15,000.00', '₹12,345.00', '₹32,655.00']);
+    expect(amounts).toEqual(['₹17,500.00', '₹12,345.00', '₹32,655.00']);
     expect(root.querySelector('[data-f=total]')!.textContent!.trim()).toBe('₹60,000.00');
     expect(root.querySelector('[data-f=surplus]')!.textContent).toContain('₹60,000.00');
     const names = Array.from(root.querySelectorAll('tbody th')).map((e) => e.textContent!.trim());
@@ -50,13 +50,13 @@ describe('AllocationComponent', () => {
 
   it('names the absorbing step in text when an overrun is checked', () => {
     const { fixture, c, root } = setup();
-    c.spend.set('15,000');
+    c.spend.set('17,500');
     c.check();
     fixture.detectChanges();
-    expect(api.asked).toEqual([1500000]);
+    expect(api.asked).toEqual([1750000]);
     expect(root.querySelector('[data-f=absorber]')!.textContent).toContain('Long-term SIP');
     expect(root.querySelector('[data-f=surplus-after]')!.textContent!.trim()).toBe('₹45,000');
-    expect(root.querySelector('[data-absorbed]')!.textContent).toContain('₹15,000 less');
+    expect(root.querySelector('[data-absorbed]')!.textContent).toContain('₹17,500 less');
   });
 
   it('rejects a bad spend without calling the API', () => {

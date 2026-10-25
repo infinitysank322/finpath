@@ -53,7 +53,7 @@ export class AllocationComponent implements OnInit {
     if (this.previewing()) return;
     const paise = rupeesToPaise(this.spend());
     if (paise === null || paise <= 0) {
-      this.previewError.set('Enter the unplanned spend in rupees, for example 15000.');
+      this.previewError.set('Enter the unplanned spend in rupees, such as the amount on the receipt.');
       this.preview.set(null);
       return;
     }

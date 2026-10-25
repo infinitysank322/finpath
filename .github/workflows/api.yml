@@ -3,10 +3,10 @@ name: api
 on:
   push:
     branches: [dev]
-    paths: ['api/**', '.github/workflows/api.yml']
+    paths: ['api/**', 'web/**', '.github/workflows/api.yml']
   pull_request:
     branches: [master]
-    paths: ['api/**', '.github/workflows/api.yml']
+    paths: ['api/**', 'web/**', '.github/workflows/api.yml']
 
 permissions:
   contents: read
@@ -18,7 +18,28 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    # GoldenFixtureScanTest scans web/ as well as api/ (the fixture lives under api/src/test/resources),
+    # hence the web/** path filter above.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: finpath
+          POSTGRES_PASSWORD: finpath_ci
+          POSTGRES_DB: finpath_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U finpath -d finpath_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # The scratch database is wiped and re-migrated by each DB test; its name must contain "test".
+      FINPATH_TEST_DB_URL: jdbc:postgresql://localhost:5432/finpath_test
+      FINPATH_TEST_DB_USER: finpath
+      FINPATH_TEST_DB_PASSWORD: finpath_ci
     defaults:
       run:
         working-directory: api
@@ -31,3 +52,17 @@ jobs:
           cache: maven
           cache-dependency-path: api/pom.xml
       - run: ./mvnw -B verify
+      - name: Fail if any test was skipped
+        run: |
+          skipped=$(grep -ho 'skipped="[0-9]*"' target/surefire-reports/TEST-*.xml | tr -dc '0-9\n' | awk '{s+=$1} END{print s+0}')
+          tests=$(grep -ho ' tests="[0-9]*"' target/surefire-reports/TEST-*.xml | tr -dc '0-9\n' | awk '{s+=$1} END{print s+0}')
+          echo "tests=$tests skipped=$skipped"
+          if [ "${tests:-0}" -lt 800 ]; then
+            echo "::error::only $tests tests reported; surefire reports missing or DB tests not discovered"
+            exit 1
+          fi
+          if [ "${skipped:-0}" -ne 0 ]; then
+            echo "::error::$skipped test(s) skipped in CI; DB tests must run against the Postgres service"
+            grep -l '<skipped' target/surefire-reports/TEST-*.xml
+            exit 1
+          fi
