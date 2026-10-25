@@ -5,6 +5,7 @@ import { IncomeStepComponent } from './income-step.component';
 import { PlanStepsState } from './plan-steps.state';
 import { ConsentStepComponent } from './consent-step.component';
 import { ConsentService } from './consent.service';
+import { DebtStepComponent } from './debt-step.component';
 import { DoneStepComponent } from './done-step.component';
 import { CONSENT_STEP_ID, ONBOARDING_STEP, OnboardingStep } from './wizard-step';
 
@@ -32,4 +33,9 @@ export const PLAN_STEP_PROVIDERS: Provider[] = [
   step({ id: 'fixed-expenses', order: 40, question: 'Which bills repeat every month?', component: FixedExpensesStepComponent }),
 ];
 
-export const ONBOARDING_STEP_PROVIDERS: Provider[] = [...SHELL_STEP_PROVIDERS, ...PLAN_STEP_PROVIDERS];
+/** T55: loans (optional; the step never blocks Next). */
+export const DEBT_STEP_PROVIDERS: Provider[] = [
+  step({ id: 'debts', order: 50, question: 'Which loans are you paying?', component: DebtStepComponent }),
+];
+
+export const ONBOARDING_STEP_PROVIDERS: Provider[] = [...SHELL_STEP_PROVIDERS, ...PLAN_STEP_PROVIDERS, ...DEBT_STEP_PROVIDERS];

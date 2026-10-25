@@ -6,5 +6,6 @@ export class PlanStepsState {
   /** The cycle day on screen equals the one the server holds. */
   readonly cycleDaySaved = signal(false);
   readonly incomeCount = signal(0);
+  readonly loanCount = signal(0);
   readonly incomeReady = computed(() => this.incomeCount() > 0);
 }
