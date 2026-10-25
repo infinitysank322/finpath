@@ -8,6 +8,7 @@ import { AddExpenseComponent } from '../expense/add-expense.component';
 import { ExpenseQueueService, QUEUE_STORAGE, QUEUE_STORAGE_KEY, queueKeyFor } from '../expense/expense-queue.service';
 import { ExpenseInput } from '../expense/expense.models';
 import { memoryStorage } from '../expense/queue-testing';
+import { wizardKeyFor } from '../onboarding/wizard-progress';
 import { USER_A, USER_B, tokenResponse } from './auth-testing';
 import { authInterceptor } from './auth.interceptor';
 import { AuthService, REFRESH_LOCK } from './auth.service';
@@ -108,6 +109,15 @@ describe('T33b session cleanup', () => {
       expect(store.isSignedIn()).toBeFalse();
       expect(navigate).toHaveBeenCalledWith('/sign-in');
       ctrl.expectNone(`${BASE}/auth/logout`); // the account is gone; nothing to revoke
+    });
+
+    it('wipe removes the onboarding resume position of that user only', async () => {
+      seed();
+      local.data[wizardKeyFor(USER_A)] = JSON.stringify({ id: 'done', index: 1 });
+      local.data[wizardKeyFor(USER_B)] = JSON.stringify({ id: 'done', index: 1 });
+      await auth.accountDeleted();
+      expect(local.data[wizardKeyFor(USER_A)]).toBeUndefined();
+      expect(local.data[wizardKeyFor(USER_B)]).toBeDefined();
     });
 
     it('on consent withdrawal: the same wipe', async () => {

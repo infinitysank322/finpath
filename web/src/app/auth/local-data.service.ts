@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { DRAFT_KEY } from '../expense/draft';
 import { ExpenseQueueService, QUEUE_STORAGE, QUEUE_STORAGE_KEY, queueKeyFor } from '../expense/expense-queue.service';
+import { clearPosition } from '../onboarding/wizard-progress';
 import { SIGNIN_KEY, SIGNIN_STORAGE } from './signin-storage';
-import { AuthSessionStore } from './session.store';
+import { AUTH_STORAGE, AuthSessionStore } from './session.store';
 
 /**
  * Everything FinPath keeps on this device for a user, and how it is removed. Pure storage work: no HTTP, no
@@ -14,6 +15,7 @@ export class LocalDataService {
   private readonly queueStorage = inject(QUEUE_STORAGE);
   private readonly tempStorage = inject(SIGNIN_STORAGE);
   private readonly session = inject(AuthSessionStore);
+  private readonly authStorage = inject(AUTH_STORAGE);
 
   /**
    * Removes the user's queue, any draft they started, the sign-in round-trip entry and the session.
@@ -22,6 +24,7 @@ export class LocalDataService {
   wipeUser(userId: string | null): void {
     if (userId) {
       this.queue.forget(userId);
+      clearPosition(this.authStorage, userId);
     }
     this.remove(this.tempStorage, DRAFT_KEY);
     this.queueStorage?.removeItem?.(QUEUE_STORAGE_KEY);

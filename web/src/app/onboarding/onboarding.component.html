@@ -1,0 +1,19 @@
+@if (step(); as s) {
+  <section class="wizard" aria-labelledby="wiz-q">
+    <p class="progress-text" aria-live="polite" aria-atomic="true">{{ progressText() }}</p>
+    <div class="bar" role="progressbar" aria-label="Setup progress" aria-valuemin="1" [attr.aria-valuemax]="total" [attr.aria-valuenow]="index() + 1" [attr.aria-valuetext]="progressText()">
+      <span class="fill" [style.width.%]="percent()"></span>
+    </div>
+    <h1 id="wiz-q" #heading tabindex="-1">{{ s.question }}</h1>
+    <div class="body"><ng-container [ngComponentOutlet]="s.component" /></div>
+    <p class="error" role="alert">{{ message() }}</p>
+    <nav class="nav" aria-label="Setup steps">
+      <button type="button" class="btn" [disabled]="index() === 0" (click)="back()">Back</button>
+      @if (isLast()) {
+        <button type="button" class="btn primary" [disabled]="!canNext() || finishing()" [attr.aria-busy]="finishing()" (click)="finish()">Finish</button>
+      } @else {
+        <button type="button" class="btn primary" [disabled]="!canNext()" (click)="next()">Next</button>
+      }
+    </nav>
+  </section>
+}
