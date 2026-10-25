@@ -10,5 +10,6 @@ export class PlanStepsState {
   readonly goalCount = signal(0);
   /** Holdings the user has entered in the wizard; the step is optional so nothing gates on it. */
   readonly holdingCount = signal(0);
+  readonly loanCount = signal(0);
   readonly incomeReady = computed(() => this.incomeCount() > 0);
 }
