@@ -68,6 +68,7 @@ client (web tab / Android Custom Tab)           API                          Goo
 | `GET /login/oauth2/code/google` | login | Google callback | Google's `code`, `state` | 302 `<return>?code=…&state=…` | 302 `<return>?error=login_failed\|email_not_verified&state=…`; unknown return URL → 400 / 401 JSON |
 | `POST /auth/token` | api | public (code is the credential) | `{"code":"…","codeVerifier":"…"}` | 200 `TokenResponse` | 401 `{"status":401,"error":"invalid_grant"}` for every failure (unknown, used, expired, verifier mismatch) |
 | `POST /auth/refresh` | api | public (refresh token is the credential) | `{"refreshToken":"…"}` | 200 `TokenResponse` (new refresh token) | 401 `invalid_grant` |
+| `POST /auth/logout` | api | public (refresh token is the credential) | `{"refreshToken":"…"}` (body optional) | 204, `Cache-Control: no-store`, no body; revokes the presented token's whole family (T33b) | none: same 204 for unknown, expired or already-revoked tokens (idempotent, no oracle). Afterwards the token and any rotated successor get 401 `invalid_grant` on `/auth/refresh`; the user's other sessions are unaffected |
 | everything else (`/me`, business APIs) | api | Bearer JWT | — | — | 401 `invalid_token`/`unauthorized`, 403 `forbidden` |
 
 `TokenResponse = {"accessToken", "tokenType":"Bearer", "expiresIn":900, "refreshToken"}`, sent with
@@ -103,7 +104,7 @@ only; `.env.example` carries empty placeholders.
    (cookie `HttpOnly`, `SameSite=Lax` so the top-level Google callback carries it, `Secure` in prod,
    10 min timeout); invalidated in both success and failure handlers.
 2. **API chain** (`@Order(2)`), everything else: stateless resource server (bearer JWT only, no
-   cookies read, so CSRF off). Public: `/actuator/health/**`, `/auth/token`, `/auth/refresh`, `/error`.
+   cookies read, so CSRF off). Public: `/actuator/health/**`, `/auth/token`, `/auth/refresh`, `/auth/logout`, `/error`.
    Everything else authenticated. No CORS configured (see T33).
 
 ## 6. Identity and the users row

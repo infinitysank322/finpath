@@ -138,6 +138,33 @@ class TokenStoresTest {
         assertThat(store.rotate(laptop)).isPresent();
     }
 
+    @Test
+    void revokeFamilyKillsTheTokenAndItsSuccessorsButNotOtherSessions() {
+        RefreshTokenStore store = new RefreshTokenStore(props(), clock);
+        String phone = store.issue(user);
+        String laptop = store.issue(user);
+        String phoneNext = store.rotate(phone).orElseThrow().refreshToken();
+
+        store.revokeFamily(phone);   // presenting an already-rotated token still revokes the family
+
+        assertThat(store.rotate(phoneNext)).isEmpty();
+        assertThat(store.rotate(phone)).isEmpty();
+        assertThat(store.rotate(laptop)).isPresent();
+    }
+
+    @Test
+    void revokeFamilyOfALiveTokenAndIsIdempotentAndQuietForJunk() {
+        RefreshTokenStore store = new RefreshTokenStore(props(), clock);
+        String token = store.issue(user);
+        store.revokeFamily(token);
+        store.revokeFamily(token);
+        store.revokeFamily("not-a-token");
+        store.revokeFamily("");
+        store.revokeFamily((String) null);
+        assertThat(store.rotate(token)).isEmpty();
+        assertThat(store.liveCount(user)).isZero();
+    }
+
     /** Many concurrent presentations of one token: exactly one rotates, and the replay kills its result. */
     @RepeatedTest(20)
     void concurrentReplayRevokesTheFamilyIncludingTheWinnersToken() throws Exception {

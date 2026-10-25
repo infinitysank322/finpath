@@ -14,7 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
  * Token endpoints (public; they authenticate by the code or refresh token in the body).
  * {@code POST /auth/token {code, codeVerifier}} exchanges the sign-in one-time code (PKCE S256
  * checked; the code is burned by any attempt); {@code POST /auth/refresh {refreshToken}}
- * rotates a refresh token. Any failure is the same 401 {@code invalid_grant}.
+ * rotates a refresh token; {@code POST /auth/logout {refreshToken}} revokes the token's whole
+ * family (always 204, idempotent). Any failure is the same 401 {@code invalid_grant}.
  */
 @RestController
 @RequestMapping("/auth")
@@ -57,6 +58,15 @@ public class AuthController {
                 .filter(r -> !deletedUsers.isDeleted(r.userId()))
                 .<ResponseEntity<?>>map(r -> ok(r.userId(), r.refreshToken()))
                 .orElseGet(AuthController::invalidGrant);
+    }
+
+    /** Sign-out: always 204 no-store, so the response says nothing about the token. */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody(required = false) RefreshRequest request) {
+        if (request != null) {
+            refreshTokens.revokeFamily(request.refreshToken());
+        }
+        return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).header("Pragma", "no-cache").build();
     }
 
     private ResponseEntity<TokenResponse> ok(UUID userId, String refreshToken) {

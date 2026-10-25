@@ -2,21 +2,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, Injector, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService, SIGNIN_STORAGE } from '../auth/auth.service';
+import { DRAFT_KEY, clearDraft, saveDraft, takeDraft } from './draft';
 import { formatExactPaise, formatTyped, pressKey, toPaise } from './amount-entry';
 import { ExpenseApiService } from './expense-api.service';
-import { ExpenseQueueService } from './expense-queue.service';
+import { ExpenseQueueService, QUEUE_OWNER } from './expense-queue.service';
 import { PendingExpensesComponent } from './pending-expenses.component';
 import { MODES, PaymentMode, SpendTag, TAGS } from './expense.models';
 
-/** Unsaved entry kept across the sign-in round trip (same tab only). Holds no account/card numbers. */
-export const DRAFT_KEY = 'finpath.expenseDraft.v1';
-interface Draft {
-  amountText: string;
-  category: string | null;
-  mode: PaymentMode | null;
-  tag: SpendTag | null;
-  note: string;
-}
+export { DRAFT_KEY };
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'];
 
@@ -42,6 +35,9 @@ export class AddExpenseComponent {
   private readonly queue = inject(ExpenseQueueService);
   private readonly injector = inject(Injector);
   private readonly draftStorage = inject(SIGNIN_STORAGE);
+  private readonly owner = inject(QUEUE_OWNER);
+  /** The sign-in this entry belongs to, captured at save time (a rejected refresh clears the session mid-save). */
+  private entryOwner: string | null = null;
 
   readonly keys = KEYS;
   readonly categories = this.api.categories();
@@ -103,6 +99,9 @@ export class AddExpenseComponent {
       this.askToSignIn();
       return;
     }
+    this.entryOwner = this.owner();
+    // Held until the save is known to have worked, so a refresh rejected mid-save (forced sign-out) loses nothing.
+    saveDraft(this.draftStorage, this.draftFields(), this.entryOwner);
     const amountPaise = this.amountPaise();
     const typed = this.amountText().replace(/\.$/, '');
     this.saving.set(true);
@@ -122,6 +121,7 @@ export class AddExpenseComponent {
     const queueIt = () => {
       const persisted = this.queue.enqueue(input, this.key);
       this.saving.set(false);
+      clearDraft(this.draftStorage);
       if (!persisted) {
         this.error.set('This device could not store the expense for later. Keep the app open until it uploads.');
       }
@@ -137,6 +137,7 @@ export class AddExpenseComponent {
       .subscribe({
         next: () => {
           this.saving.set(false);
+          clearDraft(this.draftStorage);
           this.message.set(`Saved ₹${typed} under ${name}.`);
           this.reset();
         },
@@ -148,9 +149,10 @@ export class AddExpenseComponent {
           this.saving.set(false);
           this.failedSig = sig;
           if (e.status === 401) {
-            this.askToSignIn();
+            this.askToSignIn(); // the draft written above stays: it is restored for this user after sign-in
             return;
           }
+          clearDraft(this.draftStorage); // the user is still here with the form; no draft needed
           this.error.set(
             e.status === 401
               ? 'Sign in to save this expense.'
@@ -174,14 +176,13 @@ export class AddExpenseComponent {
 
   /** Keep what was typed, remember this screen, and go to /sign-in. */
   signInToSave(): void {
-    try {
-      const d: Draft = { amountText: this.amountText(), category: this.category(), mode: this.mode(), tag: this.tag(), note: this.note() };
-      this.draftStorage?.setItem(DRAFT_KEY, JSON.stringify(d));
-    } catch {
-      /* storage blocked: the entry is lost on the round trip, nothing else breaks */
-    }
+    saveDraft(this.draftStorage, this.draftFields(), this.entryOwner);
     this.injector.get(AuthService).rememberReturnTo('/spending/add');
     void this.injector.get(Router).navigateByUrl('/sign-in');
+  }
+
+  private draftFields() {
+    return { amountText: this.amountText(), category: this.category(), mode: this.mode(), tag: this.tag(), note: this.note() };
   }
 
   private askToSignIn(): void {
@@ -192,26 +193,16 @@ export class AddExpenseComponent {
   }
 
   private restoreDraft(): void {
-    let raw: string | null = null;
-    try {
-      raw = this.draftStorage?.getItem(DRAFT_KEY) ?? null;
-      this.draftStorage?.removeItem(DRAFT_KEY);
-    } catch {
-      return;
-    }
-    if (!raw) return;
-    try {
-      const d = JSON.parse(raw) as Partial<Draft>;
-      if (typeof d.amountText === 'string' && /^[0-9.]{0,16}$/.test(d.amountText)) this.amountText.set(d.amountText);
-      if (typeof d.category === 'string' && this.categories.some((c) => c.code === d.category)) this.category.set(d.category);
-      const mode = this.modes.find((m) => m.code === d.mode);
-      if (mode) this.mode.set(mode.code);
-      const tag = this.tags.find((t) => t.code === d.tag);
-      if (tag) this.tag.set(tag.code);
-      if (typeof d.note === 'string') this.note.set(d.note.slice(0, 140));
-    } catch {
-      /* ignore a corrupt draft */
-    }
+    const d = takeDraft(this.draftStorage, this.owner());
+    if (!d) return;
+    this.entryOwner = d.userId;
+    if (typeof d.amountText === 'string' && /^[0-9.]{0,16}$/.test(d.amountText)) this.amountText.set(d.amountText);
+    if (typeof d.category === 'string' && this.categories.some((c) => c.code === d.category)) this.category.set(d.category);
+    const mode = this.modes.find((m) => m.code === d.mode);
+    if (mode) this.mode.set(mode.code);
+    const tag = this.tags.find((t) => t.code === d.tag);
+    if (tag) this.tag.set(tag.code);
+    if (typeof d.note === 'string') this.note.set(d.note.slice(0, 140));
   }
 
   private reset(): void {

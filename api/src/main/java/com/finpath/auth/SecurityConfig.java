@@ -102,7 +102,7 @@ public class SecurityConfig {
         http.cors(c -> c.configurationSource(corsSource(cors)))
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers("/auth/token", "/auth/refresh").permitAll()
+                        .requestMatchers("/auth/token", "/auth/refresh", "/auth/logout").permitAll()
                         .requestMatchers("/error").permitAll()
                         // T32: the OpenAPI document describes routes and schemas only, never data.
                         // It is off in prod unless OPENAPI_ENABLED=true (404 then); Swagger UI is not shipped.

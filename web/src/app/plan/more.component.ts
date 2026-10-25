@@ -23,11 +23,14 @@ import { ExpenseQueueService } from '../expense/expense-queue.service';
       <h2 id="acct-h">Account</h2>
       @if (unsent() !== null) {
         <p role="alert" class="warn" data-f="unsent-warning">
-          {{ unsent() }} {{ unsent() === 1 ? 'expense has' : 'expenses have' }} not been sent yet. They stay saved on
-          this device and send the next time you sign in with this account.
+          {{ unsent() }} {{ unsent() === 1 ? 'expense has' : 'expenses have' }} not been sent yet. Sign out anyway keeps
+          them on this device until you sign in with this account again; they are deleted if someone else signs in
+          first. On a shared device, choose
+          Sign out and discard: they are deleted and cannot be recovered.
         </p>
         <div class="row">
           <button type="button" class="btn" (click)="confirm()">Sign out anyway</button>
+          <button type="button" class="btn" (click)="discard()" data-f="discard">Sign out and discard</button>
           <button type="button" class="btn" (click)="unsent.set(null)">Cancel</button>
         </div>
       } @else {
@@ -57,6 +60,13 @@ export class MoreComponent {
     const n = this.queue.items().length;
     if (n > 0) this.unsent.set(n);
     else void this.confirm();
+  }
+
+  /** Shared-device option: unsent expenses are deleted, leaving nothing queued for this user. */
+  async discard(): Promise<void> {
+    this.unsent.set(null);
+    await this.auth.signOut({ discardQueue: true });
+    this.queue.reload();
   }
 
   /** The signed-out user's queue is kept under their own key; it is not deleted. */

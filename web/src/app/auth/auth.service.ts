@@ -4,23 +4,13 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE } from '../api-base';
 import { AuthApiService } from './auth-api.service';
+import { LocalDataService } from './local-data.service';
+import { SIGNIN_KEY, SIGNIN_STORAGE } from './signin-storage';
 import { challengeFor, createState, createVerifier } from './pkce';
 import { DEFAULT_RETURN_PATH, safeReturnPath } from './return-path';
-import { AuthSessionStore, KeyValueStorage, Session, isExpired, isTokenResponse } from './session.store';
+import { AuthSessionStore, Session, isExpired, isTokenResponse } from './session.store';
 
-export const SIGNIN_KEY = 'finpath.signin.v1';
-
-/** sessionStorage seam: the PKCE verifier lives here only for the Google round trip. */
-export const SIGNIN_STORAGE = new InjectionToken<KeyValueStorage | null>('SIGNIN_STORAGE', {
-  providedIn: 'root',
-  factory: () => {
-    try {
-      return globalThis.sessionStorage ?? null;
-    } catch {
-      return null;
-    }
-  },
-});
+export { SIGNIN_KEY, SIGNIN_STORAGE };
 
 /** Cross-tab mutual exclusion for refresh (a replayed, already-rotated refresh token revokes the whole family). */
 export type RefreshLock = <T>(fn: () => Promise<T>) => Promise<T>;
@@ -78,6 +68,7 @@ export class AuthService {
   private readonly nav = inject(BrowserNav);
   private readonly signinStorage = inject(SIGNIN_STORAGE);
   private readonly lock = inject(REFRESH_LOCK);
+  private readonly local = inject(LocalDataService);
   private readonly base = inject(API_BASE);
 
   /** The URL the guard intercepted; kept in memory and in the round-trip entry, never in a query string. */
@@ -169,10 +160,34 @@ export class AuthService {
     return this.inFlight;
   }
 
-  /** Client-side sign-out (no server revoke endpoint exists yet). Queued expenses are not touched. */
-  signOut(): Promise<boolean> {
+  /**
+   * Sign-out. Best-effort POST /auth/logout revokes the refresh-token family; its outcome never blocks or fails
+   * the sign-out. Unsent expenses stay under the user's own key unless `discardQueue` is set, which removes them
+   * (and any draft that user started) so nothing is left on a shared device.
+   */
+  signOut(opts: { discardQueue?: boolean } = {}): Promise<boolean> {
     this.deliberateSignOut = true;
-    this.store.clear();
+    const s = this.store.session();
+    if (s) this.api.logout(s.refreshToken).subscribe({ error: () => undefined });
+    if (opts.discardQueue) this.local.wipeUser(s?.userId ?? null);
+    else this.store.clear();
+    this.returnTo = null;
+    return this.router.navigateByUrl('/sign-in');
+  }
+
+  /** `DELETE /me` succeeded: the account is gone, so everything stored here for it goes too. */
+  accountDeleted(): Promise<boolean> {
+    return this.endAndWipe();
+  }
+
+  /** Consent was withdrawn: same local wipe as a deleted account. */
+  consentWithdrawn(): Promise<boolean> {
+    return this.endAndWipe();
+  }
+
+  private endAndWipe(): Promise<boolean> {
+    this.deliberateSignOut = true;
+    this.local.wipeUser(this.store.session()?.userId ?? null);
     this.returnTo = null;
     return this.router.navigateByUrl('/sign-in');
   }

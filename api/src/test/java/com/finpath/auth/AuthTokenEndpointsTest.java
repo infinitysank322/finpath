@@ -135,6 +135,40 @@ class AuthTokenEndpointsTest {
         refresh(second).andExpect(status().isUnauthorized());
     }
 
+    private ResultActions logout(String token) throws Exception {
+        return mvc.perform(post("/auth/logout").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(java.util.Map.of("refreshToken", token))));
+    }
+
+    @Test
+    void logoutRevokesTheWholeFamilyAndIsIdempotent() throws Exception {
+        UUID user = UUID.randomUUID();
+        String first = body(exchange(issue(user))).get("refreshToken").asText();
+        String second = body(refresh(first)).get("refreshToken").asText();
+        String otherDevice = body(exchange(issue(user))).get("refreshToken").asText();
+
+        logout(second).andExpect(status().isNoContent())
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(""));
+
+        refresh(second).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").value("invalid_grant"));
+        refresh(first).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").value("invalid_grant"));
+        refresh(otherDevice).andExpect(status().isOk());
+
+        // Same answer for an already-revoked, an unknown and a missing token.
+        logout(second).andExpect(status().isNoContent());
+        logout("not-a-token").andExpect(status().isNoContent());
+        mvc.perform(post("/auth/logout")).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void logoutWithTheSupersededTokenStillKillsTheSuccessor() throws Exception {
+        String first = body(exchange(issue(UUID.randomUUID()))).get("refreshToken").asText();
+        String second = body(refresh(first)).get("refreshToken").asText();
+        logout(first).andExpect(status().isNoContent());
+        refresh(second).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").value("invalid_grant"));
+    }
+
     @Test
     void issuedAccessTokenOpensTheApi() throws Exception {
         String access = body(exchange(issue(UUID.randomUUID()))).get("accessToken").asText();

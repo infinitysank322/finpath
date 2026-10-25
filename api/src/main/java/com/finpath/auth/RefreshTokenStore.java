@@ -119,6 +119,21 @@ public class RefreshTokenStore {
         tokens.values().removeIf(e -> e.userId().equals(userId));
     }
 
+    /**
+     * Sign-out: revokes the whole family of the presented token, whether it is live, already rotated
+     * or expired. Unknown, blank or null tokens do nothing and say nothing (no oracle); other
+     * sessions of the same user are untouched.
+     */
+    public void revokeFamily(String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        Entry entry = tokens.get(OpaqueTokens.hash(token));
+        if (entry != null) {
+            revokeFamily(entry.family());
+        }
+    }
+
     private boolean stillAllowed(Entry entry) {
         return !revokedFamilies.containsKey(entry.family()) && entry.epoch() == epoch(entry.userId());
     }

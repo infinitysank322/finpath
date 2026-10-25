@@ -20,7 +20,7 @@ const input = (amountPaise: number): ExpenseInput => ({
   note: null,
 });
 
-type Outcome = number | 'gate' | 'timeout'; // HTTP status, or hold the request open
+type Outcome = number | 'gate' | 'timeout' | 'forbidden'; // HTTP status, or hold the request open
 
 class FakeApi {
   calls: string[] = [];
@@ -35,6 +35,8 @@ class FakeApi {
     const o = this.outcomes.get(key) ?? 201;
     if (o === 'gate') return this.gate;
     if (o === 'timeout') return throwError(() => new TimeoutError());
+    if (o === 'forbidden') return throwError(() => new HttpErrorResponse({ status: 403, error: { status: 403, error: 'forbidden' } }));
+    if (o === 403) return throwError(() => new HttpErrorResponse({ status: 403, error: { status: 403, error: 'consent_required' } }));
     if (o >= 400 || o === 0) return throwError(() => new HttpErrorResponse({ status: o }));
     if (this.stored.has(key)) return of(new HttpResponse<ExpenseView>({ status: 200 }));
     this.stored.add(key);
@@ -320,6 +322,31 @@ describe('ExpenseQueueService', () => {
         await q.flush();
         expect(q.pending().length).withContext(`${status}`).toBe(1);
       }
+    });
+
+    it('a 403 that is not consent_required does not pause: item goes to needs-attention and the next one is sent', async () => {
+      const q = make();
+      q.enqueue(input(100), 'key-aaaaaaaa');
+      q.enqueue(input(200), 'key-bbbbbbbb');
+      api.outcomes.set('key-aaaaaaaa', 'forbidden');
+      await q.flush();
+      expect(q.consentNeeded()).toBeFalse();
+      expect(q.needsAttention().map((i) => i.key)).toEqual(['key-aaaaaaaa']);
+      expect(api.calls).toEqual(['key-aaaaaaaa', 'key-bbbbbbbb']);
+      expect(q.pending().length).toBe(0);
+    });
+
+    it('onConsentGranted clears the paused state and flushes what was held back', async () => {
+      const q = make();
+      q.enqueue(input(100), 'key-aaaaaaaa');
+      api.outcomes.set('key-aaaaaaaa', 403);
+      await q.flush();
+      expect(q.consentNeeded()).toBeTrue();
+      api.outcomes.delete('key-aaaaaaaa');
+      await q.onConsentGranted();
+      expect(q.consentNeeded()).toBeFalse();
+      expect(q.items().length).toBe(0);
+      expect(api.rows).toBe(1);
     });
 
     it('403 pauses: item kept, flag set, no backoff timer, resumes on the next trigger', async () => {

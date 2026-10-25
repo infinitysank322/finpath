@@ -70,6 +70,21 @@ describe('MoreComponent sign-out', () => {
     expect(JSON.parse(store.data[queueKeyFor('user-a')]).length).toBe(2);
   });
 
+  it('Sign out and discard passes discardQueue and leaves zero queued items', async () => {
+    store.data[queueKeyFor('user-a')] = JSON.stringify([item('k-0000001'), item('k-0000002')]);
+    signOut.and.callFake(async (o: { discardQueue?: boolean }) => {
+      if (o?.discardQueue) delete store.data[queueKeyFor('user-a')];
+      owner = null;
+      return true;
+    });
+    const f = render();
+    click(f, 'Sign out');
+    click(f, 'Sign out and discard');
+    await f.whenStable();
+    expect(signOut).toHaveBeenCalledOnceWith({ discardQueue: true });
+    expect(store.data[queueKeyFor('user-a')]).toBeUndefined();
+  });
+
   it('Cancel keeps the user signed in', () => {
     store.data[queueKeyFor('user-a')] = JSON.stringify([item('k-0000001')]);
     const f = render();

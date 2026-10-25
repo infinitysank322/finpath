@@ -27,7 +27,7 @@ export const QUEUE_OWNER = new InjectionToken<() => string | null>('QUEUE_OWNER'
 export const BACKOFF_MS = [5_000, 30_000, 120_000];
 
 /** Storage seam so tests (and a later IndexedDB move) do not touch the service. */
-export type QueueStorage = Pick<Storage, 'getItem' | 'setItem'> & Partial<Pick<Storage, 'removeItem'>>;
+export type QueueStorage = Pick<Storage, 'getItem' | 'setItem'> & Partial<Pick<Storage, 'removeItem' | 'key' | 'length'>>;
 export const QUEUE_STORAGE = new InjectionToken<QueueStorage | null>('QUEUE_STORAGE', {
   providedIn: 'root',
   factory: () => {
@@ -50,13 +50,22 @@ export interface QueuedExpense {
   reason?: number;
 }
 
-/** Any 4xx except 401 (sign in), 403 (consent), 408 (timeout) and 429 (rate limit) will never succeed on retry. */
+/** 403 with the API's fixed `{status, error: 'consent_required'}` body: the only 403 that pauses the queue. */
+export function isConsentRequired(e: unknown): boolean {
+  return e instanceof HttpErrorResponse && e.status === 403 && (e.error as { error?: unknown } | null)?.error === 'consent_required';
+}
+
+/**
+ * Any 4xx except 401 (sign in), 408 (timeout), 429 (rate limit) and a consent_required 403 will never succeed on
+ * retry. A 403 for any other reason does not pause the queue: that item goes to "needs attention".
+ */
 function isTerminal(e: unknown): e is HttpErrorResponse {
   return (
     e instanceof HttpErrorResponse &&
     e.status >= 400 &&
     e.status < 500 &&
-    ![401, 403, 408, 429].includes(e.status)
+    ![401, 408, 429].includes(e.status) &&
+    !isConsentRequired(e)
   );
 }
 
@@ -93,7 +102,7 @@ export class ExpenseQueueService implements OnDestroy {
   readonly items = this._items.asReadonly();
   readonly pending = computed(() => this._items().filter((i) => i.status === 'pending'));
   readonly needsAttention = computed(() => this._items().filter((i) => i.status === 'attention'));
-  /** True after a 403: sending is paused until the next explicit trigger (consent has to be granted first). */
+  /** True after a 403 consent_required: sending is paused until the next explicit trigger (consent has to be granted first). */
   readonly consentNeeded = signal(false);
 
   private inFlight: Promise<void> | null = null;
@@ -176,7 +185,7 @@ export class ExpenseQueueService implements OnDestroy {
         if (isTerminal(e)) {
           const reason = e.status;
           this.mutate((items) => items.map((i) => (i.key === item.key ? { ...i, status: 'attention', reason } : i)));
-        } else if (e instanceof HttpErrorResponse && e.status === 403) {
+        } else if (isConsentRequired(e)) {
           this.consentNeeded.set(true); // pause; no timer, the user has to act first
           return;
         } else {
@@ -185,6 +194,29 @@ export class ExpenseQueueService implements OnDestroy {
         }
       }
     }
+  }
+
+  /** Call once POST /me/consent has succeeded: clears the paused state and sends what was held back. */
+  onConsentGranted(): Promise<void> {
+    this.consentNeeded.set(false);
+    return this.flush();
+  }
+
+  /**
+   * Drops one user's queue everywhere (storage key, in-memory copy, and the visible list when it is theirs).
+   * Used when the account is deleted or consent withdrawn, and for "Sign out and discard".
+   */
+  forget(owner: string): void {
+    this.memory.delete(owner);
+    try {
+      const key = queueKeyFor(owner);
+      if (this.storage?.removeItem) this.storage.removeItem(key);
+      else this.storage?.setItem(key, '[]');
+    } catch {
+      /* blocked: nothing more can be done */
+    }
+    if (this.itemsOwner === owner || this.owner() === owner) this._items.set([]);
+    this.clearTimer();
   }
 
   private scheduleRetry(): void {

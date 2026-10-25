@@ -267,7 +267,9 @@ describe('AddExpenseComponent', () => {
       btn.click();
       expect(nav).toHaveBeenCalledWith('/sign-in');
       expect(TestBed.inject(AuthService).pendingReturnTo()).toBe('/spending/add');
-      expect(JSON.parse(signin.data[DRAFT_KEY])).toEqual({ amountText: '9', category: 'GROCERIES', mode: 'UPI', tag: null, note: '' });
+      expect(JSON.parse(signin.data[DRAFT_KEY])).toEqual(
+        jasmine.objectContaining({ amountText: '9', category: 'GROCERIES', mode: 'UPI', tag: null, note: '', userId: null }),
+      );
 
       // Back after sign-in: a new component restores the draft once.
       owner = 'user-1';
@@ -279,7 +281,7 @@ describe('AddExpenseComponent', () => {
     });
 
     it('ignores a tampered draft', () => {
-      signin.data[DRAFT_KEY] = JSON.stringify({ amountText: '<script>', category: 'NOPE', mode: 'BARTER', tag: 'X', note: 5 });
+      signin.data[DRAFT_KEY] = JSON.stringify({ amountText: '<script>', category: 'NOPE', mode: 'BARTER', tag: 'X', note: 5, userId: null, savedAt: Date.now() });
       const c = TestBed.createComponent(AddExpenseComponent).componentInstance;
       expect(c.amountText()).toBe('');
       expect(c.category()).toBeNull();

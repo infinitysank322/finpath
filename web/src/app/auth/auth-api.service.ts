@@ -17,6 +17,11 @@ export class AuthApiService {
     return this.http.post<TokenResponse>(`${this.base}/auth/token`, { code, codeVerifier });
   }
 
+  /** Revokes the refresh-token family. Always 204 (idempotent); callers ignore failures. */
+  logout(refreshToken: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/auth/logout`, { refreshToken });
+  }
+
   refresh(refreshToken: string): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(`${this.base}/auth/refresh`, { refreshToken });
   }

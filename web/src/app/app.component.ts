@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter, map } from 'rxjs';
 import { AUTH_PATHS } from './app.routes';
 import { AuthService } from './auth/auth.service';
+import { LocalDataService } from './auth/local-data.service';
 import { AuthSessionStore } from './auth/session.store';
 import { ThemeService } from './theme.service';
 
@@ -32,6 +33,7 @@ export class AppComponent {
   });
   private readonly session = inject(AuthSessionStore);
   private readonly auth = inject(AuthService);
+  private readonly local = inject(LocalDataService);
   private wasSignedIn = this.session.isSignedIn();
 
   constructor() {
@@ -41,7 +43,10 @@ export class AppComponent {
       () => {
         const now = this.session.isSignedIn();
         untracked(() => {
-          if (now) this.auth.sessionPresent();
+          if (now) {
+            this.auth.sessionPresent();
+            this.local.purgeOrphans(); // other users' leftover queues: one session per device
+          }
           else if (this.wasSignedIn) this.auth.sessionLost(this.router.url);
           this.wasSignedIn = now;
         });
