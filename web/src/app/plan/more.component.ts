@@ -17,6 +17,7 @@ import { ExpenseQueueService } from '../expense/expense-queue.service';
         <li><a routerLink="/spending/budget">Category budgets</a></li>
         <li><a routerLink="/goals/fi-planner">FI planner</a></li>
         <li><a routerLink="/more/allocation">Cycle allocation</a></li>
+        <li><a routerLink="/more/investments">Investments</a></li>
       </ul>
     </nav>
     <section aria-labelledby="acct-h">

@@ -2,6 +2,7 @@ import { Provider, inject } from '@angular/core';
 import { CycleDayStepComponent } from './cycle-day-step.component';
 import { FixedExpensesStepComponent } from './fixed-expenses-step.component';
 import { GoalStepComponent } from './goal-step.component';
+import { AssetsStepComponent } from './assets-step.component';
 import { IncomeStepComponent } from './income-step.component';
 import { PlanStepsState } from './plan-steps.state';
 import { ConsentStepComponent } from './consent-step.component';
@@ -38,4 +39,9 @@ export const GOAL_STEP_PROVIDERS: Provider[] = [
   step({ id: 'goals', order: 60, question: 'What are you saving for?', component: GoalStepComponent }),
 ];
 
-export const ONBOARDING_STEP_PROVIDERS: Provider[] = [...SHELL_STEP_PROVIDERS, ...PLAN_STEP_PROVIDERS, ...GOAL_STEP_PROVIDERS];
+/** T69: an optional assets step with an explicit EPF balance (OQ-1: asked for, never derived). */
+export const ASSET_STEP_PROVIDERS: Provider[] = [
+  step({ id: 'assets', order: 70, question: 'What do you already have invested?', component: AssetsStepComponent }),
+];
+
+export const ONBOARDING_STEP_PROVIDERS: Provider[] = [...SHELL_STEP_PROVIDERS, ...PLAN_STEP_PROVIDERS, ...GOAL_STEP_PROVIDERS, ...ASSET_STEP_PROVIDERS];

@@ -178,7 +178,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | T66 | DONE | FR-19, FR-20, FR-01 | Web: goals screen with progress bars; appends the goal step to the wizard | T62, T47 | 3 h | Monthly need and on-track flag come from the API; progress conveyed by text as well as bar length |
 | T67 | DONE | FR-21 | Web: FI planner with corpus projection line and return-range band | T63 | 4 h | Band and assumptions visible without scrolling at 380 px; screen carries an educational label; chart has a table equivalent |
 | T68 | DONE | FR-22 | Web: cycle allocation display (waterfall steps, amounts, which step absorbed an overrun) | T64 | 3 h | Displayed lines sum to the API surplus; no client arithmetic; 380 px dark verified |
-| T69 | TODO | FR-23, FR-01 | Web: investments screen + allocation donut; appends the assets step to the wizard | T65, T66 | 3 h | Donut has a table equivalent and non-colour labels; `[?OQ-1]` EPF balance is asked for, never derived; a full FR-01 wizard run is recorded |
+| T69 | DONE | FR-23, FR-01 | Web: investments screen + allocation donut; appends the assets step to the wizard | T65, T66 | 3 h | Donut has a table equivalent and non-colour labels; `[?OQ-1]` EPF balance is asked for, never derived; a full FR-01 wizard run is recorded |
 
 ### Stage 6 — Dashboard, consistency and shipping · 18 tasks · 60 h
 
