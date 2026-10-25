@@ -9,6 +9,7 @@ web/: Angular 18+, standalone components, ngx-echarts, Capacitor (Android)
 - Amounts in paise (long) in DB; INR formatting with lakh/crore in UI.
 - Never store account numbers, card numbers or IDs.
 - One feature = one branch = one FR id from the BRD. Commit message starts with FR id.
+- All web UI uses the design tokens and shared components from T06b (web/src/styles, web/src/app/ui) and matches the mockups in docs/design/ui. No hard-coded colours, fonts or spacing in screens. Never copy figures from the mockups: every number shown comes from the API.
 ## Commands
 api: ./mvnw test | web: npm test, ng build
 ## Agents (.claude/agents/)

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FinPath Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#F4F2EC;text-decoration:none}a:hover{color:#ffffff}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0B0C; color: #F4F2EC; font-family: Manrope, system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <main style="flex: 1; padding: 28px 20px 0; display: flex; flex-direction: column; gap: 14px">
+
+    <header style="display: flex; justify-content: space-between; align-items: center">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #A1A1A8">Cycle · 25 Oct – 24 Nov</span>
+        <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.01em">Hi Sanket</h1>
+      </div>
+      <button aria-label="Profile" style="width: 44px; height: 44px; border-radius: 22px; border: 1px solid #2A2A2E; background: #161618; color: #F4F2EC; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px">S</button>
+    </header>
+
+    <section style="background: linear-gradient(180deg, #1A1A1D 0%, #141416 100%); border: 1px solid #2A2A2E; border-radius: 24px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 40px rgba(0,0,0,0.5)">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #A1A1A8">Surplus this cycle</span>
+        <span style="font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 999px; background: #232326; color: #D6D4CE">Day 1 of 31</span>
+      </div>
+      <div style="font-family: 'Space Grotesk', sans-serif; font-size: 50px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">₹39,835</div>
+      <div style="font-size: 13px; color: #A1A1A8; line-height: 1.4">of ₹1,27,000 income, after EMIs and fixed bills</div>
+      <div role="img" aria-label="Income split: EMIs 49.9 percent, fixed bills 18.8 percent, surplus 31.4 percent" style="display: flex; gap: 3px; height: 10px">
+        <div style="width: 49.9%; background: #F5B547; border-radius: 999px 2px 2px 999px"></div>
+        <div style="width: 18.8%; background: #6E6E76; border-radius: 2px"></div>
+        <div style="width: 31.3%; background: {{accent}}; border-radius: 2px 999px 999px 2px"></div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 12px; color: #A1A1A8; display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #F5B547"></span>EMIs</span>
+          <span style="font-size: 15px; font-weight: 700">₹63,332</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 12px; color: #A1A1A8; display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #6E6E76"></span>Fixed</span>
+          <span style="font-size: 15px; font-weight: 700">₹23,833</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 12px; color: #A1A1A8; display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: {{accent}}"></span>Surplus</span>
+          <span style="font-size: 15px; font-weight: 700">₹39,835</span>
+        </div>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <a href="Debt.dc.html" style="background: #161618; border: 1px solid #2A2A2E; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #A1A1A8">EMI load</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: #F5B547">49.9%</span>
+        <span style="font-size: 12px; color: #D6D4CE; display: flex; align-items: center; gap: 6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F5B547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+          Above 40% line
+        </span>
+      </a>
+      <div style="background: #161618; border: 1px solid #2A2A2E; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #A1A1A8">Free at 40</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700">13 yrs</span>
+        <span style="font-size: 12px; color: #D6D4CE">Target corpus ₹2.76 Cr</span>
+      </div>
+    </div>
+
+    <section style="background: #161618; border: 1px solid #2A2A2E; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+      <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #A1A1A8">Cash freed up ahead</span>
+      <div style="display: flex; align-items: center; gap: 14px">
+        <div style="width: 52px; height: 44px; border-radius: 12px; background: #1E1E21; display: flex; flex-direction: column; align-items: center; justify-content: center"><span style="font-size: 13px; font-weight: 700">Dec</span><span style="font-size: 11px; color: #A1A1A8">2026</span></div>
+        <span style="flex: 1; font-size: 14px; font-weight: 600">Phone EMI ends</span>
+        <span style="font-size: 14px; font-weight: 700; color: {{accent}}">+₹8,000</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px">
+        <div style="width: 52px; height: 44px; border-radius: 12px; background: #1E1E21; display: flex; flex-direction: column; align-items: center; justify-content: center"><span style="font-size: 13px; font-weight: 700">Jan</span><span style="font-size: 11px; color: #A1A1A8">2027</span></div>
+        <span style="flex: 1; font-size: 14px; font-weight: 600">Washing machine EMI ends</span>
+        <span style="font-size: 14px; font-weight: 700; color: {{accent}}">+₹6,000</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px">
+        <div style="width: 52px; height: 44px; border-radius: 12px; background: #1E1E21; display: flex; flex-direction: column; align-items: center; justify-content: center"><span style="font-size: 13px; font-weight: 700">Mar</span><span style="font-size: 11px; color: #A1A1A8">2028</span></div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; font-weight: 600">Gold loan due</span>
+          <span style="font-size: 12px; color: #A1A1A8">Set aside ₹10,588 every cycle</span>
+        </div>
+        <span style="font-size: 14px; font-weight: 700; color: #F5B547">₹1.8 L</span>
+      </div>
+    </section>
+  </main>
+
+  <nav aria-label="Main" style="height: 84px; box-sizing: border-box; border-top: 1px solid #1E1E21; background: #0F0F11; display: flex; align-items: center; justify-content: space-around; padding: 0 6px 10px">
+    <a href="Main.dc.html" aria-current="page" style="width: 64px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: {{accent}}">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>
+      <span style="font-size: 11px; font-weight: 700; color: #F4F2EC">Home</span>
+    </a>
+    <button style="width: 64px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: none; border: 0; color: #A1A1A8; font-family: inherit">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"></rect><path d="M3 10h18M16 15h2"></path></svg>
+      <span style="font-size: 11px; font-weight: 600">Spend</span>
+    </button>
+    <a href="AddExpense.dc.html" aria-label="Add expense" style="width: 58px; height: 58px; border-radius: 20px; background: {{accent}}; color: #0B0B0C; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 24px rgba(0,0,0,0.5)">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </a>
+    <a href="Debt.dc.html" style="width: 64px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #A1A1A8">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"></path><path d="m3 13 9 5 9-5"></path></svg>
+      <span style="font-size: 11px; font-weight: 600">Debt</span>
+    </a>
+    <button style="width: 64px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: none; border: 0; color: #A1A1A8; font-family: inherit">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1"></circle></svg>
+      <span style="font-size: 11px; font-weight: 600">Goals</span>
+    </button>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#C8F26B","options":["#C8F26B","#8FD3FF","#F5B547"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#C8F26B' };
+  }
+}
+</script>
+</body>
+</html>

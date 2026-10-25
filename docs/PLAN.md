@@ -105,7 +105,7 @@ No HTTP, no JPA, no Spring in this package. Pure functions, `BigDecimal`, explic
 | T26 | DONE | FR-13…FR-22 | Close `RulesGoldenTest`: every persona figure asserted, all sourced from the T10b fixture | T10b, T11–T22 | 4 h | `./mvnw test -Dtest=RulesGoldenTest` green; tolerance asserted only by the named `assertWithinOnePercent`; test output contains no persona amount; a static check confirms no persona literal in the `rules` test sources; owner runs `RulesGoldenTest` locally against the real fixture before merging dev to master |
 | T27 | DONE | INFRA | Boundary sweep (zero principal, final instalment, rate at threshold, cycle spanning month end, already-closed loan) + JaCoCo 90% gate on `rules` | T26 | 3 h | `./mvnw verify` fails below 90% coverage on `rules`; each boundary case has a named test |
 
-### Stage 2 — Identity, tenancy, DPDP spine · 7 tasks · 26 h
+### Stage 2 — Identity, tenancy, DPDP spine · 8 tasks · 38 h
 
 Built before any business table, so every later `[+TABLE]` task has an export registry, a deletion registry and an RLS harness to plug into.
 
@@ -120,6 +120,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | T32 | DONE | INFRA | API conventions: error model, OpenAPI, paise-as-integer JSON contract documented, no stack traces or amounts in logs | T29 | 3 h | OpenAPI served; a 500 body contains no amount or merchant text; a log-appender test asserts no amount patterns in output, and no email addresses (including on the sign-in failure path) or bearer/refresh/one-time-code values (T29 follow-up) |
 | T33 | DONE | FR-01 | `[LOCAL]` Web: Google sign-in, JWT storage, auth guard, session survival inside the Capacitor webview | T29, T06 | 4 h | Signed-out redirect test passes; token survives an app restart; sign-in renders at 380 px dark; T29 follow-ups: the API chain has a CORS allow-list for the web origin (or the Angular dev server proxies `/auth`, `/oauth2`, `/login`); the web client generates a PKCE S256 verifier and a `state` per sign-in, keeps the verifier only for the round trip, rejects a mismatched echoed `state`, and sends `codeVerifier` to `POST /auth/token` |
 | T33b | TODO | FR-01 | Sign-in follow-ups from the T33 review: (1) `POST /auth/logout` revoking the refresh-token family, called by web sign-out; (2) after a successful `DELETE /me` (and on consent withdrawal) the web clears the session, the user's queue key and `finpath.signin.v1`, and orphaned queues get a purge rule; (3) "Sign out and discard" option for unsent expenses on a shared device; (4) the add-expense draft is restored only for the sign-in it started (or expires after ~10 min); (5) a forced sign-out on a rejected refresh while saving keeps the typed entry as a draft; (6) the queue pauses only on 403 `consent_required`, and T46 shows the paused state and flushes after `POST /me/consent` | T33 | 4 h | After sign-out the old refresh token returns 401; after `DELETE /me` no `finpath.*` key for that user remains in storage; discard leaves zero queued items; a draft from user A is not shown to user B; an expense typed before a rejected refresh is restored after sign-in; a non-consent 403 does not pause the queue |
+| T06b | TODO | INFRA | `[LOCAL]` **Design system and UI overhaul.** Visual direction is `docs/design/ui/` (Main, AddExpense, Debt): dark CRED-inspired, Space Grotesk numbers + Manrope text, cards with soft depth, one lime accent, amber for warnings, bottom nav with a central add button. Extract the colour, font, spacing, radius and shadow tokens into one global file (dark default, light derived from the same tokens, existing theme switch kept); self-host the fonts; build shared standalone components (card, stat, chip / segmented control, progress bar with limit marker, timeline row, bottom nav with central add button, amount keypad); restyle home, expense entry, debt, budget, goals / FI planner, allocation and the remaining shipped screens with them | T33 | 12 h | One tokens file feeds both themes and the contrast spec passes in dark and light (text pairs >= 4.5:1, non-text >= 3:1); fonts come from the build, so there is no third-party font request and the shell still renders offline; each shared component has a spec; every shipped screen renders at 380 px in dark and light with no horizontal scroll, 44 px touch targets and real buttons / labels; every chart keeps its aria description and table equivalent; all existing behaviour and tests still pass; no figure from the mockups appears in web code (every displayed amount comes from an API response, and `GoldenFixtureScanTest` passes) |
 
 ### Stage 3 — Capture and cycle · 15 tasks · 52 h
 
@@ -191,10 +192,10 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | T72 | TODO | FR-27 | Reminder scheduling: due-date and cycle-day events, the 5-days-before card rule, cold-start-tolerant scheduler | T71, T48 | 3 h | A loan due on the 5th generates a reminder dated the 31st/1st per the rule; a simulated 12 s first query does not cause a double-send |
 | T73 | TODO | FR-27 | `[LOCAL]` Web Push subscription + free-tier SMTP fallback | T72 | 3 h | Push delivered to a subscribed browser; with push denied the email path fires; notification bodies contain no amount or merchant text |
 | T74 | TODO | FR-10, FR-21, FR-26 | `GET /dashboard` single aggregate: cycle progress, spent vs budget, days left, safe-to-spend/day, net-worth series, FI date + delta, key statistics | T64, T70, T71 | 4 h | One request returns every home-screen figure; warm p95 under 600 ms; a cold first call returns correct data without an error status |
-| T75 | TODO | FR-10 | Web: home cycle-progress ring, spent vs budget, days left, safe-to-spend | T74 | 3 h | Ring values equal the API payload; ring has a text equivalent; 380 px both themes |
-| T76 | TODO | FR-21, FR-26 | Web: net-worth line + FI countdown card with change vs last cycle | T74 | 3 h | Series from snapshots, never recomputed client-side; FI date shown with range and assumptions |
-| T77 | TODO | FR-06, FR-10 | Web: spending screens — category donut with need/want/waste, month-on-month bars against each category's 3-month average | T39, T40 | 4 h | Both carry table equivalents; comparison labels use **cycle** labels, never calendar-month names, unless the cycle starts on the 1st |
-| T78 | TODO | FR-26 | Web: monthly checklist, streak, consistency heatmap | T71 | 4 h | Heatmap cells labelled for screen readers; streak matches the API; cells distinguishable without colour |
+| T75 | TODO | FR-10 | Web: home cycle-progress ring, spent vs budget, days left, safe-to-spend | T74, T06b | 3 h | Ring values equal the API payload; ring has a text equivalent; 380 px both themes |
+| T76 | TODO | FR-21, FR-26 | Web: net-worth line + FI countdown card with change vs last cycle | T74, T06b | 3 h | Series from snapshots, never recomputed client-side; FI date shown with range and assumptions |
+| T77 | TODO | FR-06, FR-10 | Web: spending screens — category donut with need/want/waste, month-on-month bars against each category's 3-month average | T39, T40, T06b | 4 h | Both carry table equivalents; comparison labels use **cycle** labels, never calendar-month names, unless the cycle starts on the 1st |
+| T78 | TODO | FR-26 | Web: monthly checklist, streak, consistency heatmap | T71, T06b | 4 h | Heatmap cells labelled for screen readers; streak matches the API; cells distinguishable without colour |
 | T79 | TODO | INFRA | PWA: service worker, cache last dashboard, offline shell, install prompt | T74, T06 | 4 h | With the network disabled the last dashboard renders from cache with a clear staleness label; Lighthouse PWA installability passes |
 | T80 | TODO | INFRA | `[LOCAL]` Android final polish: app icon and splash, re-verify the wrapper after PWA caching (T79) lands, plugin/permission audit, fresh-install run-through | T43b, T79 | 2 h | A fresh install on a wiped device completes onboarding → expense entry → dashboard with the T79 service worker active; no regression in the T43b deep-link sign-in; icon and splash render at the device's density. No Play Store or release signing in MVP |
 | T81 | TODO | INFRA | Accessibility, dark-mode and 380 px audit across every shipped screen and chart | T75–T78 | 4 h | axe reports zero serious/critical issues; each of the 12 in-scope charts has an aria description and a table equivalent; all contrast pairs ≥ 4.5:1 |
@@ -212,12 +213,12 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | --- | --- | --- |
 | 0 — Skeleton and pipes | 8 | 23 |
 | 1 — Rules engine and golden tests | 20 | 63 |
-| 2 — Identity, tenancy, DPDP spine | 7 | 26 |
+| 2 — Identity, tenancy, DPDP spine | 8 | 38 |
 | 3 — Capture and cycle | 15 | 52 |
 | 4 — Debt | 13 | 40 |
 | 5 — Goals, FI, allocation, investments | 9 | 30 |
 | 6 — Dashboard, consistency, shipping | 18 | 60 |
-| **Total** | **90** | **294** |
+| **Total** | **91** | **306** |
 
 287 hours is roughly **7 focused weeks full-time, or 5–6 months at 12 h/week of evenings**. Stage 1 alone is 22% of the build and ships no visible UI — that is correct, not a problem to engineer around.
 
