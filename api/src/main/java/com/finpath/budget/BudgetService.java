@@ -15,6 +15,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,14 @@ public class BudgetService {
     }
 
     public record StatusView(LocalDate cycleStart, LocalDate cycleEndExclusive, List<Line> lines) {
+    }
+
+    /**
+     * Whole-cycle roll-up: total budget, all OUT spend in the cycle (unbudgeted categories included, as the
+     * rebalance preview counts it), and the per-day safe-to-spend. usedFraction is null for a zero budget.
+     */
+    public record CycleSummary(long budgetPaise, long spentPaise, long remainingPaise, String usedFraction,
+            Level level, long safeToSpendPerDayPaise) {
     }
 
     private final BudgetRepository budgets;
@@ -95,6 +104,24 @@ public class BudgetService {
         return budgets.inTransaction(() -> {
             CycleCalendar.Cycle cycle = budgets.cycleOf(userId, day(cycleStart));
             return new StatusView(cycle.start(), cycle.endExclusive(), lines(userId, cycle));
+        });
+    }
+
+    /** Empty when the cycle containing {@code asOf} has no budget lines (nothing to compare spend to). */
+    public Optional<CycleSummary> cycleSummary(UUID userId, LocalDate asOf) {
+        consents.require(userId);
+        return budgets.inTransaction(() -> {
+            CycleCalendar.Cycle cycle = budgets.cycleOf(userId, asOf);
+            List<Row> rows = budgets.listForCycle(userId, cycle.start());
+            if (rows.isEmpty()) {
+                return Optional.<CycleSummary>empty();
+            }
+            Money totalBudget = BudgetRules.sum(rows.stream().map(r -> Money.ofPaise(r.budgetPaise())).toList());
+            Money totalSpent = BudgetRules.sum(BudgetSpend.byCategory(transactions, userId, cycle).values());
+            Status s = BudgetRules.status(totalBudget, totalSpent, config);
+            Money safe = BudgetRules.safeToSpendPerDay(totalBudget, totalSpent, cycle, asOf);
+            return Optional.of(new CycleSummary(s.budget().paise(), s.spent().paise(), s.remaining().paise(),
+                    s.usedFraction() == null ? null : s.usedFraction().toPlainString(), s.level(), safe.paise()));
         });
     }
 

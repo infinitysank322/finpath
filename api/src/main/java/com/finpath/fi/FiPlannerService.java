@@ -54,6 +54,13 @@ public class FiPlannerService {
 
     public FiPlanView plan(Long expensePaise, Long passivePaise, Long openingPaise, Long sipPaise, String stepUpText,
             Integer yearsToFi) {
+        return plan(expensePaise, passivePaise, openingPaise, sipPaise, stepUpText, yearsToFi,
+                LocalDate.now(clock));
+    }
+
+    /** As above with the reference date supplied, so a caller can keep every figure on one "today". */
+    public FiPlanView plan(Long expensePaise, Long passivePaise, Long openingPaise, Long sipPaise, String stepUpText,
+            Integer yearsToFi, LocalDate today) {
         if (expensePaise == null || expensePaise < 0 || yearsToFi == null || yearsToFi < 1
                 || yearsToFi > MAX_YEARS) {
             throw new InvalidFiException();
@@ -82,7 +89,6 @@ public class FiPlannerService {
         } catch (IllegalArgumentException | ArithmeticException e) {
             throw new InvalidFiException();
         }
-        LocalDate today = LocalDate.now(clock);
         FiCorpus.Result c = p.corpus();
         List<BandView> bands = p.bands().stream().map(b -> new BandView(b.band().name(),
                 b.annualReturn().toPlainString(), b.requiredFirstMonthly().paise(),

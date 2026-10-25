@@ -41,6 +41,16 @@ public final class Statistics {
         return percent(wantsPlusWaste, totalOutflow, true);
     }
 
+    /**
+     * Discretionary share from the tag split: wants plus waste (summed exactly) over total outflow.
+     * Needs, untagged spend and the total are the caller's; zero outflow gives null.
+     */
+    public static BigDecimal discretionaryShare(Money wants, Money waste, Money totalOutflow) {
+        Objects.requireNonNull(wants, "wants");
+        Objects.requireNonNull(waste, "waste");
+        return discretionaryShare(Money.ofPaise(Math.addExact(wants.paise(), waste.paise())), totalOutflow);
+    }
+
     private static BigDecimal percent(Money part, Money whole, boolean partNonNegative) {
         Objects.requireNonNull(part, "part");
         Objects.requireNonNull(whole, "whole");

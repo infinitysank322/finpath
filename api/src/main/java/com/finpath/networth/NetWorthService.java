@@ -47,6 +47,13 @@ public class NetWorthService {
         return bean;
     }
 
+    /** Net worth now, from the same inputs and rule as the cycle-close snapshot. */
+    public NetWorthSnapshots.Position current(UUID userId) {
+        consents.require(userId);
+        JdbcTemplate j = jdbc.get();
+        return tx.get().execute(status -> NetWorthSnapshots.position(j, userId));
+    }
+
     public SeriesView series(UUID userId) {
         consents.require(userId);
         JdbcTemplate j = jdbc.get();

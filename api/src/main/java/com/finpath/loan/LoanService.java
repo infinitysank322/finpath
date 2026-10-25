@@ -16,6 +16,7 @@ import com.finpath.rules.Money;
 import com.finpath.rules.PayoffPlanner;
 import com.finpath.rules.PrepaymentSimulator;
 import com.finpath.rules.RuleConfig;
+import com.finpath.rules.Statistics;
 import com.finpath.rules.WaterfallAllocator;
 import com.finpath.rules.SinkingFund;
 import java.math.BigDecimal;
@@ -188,9 +189,31 @@ public class LoanService {
 
     /** FR-14 plan over the caller's open loans. The strategy is required: anything else is 400, never a default. */
     public PayoffPlanView payoffPlan(UUID userId, String strategyName) {
-        PayoffPlanner.Strategy strategy = strategy(strategyName);
+        return payoffPlan(userId, strategy(strategyName), LocalDate.now(clock));
+    }
+
+    /**
+     * Cycle in which the last open debt closes under the avalanche plan (Statistics.debtFreeCycle), or null
+     * when there is no open debt or the plan cannot be simulated (a payment that never covers interest). Null
+     * means "no date to show", never an error, so the dashboard still renders.
+     */
+    public PayoffCycle debtFree(UUID userId, LocalDate today) {
+        if (loans.list(userId).stream().noneMatch(r -> r.principalOutstandingPaise() > 0)) {
+            return null;
+        }
+        PayoffPlanView plan;
+        try {
+            plan = payoffPlan(userId, PayoffPlanner.Strategy.AVALANCHE, today);
+        } catch (InvalidLoanException e) {
+            return null;
+        }
+        java.util.OptionalInt last = Statistics.debtFreeCycle(plan.order().stream().map(PayoffStepView::payoffCycle).toList());
+        return last.isEmpty() ? null : plan.order().stream().filter(st -> st.payoffCycle() == last.getAsInt())
+                .findFirst().map(PayoffStepView::payoffCycleDates).orElse(null);
+    }
+
+    private PayoffPlanView payoffPlan(UUID userId, PayoffPlanner.Strategy strategy, LocalDate today) {
         int startDay = loans.cycleStartDay(userId).orElseThrow(LoanNotFoundException::new);
-        LocalDate today = LocalDate.now(clock);
         List<Row> rows = loans.list(userId);
         List<PayoffPlanner.DebtEntry> debts = rows.stream().map(r -> debtEntry(r, today, startDay)).toList();
         PayoffPlanner.Plan plan;
