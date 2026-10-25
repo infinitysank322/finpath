@@ -178,7 +178,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | T68 | DONE | FR-22 | Web: cycle allocation display (waterfall steps, amounts, which step absorbed an overrun) | T64 | 3 h | Displayed lines sum to the API surplus; no client arithmetic; 380 px dark verified |
 | T69 | TODO | FR-23, FR-01 | Web: investments screen + allocation donut; appends the assets step to the wizard | T65, T66 | 3 h | Donut has a table equivalent and non-colour labels; `[?OQ-1]` EPF balance is asked for, never derived; a full FR-01 wizard run is recorded |
 
-### Stage 6 — Dashboard, consistency and shipping · 17 tasks · 57 h
+### Stage 6 — Dashboard, consistency and shipping · 18 tasks · 60 h
 
 *Exit:* the home screen answers the three section-8 questions in one call under 2 s on throttled 4G; the Android build is polished on a fresh install (the APK itself already worked at T43b); backups run; DPDP export/delete verified against every shipped table.
 
@@ -186,6 +186,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | --- | --- | --- | --- | --- | --- | --- |
 | T70 | DONE | FR-26 `[+TABLE]` | `net_worth_snapshot` written at cycle close (assets − liabilities as at that cycle) | T65, T48 | 3 h | Closing a cycle writes exactly one snapshot; backfilling a closed cycle is rejected; value equals the rules-engine result; `[+TABLE]` trio satisfied |
 | T71 | DONE | FR-26 `[+TABLE]` | `checklist_item` (plan_cycle_id, type, amount, done_at) + per-cycle generation + mark-done + streak from T25 | T34, T25 | 4 h | Generation produces one item per EMI, SIP and goal transfer; marking done twice is idempotent; streak matches T25; `[+TABLE]` trio satisfied |
+| T71b | TODO | FR-26 | Checklist follow-ups from the T71 review: (1) `markDone` rejects items whose cycle is CLOSED, so the streak cannot be back-filled; (2) the streak treats a month with no `plan_cycle` row explicitly (documented and tested: gap neither counts as complete nor silently disappears); (3) editing a loan's EMI mid-cycle updates the amount of its still-open items (done items stay frozen; needs the UPDATE grant on `amount_paise` limited to open items); (4) closed or paid-off loans generate no EMI items | T71 | 3 h | Ticking an item in a CLOSED cycle returns a clear 4xx and leaves `done_at` null; a skipped month has a tested streak outcome; after an EMI edit the open item shows the new paise and a done item keeps its old amount; a closed loan yields no item; the RLS, export and deletion tests still pass |
 | T72 | TODO | FR-27 | Reminder scheduling: due-date and cycle-day events, the 5-days-before card rule, cold-start-tolerant scheduler | T71, T48 | 3 h | A loan due on the 5th generates a reminder dated the 31st/1st per the rule; a simulated 12 s first query does not cause a double-send |
 | T73 | TODO | FR-27 | `[LOCAL]` Web Push subscription + free-tier SMTP fallback | T72 | 3 h | Push delivered to a subscribed browser; with push denied the email path fires; notification bodies contain no amount or merchant text |
 | T74 | TODO | FR-10, FR-21, FR-26 | `GET /dashboard` single aggregate: cycle progress, spent vs budget, days left, safe-to-spend/day, net-worth series, FI date + delta, key statistics | T64, T70, T71 | 4 h | One request returns every home-screen figure; warm p95 under 600 ms; a cold first call returns correct data without an error status |
@@ -214,8 +215,8 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | 3 — Capture and cycle | 15 | 52 |
 | 4 — Debt | 13 | 40 |
 | 5 — Goals, FI, allocation, investments | 9 | 30 |
-| 6 — Dashboard, consistency, shipping | 17 | 57 |
-| **Total** | **88** | **287** |
+| 6 — Dashboard, consistency, shipping | 18 | 60 |
+| **Total** | **89** | **290** |
 
 287 hours is roughly **7 focused weeks full-time, or 5–6 months at 12 h/week of evenings**. Stage 1 alone is 22% of the build and ships no visible UI — that is correct, not a problem to engineer around.
 
