@@ -27,7 +27,38 @@ npm test
 ng build
 ```
 
-## Running locally
+## Run locally
+
+Two PowerShell scripts in the repo root start and stop the whole stack on Windows:
+
+```powershell
+.\start-local.ps1     # Postgres + API + web, then opens http://localhost:4200
+.\stop-local.ps1      # stops all three
+```
+
+If PowerShell refuses to run them, use `powershell -ExecutionPolicy Bypass -File .\start-local.ps1`.
+
+`start-local.ps1`:
+
+1. Checks that Docker is running, `.env` exists and holds `DB_PASSWORD`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `FINPATH_JWT_SECRET`, `JAVA_HOME` is a JDK 21 and `npm` is installed. It stops with a message naming the problem (key names only, never values).
+2. Runs `docker compose up -d db` and waits until Postgres is healthy (host port 5433, or `DB_PORT`).
+3. Opens a **new PowerShell window** running the API on the `local` profile (`mvnw spring-boot:run`, which reads `.env` itself) and waits until `http://localhost:8080/actuator/health` reports `UP`. The first start compiles, so allow a minute or two.
+4. Opens a second **new window** running `ng serve` (after `npm install` if `web/node_modules` is missing) and waits until `http://localhost:4200` answers.
+5. Opens `http://localhost:4200` in your default browser.
+
+Re-running it is safe: a part that is already up is left alone. If port 8080 or 4200 is taken by something else, it stops and says which process.
+
+`stop-local.ps1` ends the two windows together with the API and `ng serve` processes under them (the API keeps no state of its own), then runs `docker compose stop`, which shuts Postgres down cleanly. The Postgres data volume is kept. The window PIDs live in `.local-run/` (gitignored).
+
+Google sign-in needs your OAuth client (Web application type) to have this authorised redirect URI, and your Gmail listed as a test user while the consent screen is in Testing:
+
+```text
+http://localhost:8080/login/oauth2/code/google
+```
+
+No JavaScript origins are needed. The native PostgreSQL on port 5432 is never touched.
+
+## Run locally by hand
 
 ```sh
 cp .env.example .env          # placeholder dev values; .env is gitignored

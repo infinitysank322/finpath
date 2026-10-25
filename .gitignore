@@ -55,3 +55,5 @@ Thumbs.db
 
 # --- Claude Code local settings ---
 .claude/settings.local.json
+# --- start-local.ps1 / stop-local.ps1 bookkeeping (window PIDs) ---
+.local-run/
