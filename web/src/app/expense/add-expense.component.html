@@ -70,6 +70,9 @@
 </section>
 
 <p class="error" role="alert">{{ error() }}</p>
+@if (signInNeeded()) {
+  <button type="button" class="chip" (click)="signInToSave()">Sign in to save</button>
+}
 <p class="ok" role="status">{{ message() }}</p>
 
 <app-pending-expenses />

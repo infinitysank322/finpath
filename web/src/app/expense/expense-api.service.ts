@@ -1,9 +1,11 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Injectable, InjectionToken, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, timeout } from 'rxjs';
+import { API_BASE } from '../api-base';
 import { CategoryOption, ExpenseInput, ExpenseView, OUT_CATEGORIES } from './expense.models';
 
-export const API_BASE = new InjectionToken<string>('API_BASE', { providedIn: 'root', factory: () => '' });
+/** Re-exported so existing `from '../expense/expense-api.service'` imports keep working. */
+export { API_BASE };
 /** A POST that has not answered in this long fails with rxjs TimeoutError, which callers treat as retryable. */
 export const CREATE_TIMEOUT_MS = 30_000;
 

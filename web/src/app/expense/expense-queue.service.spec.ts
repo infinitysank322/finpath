@@ -2,7 +2,12 @@ import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Observable, Subject, TimeoutError, of, throwError } from 'rxjs';
 import { ExpenseApiService } from './expense-api.service';
-import { BACKOFF_MS, ExpenseQueueService, QUEUE_STORAGE, QUEUE_STORAGE_KEY } from './expense-queue.service';
+import { BACKOFF_MS, ExpenseQueueService, QUEUE_OWNER, QUEUE_STORAGE, queueKeyFor } from './expense-queue.service';
+
+/** Every queue belongs to a signed-in user since T33; these specs run as one. */
+const OWNER = 'user-1';
+const QUEUE_STORAGE_KEY = queueKeyFor(OWNER);
+const owner = { provide: QUEUE_OWNER, useValue: () => OWNER };
 import { ExpenseInput, ExpenseView } from './expense.models';
 import { memoryStorage } from './queue-testing';
 
@@ -50,6 +55,7 @@ describe('ExpenseQueueService', () => {
       providers: [
         { provide: ExpenseApiService, useValue: api },
         { provide: QUEUE_STORAGE, useValue: store },
+        owner,
       ],
     });
     return TestBed.inject(ExpenseQueueService);
@@ -278,6 +284,7 @@ describe('ExpenseQueueService', () => {
         providers: [
           { provide: ExpenseApiService, useValue: api },
           { provide: QUEUE_STORAGE, useValue: null },
+          owner,
         ],
       });
       expect(TestBed.inject(ExpenseQueueService).enqueue(input(100), 'key-cccccccc')).toBeFalse();

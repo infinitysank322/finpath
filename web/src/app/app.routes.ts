@@ -1,8 +1,10 @@
-import { Routes } from '@angular/router';
+import { Route, Routes } from '@angular/router';
+import { authGuard, signedOutGuard } from './auth/auth.guard';
 
 const page = () => import('./placeholder.component').then((m) => m.PlaceholderComponent);
 
-export const routes: Routes = [
+/** Everything behind sign-in. Redirect routes cannot carry guards; their targets do. */
+const appRoutes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'home' },
   { path: 'home', loadComponent: page, title: 'Home - FinPath', data: { heading: 'Home' } },
   {
@@ -25,4 +27,24 @@ export const routes: Routes = [
   { path: 'more/income', loadComponent: () => import('./plan/income.component').then((m) => m.IncomeComponent), title: 'Income sources - FinPath' },
   { path: 'more/recurring', loadComponent: () => import('./plan/recurring.component').then((m) => m.RecurringComponent), title: 'Recurring bills - FinPath' },
   { path: '**', redirectTo: 'home' },
+];
+
+const guarded = (r: Route): Route => (r.redirectTo !== undefined ? r : { ...r, canActivate: [authGuard] });
+
+/** Paths that render without the app chrome (bottom nav, Add expense). */
+export const AUTH_PATHS = ['/sign-in', '/auth/callback'];
+
+export const routes: Routes = [
+  {
+    path: 'sign-in',
+    canActivate: [signedOutGuard],
+    loadComponent: () => import('./auth/sign-in.component').then((m) => m.SignInComponent),
+    title: 'Sign in - FinPath',
+  },
+  {
+    path: 'auth/callback',
+    loadComponent: () => import('./auth/auth-callback.component').then((m) => m.AuthCallbackComponent),
+    title: 'Signing in - FinPath',
+  },
+  ...appRoutes.map(guarded),
 ];

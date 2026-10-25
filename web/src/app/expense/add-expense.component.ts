@@ -1,10 +1,22 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService, SIGNIN_STORAGE } from '../auth/auth.service';
 import { formatExactPaise, formatTyped, pressKey, toPaise } from './amount-entry';
 import { ExpenseApiService } from './expense-api.service';
 import { ExpenseQueueService } from './expense-queue.service';
 import { PendingExpensesComponent } from './pending-expenses.component';
 import { MODES, PaymentMode, SpendTag, TAGS } from './expense.models';
+
+/** Unsaved entry kept across the sign-in round trip (same tab only). Holds no account/card numbers. */
+export const DRAFT_KEY = 'finpath.expenseDraft.v1';
+interface Draft {
+  amountText: string;
+  category: string | null;
+  mode: PaymentMode | null;
+  tag: SpendTag | null;
+  note: string;
+}
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'];
 
@@ -28,6 +40,8 @@ function newKey(): string {
 export class AddExpenseComponent {
   private readonly api = inject(ExpenseApiService);
   private readonly queue = inject(ExpenseQueueService);
+  private readonly injector = inject(Injector);
+  private readonly draftStorage = inject(SIGNIN_STORAGE);
 
   readonly keys = KEYS;
   readonly categories = this.api.categories();
@@ -42,6 +56,12 @@ export class AddExpenseComponent {
   readonly saving = signal(false);
   readonly message = signal('');
   readonly error = signal('');
+  /** Nobody is signed in: the entry cannot be saved or queued; the form is kept and sign-in is offered. */
+  readonly signInNeeded = signal(false);
+
+  constructor() {
+    this.restoreDraft();
+  }
 
   readonly amountPaise = computed(() => toPaise(this.amountText()));
   readonly canSave = computed(
@@ -78,6 +98,11 @@ export class AddExpenseComponent {
     const category = this.category();
     const mode = this.mode();
     if (!this.canSave() || category === null || mode === null) return;
+    this.signInNeeded.set(false);
+    if (!this.queue.hasOwner()) {
+      this.askToSignIn();
+      return;
+    }
     const amountPaise = this.amountPaise();
     const typed = this.amountText().replace(/\.$/, '');
     this.saving.set(true);
@@ -122,9 +147,13 @@ export class AddExpenseComponent {
           }
           this.saving.set(false);
           this.failedSig = sig;
+          if (e.status === 401) {
+            this.askToSignIn();
+            return;
+          }
           this.error.set(
             e.status === 401
-              ? 'Please sign in to save expenses.'
+              ? 'Sign in to save this expense.'
               : e.status === 400
               ? 'This expense was rejected. Check the amount and note, and do not enter account or card numbers.'
               : e.status === 409
@@ -143,7 +172,50 @@ export class AddExpenseComponent {
       });
   }
 
+  /** Keep what was typed, remember this screen, and go to /sign-in. */
+  signInToSave(): void {
+    try {
+      const d: Draft = { amountText: this.amountText(), category: this.category(), mode: this.mode(), tag: this.tag(), note: this.note() };
+      this.draftStorage?.setItem(DRAFT_KEY, JSON.stringify(d));
+    } catch {
+      /* storage blocked: the entry is lost on the round trip, nothing else breaks */
+    }
+    this.injector.get(AuthService).rememberReturnTo('/spending/add');
+    void this.injector.get(Router).navigateByUrl('/sign-in');
+  }
+
+  private askToSignIn(): void {
+    this.saving.set(false);
+    this.message.set('');
+    this.error.set('Sign in to save this expense. What you entered stays here.');
+    this.signInNeeded.set(true);
+  }
+
+  private restoreDraft(): void {
+    let raw: string | null = null;
+    try {
+      raw = this.draftStorage?.getItem(DRAFT_KEY) ?? null;
+      this.draftStorage?.removeItem(DRAFT_KEY);
+    } catch {
+      return;
+    }
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw) as Partial<Draft>;
+      if (typeof d.amountText === 'string' && /^[0-9.]{0,16}$/.test(d.amountText)) this.amountText.set(d.amountText);
+      if (typeof d.category === 'string' && this.categories.some((c) => c.code === d.category)) this.category.set(d.category);
+      const mode = this.modes.find((m) => m.code === d.mode);
+      if (mode) this.mode.set(mode.code);
+      const tag = this.tags.find((t) => t.code === d.tag);
+      if (tag) this.tag.set(tag.code);
+      if (typeof d.note === 'string') this.note.set(d.note.slice(0, 140));
+    } catch {
+      /* ignore a corrupt draft */
+    }
+  }
+
   private reset(): void {
+    this.signInNeeded.set(false);
     this.amountText.set('');
     this.category.set(null);
     this.mode.set(null);
