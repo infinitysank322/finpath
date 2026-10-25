@@ -28,3 +28,6 @@ finpath:
   auth:
     jwt-secret: ${random.uuid}${random.uuid}
     allowed-redirects: http://localhost:4200/auth/callback,com.finpath.app://auth/callback
+  # T33: the web dev server is the only cross-origin caller under test (CorsTest).
+  cors:
+    allowed-origins: http://localhost:4200

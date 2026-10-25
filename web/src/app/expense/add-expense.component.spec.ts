@@ -1,10 +1,14 @@
-import { HttpResponse } from '@angular/common/http';
+import { HttpResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Router, provideRouter } from '@angular/router';
+import { AuthService, SIGNIN_STORAGE } from '../auth/auth.service';
+import { AUTH_STORAGE } from '../auth/session.store';
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
-import { AddExpenseComponent, todayIst } from './add-expense.component';
+import { AddExpenseComponent, DRAFT_KEY, todayIst } from './add-expense.component';
 import { ExpenseApiService } from './expense-api.service';
-import { ExpenseQueueService, QUEUE_STORAGE } from './expense-queue.service';
+import { ExpenseQueueService, QUEUE_OWNER, QUEUE_STORAGE } from './expense-queue.service';
 import { memoryStorage } from './queue-testing';
 import { ExpenseInput, ExpenseView, OUT_CATEGORIES } from './expense.models';
 
@@ -38,13 +42,24 @@ describe('AddExpenseComponent', () => {
   };
   const tapKey = (k: string) => tap(`.keypad button[aria-label="${k === '.' ? 'Decimal point' : 'Digit ' + k}"]`);
 
+  let owner: string | null;
+  let signin: ReturnType<typeof memoryStorage>;
+
   beforeEach(() => {
+    owner = 'user-1';
+    signin = memoryStorage();
     api = new FakeApi();
     TestBed.configureTestingModule({
       imports: [AddExpenseComponent],
       providers: [
         { provide: ExpenseApiService, useValue: api },
         { provide: QUEUE_STORAGE, useValue: memoryStorage() },
+        { provide: QUEUE_OWNER, useValue: () => owner },
+        { provide: SIGNIN_STORAGE, useValue: signin },
+        { provide: AUTH_STORAGE, useValue: memoryStorage() },
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
       ],
     });
     queue = TestBed.inject(ExpenseQueueService);
@@ -215,11 +230,62 @@ describe('AddExpenseComponent', () => {
     api.failWith = 401;
     fill('5');
     tap('[aria-label="Save expense"]');
-    expect(errorText()).toContain('Please sign in');
+    expect(errorText()).toContain('Sign in to save');
+    expect(root.querySelector('button.chip:not([aria-label])')?.textContent?.trim()).toBe('Sign in to save');
     api.failWith = 500;
     tap('[aria-label="Save expense"]');
     expect(errorText()).toContain('server had a problem');
     expect(errorText()).not.toContain('connection');
+  });
+
+  describe('signed out (T33)', () => {
+    beforeEach(() => (owner = null));
+
+    for (const online of [true, false]) {
+      it(`${online ? 'online' : 'offline'}: refuses to save or queue, keeps the form, offers Sign in to save`, () => {
+        spyOn(queue, 'isOnline').and.returnValue(online);
+        tapKey('7');
+        tap('[aria-label="Category Groceries"]');
+        tap('[aria-label="Payment mode UPI"]');
+        tap('[aria-label="Save expense"]');
+        expect(api.calls.length).toBe(0);
+        expect(queue.items().length).toBe(0);
+        expect(errorText()).toContain('Sign in to save');
+        expect(fixture.componentInstance.amountPaise()).toBe(700); // form kept
+        expect(fixture.componentInstance.category()).toBe('GROCERIES');
+        expect((root.querySelector('[aria-label="Save expense"]') as HTMLButtonElement).disabled).toBeFalse();
+      });
+    }
+
+    it('Sign in to save keeps the entry as a draft for the round trip and remembers this screen', () => {
+      const nav = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+      tapKey('9');
+      tap('[aria-label="Category Groceries"]');
+      tap('[aria-label="Payment mode UPI"]');
+      tap('[aria-label="Save expense"]');
+      const btn = Array.from(root.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Sign in to save')!;
+      btn.click();
+      expect(nav).toHaveBeenCalledWith('/sign-in');
+      expect(TestBed.inject(AuthService).pendingReturnTo()).toBe('/spending/add');
+      expect(JSON.parse(signin.data[DRAFT_KEY])).toEqual({ amountText: '9', category: 'GROCERIES', mode: 'UPI', tag: null, note: '' });
+
+      // Back after sign-in: a new component restores the draft once.
+      owner = 'user-1';
+      const again = TestBed.createComponent(AddExpenseComponent).componentInstance;
+      expect(again.amountPaise()).toBe(900);
+      expect(again.category()).toBe('GROCERIES');
+      expect(again.mode()).toBe('UPI');
+      expect(signin.data[DRAFT_KEY]).toBeUndefined();
+    });
+
+    it('ignores a tampered draft', () => {
+      signin.data[DRAFT_KEY] = JSON.stringify({ amountText: '<script>', category: 'NOPE', mode: 'BARTER', tag: 'X', note: 5 });
+      const c = TestBed.createComponent(AddExpenseComponent).componentInstance;
+      expect(c.amountText()).toBe('');
+      expect(c.category()).toBeNull();
+      expect(c.mode()).toBeNull();
+      expect(c.tag()).toBeNull();
+    });
   });
 
   describe('offline (T43)', () => {

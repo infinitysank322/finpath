@@ -4,6 +4,7 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import javax.crypto.SecretKey;
@@ -36,6 +37,9 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.security.web.savedrequest.NullRequestCache;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * Two filter chains.
@@ -45,11 +49,13 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
  *       few seconds between the redirect to Google and the callback.</li>
  *   <li>Everything else: a stateless bearer-JWT resource server. Health, the OpenAPI document and the token
  *       endpoints are public; every other path needs {@code Authorization: Bearer <jwt>}. No cookies are
- *       read, so CSRF protection is off for this chain only.</li>
+ *       read, so CSRF protection is off for this chain only. CORS (T33) applies to this chain only:
+ *       exact origins from FINPATH_CORS_ALLOWED_ORIGINS, no credentials. The sign-in chain is
+ *       top-level browser navigation and gets no CORS handling.</li>
  * </ol>
  */
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(AuthProperties.class)
+@EnableConfigurationProperties({AuthProperties.class, CorsProperties.class})
 public class SecurityConfig {
 
     static final String GOOGLE = "google";
@@ -88,9 +94,13 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
-    SecurityFilterChain apiChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain apiChain(HttpSecurity http, CorsProperties cors) throws Exception {
         JsonAuthenticationEntryPoint entryPoint = new JsonAuthenticationEntryPoint();
-        http.authorizeHttpRequests(a -> a
+        // CorsFilter runs before authentication: a preflight from an allowed origin is answered 200
+        // without a token, a disallowed origin gets 403 with no ACAO, and a 401 still carries ACAO
+        // so the web can read it and refresh.
+        http.cors(c -> c.configurationSource(corsSource(cors)))
+                .authorizeHttpRequests(a -> a
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/auth/token", "/auth/refresh").permitAll()
                         .requestMatchers("/error").permitAll()
@@ -112,6 +122,19 @@ public class SecurityConfig {
                         .accessDeniedHandler(JsonAuthenticationEntryPoint.accessDeniedHandler())
                         .jwt(jwt -> { }));
         return http.build();
+    }
+
+    /** Not a bean on purpose, so nothing else (the sign-in chain, Spring MVC) picks it up. */
+    static CorsConfigurationSource corsSource(CorsProperties cors) {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(cors.allowedOrigins());   // exact match; empty = no cross-origin caller
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+        config.setAllowCredentials(false);                 // bearer tokens only, never cookies
+        config.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     @Bean

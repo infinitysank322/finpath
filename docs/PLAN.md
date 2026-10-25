@@ -105,7 +105,7 @@ No HTTP, no JPA, no Spring in this package. Pure functions, `BigDecimal`, explic
 | T26 | DONE | FR-13…FR-22 | Close `RulesGoldenTest`: every persona figure asserted, all sourced from the T10b fixture | T10b, T11–T22 | 4 h | `./mvnw test -Dtest=RulesGoldenTest` green; tolerance asserted only by the named `assertWithinOnePercent`; test output contains no persona amount; a static check confirms no persona literal in the `rules` test sources; owner runs `RulesGoldenTest` locally against the real fixture before merging dev to master |
 | T27 | DONE | INFRA | Boundary sweep (zero principal, final instalment, rate at threshold, cycle spanning month end, already-closed loan) + JaCoCo 90% gate on `rules` | T26 | 3 h | `./mvnw verify` fails below 90% coverage on `rules`; each boundary case has a named test |
 
-### Stage 2 — Identity, tenancy, DPDP spine · 6 tasks · 22 h
+### Stage 2 — Identity, tenancy, DPDP spine · 7 tasks · 26 h
 
 Built before any business table, so every later `[+TABLE]` task has an export registry, a deletion registry and an RLS harness to plug into.
 
@@ -118,7 +118,8 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | T30 | DONE | INFRA | Postgres RLS policies on `app.current_user_id`, set per transaction by a connection initialiser; service-layer scoping as defence in depth; reusable `CrossTenantTest` base | T29 | 4 h | `CrossTenantTest` proves a raw repository query for another user's id returns zero rows **even with service scoping bypassed**; a new table without a policy fails a metadata test; the app connects as `app_user` (not the migrating/owner role) and returning-user sign-in through `finpath_user_id_by_email` (V2_1) still passes; that function is on the metadata test's SECURITY DEFINER allow-list and a cross-tenant test proves it reveals only an id (T29 follow-up) |
 | T31 | DONE | INFRA `[+TABLE]` | DPDP: `consent` table with purpose statement, `GET /me/export` from an exporter registry, `DELETE /me` from a deleter registry | T30 | 4 h | Removing a table from the registry breaks a test *by name*; export is valid JSON covering every registered table; post-delete every table returns zero rows; a consent row is required before the first write; `consent` itself carries an RLS policy and a cross-tenant test, and is registered in both the exporter and deleter (`[+TABLE]` trio satisfied for `consent`); T29 follow-ups: after `DELETE /me` the user's old access token, refresh tokens and any live one-time code all fail (`RefreshTokenStore.revokeAll`, a matching `OneTimeCodeStore` revoke, and JWTs/refresh for a deleted `sub` rejected); the consent check is proven against a business-table write (sign-in's `users` upsert is the only pre-consent write), and `users` rows whose owner declines or never gives consent are deleted or purged |
 | T32 | DONE | INFRA | API conventions: error model, OpenAPI, paise-as-integer JSON contract documented, no stack traces or amounts in logs | T29 | 3 h | OpenAPI served; a 500 body contains no amount or merchant text; a log-appender test asserts no amount patterns in output, and no email addresses (including on the sign-in failure path) or bearer/refresh/one-time-code values (T29 follow-up) |
-| T33 | TODO | FR-01 | `[LOCAL]` Web: Google sign-in, JWT storage, auth guard, session survival inside the Capacitor webview | T29, T06 | 4 h | Signed-out redirect test passes; token survives an app restart; sign-in renders at 380 px dark; T29 follow-ups: the API chain has a CORS allow-list for the web origin (or the Angular dev server proxies `/auth`, `/oauth2`, `/login`); the web client generates a PKCE S256 verifier and a `state` per sign-in, keeps the verifier only for the round trip, rejects a mismatched echoed `state`, and sends `codeVerifier` to `POST /auth/token` |
+| T33 | DONE | FR-01 | `[LOCAL]` Web: Google sign-in, JWT storage, auth guard, session survival inside the Capacitor webview | T29, T06 | 4 h | Signed-out redirect test passes; token survives an app restart; sign-in renders at 380 px dark; T29 follow-ups: the API chain has a CORS allow-list for the web origin (or the Angular dev server proxies `/auth`, `/oauth2`, `/login`); the web client generates a PKCE S256 verifier and a `state` per sign-in, keeps the verifier only for the round trip, rejects a mismatched echoed `state`, and sends `codeVerifier` to `POST /auth/token` |
+| T33b | TODO | FR-01 | Sign-in follow-ups from the T33 review: (1) `POST /auth/logout` revoking the refresh-token family, called by web sign-out; (2) after a successful `DELETE /me` (and on consent withdrawal) the web clears the session, the user's queue key and `finpath.signin.v1`, and orphaned queues get a purge rule; (3) "Sign out and discard" option for unsent expenses on a shared device; (4) the add-expense draft is restored only for the sign-in it started (or expires after ~10 min); (5) a forced sign-out on a rejected refresh while saving keeps the typed entry as a draft; (6) the queue pauses only on 403 `consent_required`, and T46 shows the paused state and flushes after `POST /me/consent` | T33 | 4 h | After sign-out the old refresh token returns 401; after `DELETE /me` no `finpath.*` key for that user remains in storage; discard leaves zero queued items; a draft from user A is not shown to user B; an expense typed before a rejected refresh is restored after sign-in; a non-consent 403 does not pause the queue |
 
 ### Stage 3 — Capture and cycle · 15 tasks · 52 h
 
@@ -211,12 +212,12 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | --- | --- | --- |
 | 0 — Skeleton and pipes | 8 | 23 |
 | 1 — Rules engine and golden tests | 20 | 63 |
-| 2 — Identity, tenancy, DPDP spine | 6 | 22 |
+| 2 — Identity, tenancy, DPDP spine | 7 | 26 |
 | 3 — Capture and cycle | 15 | 52 |
 | 4 — Debt | 13 | 40 |
 | 5 — Goals, FI, allocation, investments | 9 | 30 |
 | 6 — Dashboard, consistency, shipping | 18 | 60 |
-| **Total** | **89** | **290** |
+| **Total** | **90** | **294** |
 
 287 hours is roughly **7 focused weeks full-time, or 5–6 months at 12 h/week of evenings**. Stage 1 alone is 22% of the build and ships no visible UI — that is correct, not a problem to engineer around.
 
