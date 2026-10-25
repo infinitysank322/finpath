@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 import { API_BASE } from '../expense/expense-api.service';
 import { CycleDayStepComponent } from './cycle-day-step.component';
 import { FixedExpensesStepComponent } from './fixed-expenses-step.component';
+import { GoalStepComponent } from './goal-step.component';
 import { IncomeStepComponent } from './income-step.component';
 import { PlanStepsState } from './plan-steps.state';
 
@@ -113,6 +114,37 @@ describe('onboarding plan steps', () => {
       ]);
       f.detectChanges();
       expect(el(f).querySelector('.rows')?.textContent).toContain('Rent');
+    });
+  });
+
+  describe('goals', () => {
+    it('posts paise and a date, sets the state count, and lists the goal', () => {
+      const f = TestBed.createComponent(GoalStepComponent);
+      f.detectChanges();
+      http.expectOne('/api/goals').flush([]);
+      expect(button(f, 'Add goal').disabled).toBeTrue();
+      type(f, 'goal-target', '5,00,000');
+      type(f, 'goal-date', '2030-03-25');
+      button(f, 'Add goal').click();
+      const post = http.expectOne('/api/goals');
+      expect(post.request.method).toBe('POST');
+      expect(post.request.body).toEqual({ type: 'emergency', targetAmountPaise: 50000000, targetDate: '2030-03-25', currentAmountPaise: 0, priority: 5 });
+      post.flush({});
+      const g = { id: 'g1', type: 'emergency', targetAmountPaise: 50000000, targetDate: '2030-03-25', currentAmountPaise: 0, priority: 5 };
+      http.expectOne('/api/goals').flush([g]);
+      f.detectChanges();
+      expect(TestBed.inject(PlanStepsState).goalCount()).toBe(1);
+      expect(el(f).querySelector('.rows')?.textContent).toContain('Emergency fund');
+      expect(el(f).querySelector('.rows')?.textContent).toContain('₹5,00,000');
+    });
+
+    it('will not add without a valid amount', () => {
+      const f = TestBed.createComponent(GoalStepComponent);
+      f.detectChanges();
+      http.expectOne('/api/goals').flush([]);
+      type(f, 'goal-target', '0');
+      type(f, 'goal-date', '2030-03-25');
+      expect(button(f, 'Add goal').disabled).toBeTrue();
     });
   });
 });

@@ -1,0 +1,78 @@
+<h1>Goals</h1>
+<p class="muted">Educational information, not personal advice. Monthly figures come from your plan.</p>
+
+@if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+@if (message()) { <p class="ok" role="status">{{ message() }}</p> }
+@if (planUnavailable()) {
+  <p class="muted" role="status">Your cycle plan is not available yet, so nothing is counted as set aside for any goal.</p>
+}
+
+@if (loading()) {
+  <p class="muted" role="status">Loading...</p>
+} @else if (rows().length === 0 && !error()) {
+  <p class="muted">No goals yet. Add one to see what it needs each month.</p>
+}
+<ul aria-label="Your goals">
+  @for (r of rows(); track r.goal.id) {
+    <li class="goal">
+      <h2>{{ typeLabel(r.goal.type) }}</h2>
+      @if (r.status.instrumentClass === 'EQUITY_ALLOWED' && r.status.plannedMonthlyPaise === 0 && r.status.status === 'BEHIND') {
+        <span class="badge"><span aria-hidden="true">i</span> Not tracked yet</span>
+      } @else {
+        <span class="badge" [class.warn]="r.status.status === 'BEHIND'" [class.breach]="r.status.status === 'PAST_DUE'"><span aria-hidden="true">{{ statusText[r.status.status].icon }}</span> {{ statusText[r.status.status].label }}</span>
+      }
+      <div class="bar" role="progressbar" [attr.aria-label]="typeLabel(r.goal.type) + ' progress'" aria-valuemin="0" aria-valuemax="100"
+        [attr.aria-valuenow]="r.percent" [attr.aria-valuetext]="(r.goal.currentAmountPaise | paiseInr) + ' of ' + (r.goal.targetAmountPaise | paiseInr) + ', ' + r.percent + ' percent'">
+        <span class="fill" [style.width.%]="r.percent"></span>
+      </div>
+      <div class="progress-text">{{ r.goal.currentAmountPaise | paiseInr }} of {{ r.goal.targetAmountPaise | paiseInr }}, {{ r.percent }}%</div>
+      <div>Target date {{ shortDate(r.goal.targetDate) }}; priority {{ r.goal.priority }}</div>
+      @if (r.status.status === 'ACHIEVED') {
+        <div>Target reached. Nothing more needed each month.</div>
+      } @else {
+        <div>Needs <strong>{{ r.status.monthlyNeedPaise | paiseInr }}</strong> a month for {{ r.status.cyclesRemaining }} more cycles.</div>
+        <div class="muted">Set aside in your plan: {{ r.status.plannedMonthlyPaise | paiseInr }} a month.@if (r.status.plannedMonthlyPaise === 0) { @if (r.status.instrumentClass === 'EQUITY_ALLOWED') { Long-horizon goals are funded through your investment plan, not set aside per goal, so no on-track verdict is shown. } @else { Nothing is allocated to this goal yet. } }</div>
+        @if (r.status.status === 'PAST_DUE') { <div>The target date has passed with {{ r.status.shortfallPaise | paiseInr }} still to go.</div> }
+        @if (r.status.instrumentClass === 'SAFE_ONLY') { <div class="muted">Short horizon: keep this money in low-risk, easily withdrawn options.</div> }
+      }
+      <div class="actions">
+        <button type="button" class="btn" [disabled]="busy()" [attr.aria-label]="'Edit ' + typeLabel(r.goal.type) + ' goal of ' + exact(r.goal.targetAmountPaise)" (click)="openEdit(r.goal)">Edit</button>
+        @if (confirmingId() === r.goal.id) {
+          <button type="button" class="btn primary" [disabled]="busy()" [attr.aria-label]="'Confirm remove ' + typeLabel(r.goal.type) + ' goal'" (click)="remove(r.goal)">Confirm remove</button>
+          <button type="button" class="btn" [disabled]="busy()" (click)="keep()">Keep</button>
+        } @else {
+          <button type="button" class="btn" [disabled]="busy()" [attr.aria-label]="'Remove ' + typeLabel(r.goal.type) + ' goal of ' + exact(r.goal.targetAmountPaise)" (click)="askRemove(r.goal)">Remove</button>
+        }
+      </div>
+    </li>
+  }
+</ul>
+
+@if (formOpen()) {
+  <form (submit)="$event.preventDefault(); save()" aria-label="Goal">
+    <label class="field"><span>Type</span>
+      <select id="goal-type" (change)="type.set($any($event.target).value)">
+        @for (x of types; track x.code) { <option [value]="x.code" [selected]="type() === x.code">{{ x.label }}</option> }
+      </select>
+    </label>
+    <label class="field"><span>Target amount in rupees</span>
+      <input type="text" id="goal-target" inputmode="decimal" autocomplete="off" [value]="targetText()" (input)="on(targetText, $event)" />
+    </label>
+    <label class="field"><span>Saved so far in rupees (optional)</span>
+      <input type="text" id="goal-current" inputmode="decimal" autocomplete="off" aria-describedby="goal-hint" [value]="currentText()" (input)="on(currentText, $event)" />
+    </label>
+    <label class="field"><span>Target date</span>
+      <input type="date" id="goal-date" [value]="targetDate()" (input)="on(targetDate, $event)" />
+    </label>
+    <label class="field"><span>Priority, 1 (highest) to 10</span>
+      <input type="text" id="goal-priority" inputmode="numeric" autocomplete="off" [attr.aria-invalid]="priorityValue() === null ? true : null" [value]="priority()" (input)="on(priority, $event)" />
+    </label>
+    <p id="goal-hint" class="muted">Whole rupees or up to two decimals. Do not enter account or ID numbers; there is no field for them.</p>
+    <div class="actions">
+      <button type="submit" class="btn primary" [disabled]="!canSave()">Save</button>
+      <button type="button" class="btn" (click)="cancel()">Cancel</button>
+    </div>
+  </form>
+} @else {
+  <p><button type="button" class="btn primary" id="goal-add" (click)="openAdd()">Add goal</button></p>
+}

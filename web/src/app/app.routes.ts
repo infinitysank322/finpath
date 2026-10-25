@@ -23,7 +23,7 @@ const appRoutes: Routes = [
   { path: 'debt', loadComponent: page, title: 'Debt - FinPath', data: { heading: 'Debt' } },
   { path: 'goals/fi-planner', loadComponent: () => import('./fi/fi-planner.component').then((m) => m.FiPlannerComponent), title: 'FI planner - FinPath' },
   { path: 'more/allocation', loadComponent: () => import('./allocation/allocation.component').then((m) => m.AllocationComponent), title: 'Cycle allocation - FinPath' },
-  { path: 'goals', loadComponent: page, title: 'Goals - FinPath', data: { heading: 'Goals' } },
+  { path: 'goals', pathMatch: 'full', loadComponent: () => import('./goals/goals.component').then((m) => m.GoalsComponent), title: 'Goals - FinPath' },
   { path: 'more', pathMatch: 'full', loadComponent: () => import('./plan/more.component').then((m) => m.MoreComponent), title: 'More - FinPath' },
   { path: 'more/income', loadComponent: () => import('./plan/income.component').then((m) => m.IncomeComponent), title: 'Income sources - FinPath' },
   { path: 'more/recurring', loadComponent: () => import('./plan/recurring.component').then((m) => m.RecurringComponent), title: 'Recurring bills - FinPath' },

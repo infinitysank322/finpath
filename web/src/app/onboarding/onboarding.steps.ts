@@ -1,6 +1,7 @@
 import { Provider, inject } from '@angular/core';
 import { CycleDayStepComponent } from './cycle-day-step.component';
 import { FixedExpensesStepComponent } from './fixed-expenses-step.component';
+import { GoalStepComponent } from './goal-step.component';
 import { IncomeStepComponent } from './income-step.component';
 import { PlanStepsState } from './plan-steps.state';
 import { ConsentStepComponent } from './consent-step.component';
@@ -32,4 +33,9 @@ export const PLAN_STEP_PROVIDERS: Provider[] = [
   step({ id: 'fixed-expenses', order: 40, question: 'Which bills repeat every month?', component: FixedExpensesStepComponent }),
 ];
 
-export const ONBOARDING_STEP_PROVIDERS: Provider[] = [...SHELL_STEP_PROVIDERS, ...PLAN_STEP_PROVIDERS];
+/** T66: an optional goal step (skippable; goals can be added any time under Goals). */
+export const GOAL_STEP_PROVIDERS: Provider[] = [
+  step({ id: 'goals', order: 60, question: 'What are you saving for?', component: GoalStepComponent }),
+];
+
+export const ONBOARDING_STEP_PROVIDERS: Provider[] = [...SHELL_STEP_PROVIDERS, ...PLAN_STEP_PROVIDERS, ...GOAL_STEP_PROVIDERS];
