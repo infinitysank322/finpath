@@ -2,13 +2,20 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE } from '../expense/expense-api.service';
-import { CycleTotalView, IncomeInput, IncomeView, MaterialiseResult, TemplateInput, TemplateView } from './plan.models';
+import { CycleTotalView, IncomeInput, IncomeView, MaterialiseResult, PlanCycleView, TemplateInput, TemplateView } from './plan.models';
 
 /** HTTP edge for income sources (T35) and recurring templates (T38). Returns API values untouched. */
 @Injectable({ providedIn: 'root' })
 export class PlanApiService {
   private readonly http = inject(HttpClient);
   private readonly base = inject(API_BASE);
+
+  cycleCurrent(): Observable<PlanCycleView> {
+    return this.http.get<PlanCycleView>(`${this.base}/plan-cycles/current`);
+  }
+  cycleChangeStartDay(startDay: number): Observable<PlanCycleView> {
+    return this.http.put<PlanCycleView>(`${this.base}/plan-cycles/start-day`, { startDay });
+  }
 
   incomeList(): Observable<IncomeView[]> {
     return this.http.get<IncomeView[]>(`${this.base}/income-sources`);

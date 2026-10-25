@@ -17,3 +17,7 @@ h1:focus-visible { outline: 3px solid var(--fp-focus); outline-offset: 2px; }
 .error { margin: .5rem 0 0; color: var(--fp-breach-text); }
 .error:empty { display: none; }
 .ok { margin: .5rem 0 0; }
+label { display: block; margin: .75rem 0 .25rem; font-weight: 600; }
+input[type=text], input[type=number], select { width: 100%; min-height: 44px; padding: 0 .75rem; border: 1px solid var(--fp-border-strong); border-radius: 12px; background: var(--fp-surface); color: var(--fp-text); font: inherit; box-sizing: border-box; }
+.rows { margin: .75rem 0 0; padding-left: 1.25rem; overflow-wrap: anywhere; }
+.body .btn { margin-top: .75rem; }

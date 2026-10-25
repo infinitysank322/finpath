@@ -142,7 +142,7 @@ Built before any business table, so every later `[+TABLE]` task has an export re
 | T44 | DONE | FR-03, FR-05 | Web: income sources and recurring templates screens | T35, T38 | 4 h | A quarterly template shows both the bill amount and the per-cycle spread; 380 px dark verified |
 | T45 | DONE | FR-10 | Web: budget screen, per-category consumption, 80/100 banners | T40 | 3 h | Percentages equal the API response exactly (no client division); banner contrast ≥ 4.5:1 in both themes |
 | T46 | DONE | FR-01 | Web: onboarding wizard shell — one question per screen, resumable, progress, consent + purpose step | T33, T31 | 4 h | Closing mid-wizard resumes at the same step; the wizard cannot complete without a recorded consent row |
-| T47 | TODO | FR-01, FR-02 | Web: wizard steps for cycle day, income, fixed expenses | T46, T35, T38 | 4 h | Entering the persona's figures yields ₹1,27,000 income and ₹23,833 fixed in the API; cycle-day step defaults to 25 |
+| T47 | DONE | FR-01, FR-02 | Web: wizard steps for cycle day, income, fixed expenses | T46, T35, T38 | 4 h | Entering the persona's figures yields ₹1,27,000 income and ₹23,833 fixed in the API; cycle-day step defaults to 25 |
 
 ### Stage 4 — Debt · 13 tasks · 40 h
 

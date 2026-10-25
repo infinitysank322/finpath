@@ -9,7 +9,7 @@ import { API_BASE } from '../expense/expense-api.service';
 import { QUEUE_STORAGE } from '../expense/expense-queue.service';
 import { memoryStorage } from '../expense/queue-testing';
 import { FINISH_NEEDS_CONSENT, OnboardingComponent } from './onboarding.component';
-import { ONBOARDING_STEP_PROVIDERS } from './onboarding.steps';
+import { SHELL_STEP_PROVIDERS } from './onboarding.steps';
 import { wizardKeyFor } from './wizard-progress';
 import { ONBOARDING_STEP } from './wizard-step';
 
@@ -32,7 +32,7 @@ describe('OnboardingComponent', () => {
         { provide: API_BASE, useValue: '/api' },
         { provide: AUTH_STORAGE, useValue: storage },
         { provide: QUEUE_STORAGE, useValue: memoryStorage() },
-        ...ONBOARDING_STEP_PROVIDERS,
+        ...SHELL_STEP_PROVIDERS,
         ...extra,
       ],
     });
