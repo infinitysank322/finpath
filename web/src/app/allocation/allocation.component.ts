@@ -7,13 +7,14 @@ import { errorMessage } from '../plan/plan-format';
 import { stepName } from './allocation-format';
 import { AllocationApiService } from './allocation-api.service';
 import { AllocationView, RebalancePreview } from './allocation.models';
+import { FpCardComponent } from '../ui/fp-card.component';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
 import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 @Component({
   selector: 'app-allocation',
   standalone: true,
-  imports: [FpPageHeaderComponent, FpProfileLinkComponent, PaiseInrPipe],
+  imports: [FpCardComponent, FpPageHeaderComponent, FpProfileLinkComponent, PaiseInrPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './allocation.component.html',
   styleUrl: './allocation.css',

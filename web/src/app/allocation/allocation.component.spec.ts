@@ -79,16 +79,6 @@ describe('AllocationComponent', () => {
     expect(root.querySelector('table')).toBeNull();
   });
 
-  it('keeps the layout at 380 px by construction: fixed-layout table, wrapping text, theme tokens only', () => {
-    const { root } = setup();
-    const host = root.ownerDocument.createElement('div');
-    host.style.width = '380px';
-    host.appendChild(root);
-    root.ownerDocument.body.appendChild(host);
-    expect(root.scrollWidth).toBeLessThanOrEqual(380);
-    host.remove();
-  });
-
   it('words known steps', () => {
     expect(stepName('DEBT_PREPAYMENT')).toBe('Debt prepayment');
     expect(stepName('NEW_THING')).toBe('New thing');

@@ -1,82 +1,83 @@
-<fp-page-header title="Budget"><fp-profile-link fpTrailing /></fp-page-header>
+<div class="fp-page">
+  <fp-page-header title="Budget"><fp-profile-link fpTrailing /></fp-page-header>
 
-@if (status(); as s) {
-  <p class="muted">Cycle from {{ shortDate(s.cycleStart) }}; next cycle starts {{ shortDate(s.cycleEndExclusive) }}</p>
-}
-
-@for (l of alertLines(); track l.categoryCode) {
-  <p class="banner" [class.warn]="l.level === 'WARN'" [class.breach]="l.level === 'BREACH'" role="status">
-    <strong>{{ l.level === 'BREACH' ? 'Over budget' : 'Warning' }}.</strong> {{ lineAlertText(l) }}
-  </p>
-}
-@for (e of events(); track e.categoryCode + e.level) {
-  <p class="notice" role="status"><strong>New alert.</strong> {{ eventText(e) }}</p>
-}
-@if (evaluateFailed()) { <p class="notice" role="status">Could not check for new alerts just now.</p> }
-
-@if (error()) { <p class="error" role="alert">{{ error() }}</p> }
-@if (message()) { <p class="ok" role="status">{{ message() }}</p> }
-
-@if (loading()) {
-  <p class="muted" role="status">Loading...</p>
-} @else if (status() && status()!.lines.length === 0) {
-  <p class="muted">No budgets for this cycle yet. Add one to track a category.</p>
-}
-
-<ul aria-label="Category budgets">
-  @for (l of status()?.lines ?? []; track l.categoryCode) {
-    <li class="line">
-      <div class="top">
-        <strong>{{ categoryName(l.categoryCode) }}</strong>
-        <span class="badge" [class.warn]="l.level === 'WARN'" [class.breach]="l.level === 'BREACH'">{{ levelText(l.level) }}</span>
-      </div>
-      @if (percent(l.usedFraction); as pct) {
-        <div class="bar" role="progressbar" [attr.aria-label]="categoryName(l.categoryCode) + ' budget used'"
-          aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="pct" [attr.aria-valuetext]="pct + ' percent used'">
-          <div class="fill" [class.warn]="l.level === 'WARN'" [class.breach]="l.level === 'BREACH'" [style.width]="barWidth(l.usedFraction)"></div>
-        </div>
-        <div class="pct">{{ pct }}% used</div>
-      } @else {
-        <div class="pct muted">Budget is zero, so no share can be shown.</div>
-      }
-      <div class="nums">
-        <span>Spent {{ exact(l.spentPaise) }} of {{ exact(l.budgetPaise) }}</span>
-        <span class="remaining">{{ remainingText(l.remainingPaise) }}</span>
-      </div>
-      <div class="actions">
-        <button type="button" class="btn" [attr.aria-label]="'Edit ' + categoryName(l.categoryCode) + ' budget'" (click)="openEdit(l)">Edit</button>
-        @if (confirmingCode() === l.categoryCode) {
-          <button type="button" class="btn primary" [disabled]="saving()" [attr.aria-label]="'Confirm remove ' + categoryName(l.categoryCode) + ' budget'" (click)="remove(l.categoryCode)">Confirm remove</button>
-          <button type="button" class="btn" (click)="keep()">Keep</button>
-        } @else {
-          <button type="button" class="btn" [attr.aria-label]="'Remove ' + categoryName(l.categoryCode) + ' budget'" (click)="askRemove(l.categoryCode)">Remove</button>
-        }
-      </div>
-    </li>
+  @if (status(); as s) {
+    <p class="fp-note">Cycle from {{ shortDate(s.cycleStart) }}; next cycle starts {{ shortDate(s.cycleEndExclusive) }}</p>
   }
-</ul>
 
-<button type="button" id="bud-add" class="btn primary add" [disabled]="unbudgeted().length === 0" aria-describedby="bud-add-hint" (click)="openAdd()">Add a budget</button>
-@if (unbudgeted().length === 0 && status()) { <p id="bud-add-hint" class="muted">Every category already has a budget. Edit one above.</p> }
+  @for (l of alertLines(); track l.categoryCode) {
+    <p class="banner fp-warn" [class.warn]="l.level === 'WARN'" [class.breach]="l.level === 'BREACH'" role="status">
+      <strong>{{ l.level === 'BREACH' ? 'Over budget' : 'Warning' }}.</strong> {{ lineAlertText(l) }}
+    </p>
+  }
+  @for (e of events(); track e.categoryCode + e.level) {
+    <p class="notice fp-ok" role="status"><strong>New alert.</strong> {{ eventText(e) }}</p>
+  }
+  @if (evaluateFailed()) { <p class="notice fp-ok" role="status">Could not check for new alerts just now.</p> }
+
+  @if (error()) { <p class="error fp-alert" role="alert">{{ error() }}</p> }
+  @if (message()) { <p class="ok fp-ok" role="status">{{ message() }}</p> }
+
+  @if (loading()) {
+    <p class="fp-note" role="status">Loading...</p>
+  } @else if (status() && status()!.lines.length === 0) {
+    <p class="fp-note">No budgets for this cycle yet. Add one to track a category.</p>
+  }
+
+  <ul class="fp-list" aria-label="Category budgets">
+    @for (l of status()?.lines ?? []; track l.categoryCode) {
+      <li class="line">
+        <fp-card>
+          <div class="top">
+            <h2 class="name">{{ categoryName(l.categoryCode) }}</h2>
+            <span class="fp-badge" [class.warn]="l.level === 'WARN'" [class.breach]="l.level === 'BREACH'">{{ levelText(l.level) }}</span>
+          </div>
+          @if (percent(l.usedFraction); as pct) {
+            <fp-progress [label]="categoryName(l.categoryCode) + ' budget used'" [value]="num(pct)" [max]="scale(pct)"
+              [valueText]="pct + '% used'" [tone]="tone(l.level)" />
+          } @else {
+            <p class="fp-note zero">Budget is zero, so no share can be shown.</p>
+          }
+          <div class="nums">
+            <span>Spent {{ exact(l.spentPaise) }} of {{ exact(l.budgetPaise) }}</span>
+            <span class="remaining">{{ remainingText(l.remainingPaise) }}</span>
+          </div>
+          <div class="fp-actions">
+            <button type="button" class="fp-pill" [attr.aria-label]="'Edit ' + categoryName(l.categoryCode) + ' budget'" (click)="openEdit(l)">Edit</button>
+            @if (confirmingCode() === l.categoryCode) {
+              <button type="button" class="fp-btn" [disabled]="saving()" [attr.aria-label]="'Confirm remove ' + categoryName(l.categoryCode) + ' budget'" (click)="remove(l.categoryCode)">Confirm remove</button>
+              <button type="button" class="fp-pill" (click)="keep()">Keep</button>
+            } @else {
+              <button type="button" class="fp-pill" [attr.aria-label]="'Remove ' + categoryName(l.categoryCode) + ' budget'" (click)="askRemove(l.categoryCode)">Remove</button>
+            }
+          </div>
+        </fp-card>
+      </li>
+    }
+  </ul>
+
+  <button type="button" id="bud-add" class="fp-btn fp-btn-block" [disabled]="unbudgeted().length === 0" aria-describedby="bud-add-hint" (click)="openAdd()">Add a budget</button>
+  @if (unbudgeted().length === 0 && status()) { <p id="bud-add-hint" class="fp-note">Every category already has a budget. Edit one above.</p> }
+</div>
 
 @if (sheetOpen()) {
-  <div class="scrim" (click)="closeSheet()"></div>
-  <form class="sheet" role="dialog" aria-modal="true" aria-label="Set budget" (submit)="$event.preventDefault(); save()" (keydown.escape)="closeSheet()">
-    <label class="field"><span>Category</span>
-      <select id="bud-cat" [disabled]="lockedCategory()" (change)="sheetCategory.set($any($event.target).value)">
+  <div class="fp-scrim" (click)="closeSheet()"></div>
+  <form class="sheet fp-sheet" role="dialog" aria-modal="true" aria-label="Set budget" (submit)="$event.preventDefault(); save()" (keydown.escape)="closeSheet()">
+    <label class="fp-field"><span class="fp-label">Category</span>
+      <select id="bud-cat" class="fp-input" [disabled]="lockedCategory()" (change)="sheetCategory.set($any($event.target).value)">
         @for (c of lockedCategory() ? categories : unbudgeted(); track c.code) {
           <option [value]="c.code" [selected]="sheetCategory() === c.code">{{ c.name }}</option>
         }
       </select>
     </label>
-    <label class="field"><span>Budget for this cycle, in rupees</span>
-      <input type="text" id="bud-amount" inputmode="decimal" autocomplete="off" [value]="amountText()" (input)="on(amountText, $event)" />
+    <label class="fp-field"><span class="fp-label">Budget for this cycle, in rupees</span>
+      <input type="text" id="bud-amount" class="fp-input" inputmode="decimal" autocomplete="off" [value]="amountText()" (input)="on(amountText, $event)" />
     </label>
-    @if (sheetError()) { <p class="error" role="alert">{{ sheetError() }}</p> }
-    @if (amountText() !== '' && !amountValid()) { <p class="error" role="alert">Enter rupees, for example 5000 or 5000.50.</p> }
-    <div class="actions">
-      <button type="submit" class="btn primary" [disabled]="!canSave()">Save budget</button>
-      <button type="button" class="btn" (click)="closeSheet()">Cancel</button>
+    @if (sheetError()) { <p class="error fp-alert" role="alert">{{ sheetError() }}</p> }
+    @if (amountText() !== '' && !amountValid()) { <p class="error fp-alert" role="alert">Enter rupees, for example 5000 or 5000.50.</p> }
+    <div class="fp-actions">
+      <button type="submit" class="fp-btn" [disabled]="!canSave()">Save budget</button>
+      <button type="button" class="fp-pill" (click)="closeSheet()">Cancel</button>
     </div>
   </form>
 }

@@ -1,22 +1,26 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 /** Entry to the debt screens. Links only; no figures. */
 @Component({
   selector: 'app-debt-hub',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, FpPageHeaderComponent, FpProfileLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [`:host { display: block; max-width: 32rem; margin: 0 auto; } h1 { margin: 0 0 .5rem; font-size: 1.5rem; } a { display: flex; align-items: center; min-height: 44px; color: var(--fp-text); } ul { list-style: none; padding: 0; margin: 0; }`],
+  styles: [`a.fp-row { min-height: var(--fp-target); color: var(--fp-text); text-decoration: none; font-weight: 600; }`],
   template: `
-    <h1>Debt</h1>
-    <nav aria-label="Debt screens">
-      <ul>
-        <li><a routerLink="/debt/loans">Your loans</a></li>
-        <li><a routerLink="/debt/emi-guard">EMI to income</a></li>
-        <li><a routerLink="/debt/payoff">Payoff timeline</a></li>
-      </ul>
-    </nav>
+    <div class="fp-page">
+      <fp-page-header title="Debt"><fp-profile-link fpTrailing /></fp-page-header>
+      <nav aria-label="Debt screens">
+        <ul class="fp-list">
+          <li><a class="fp-row" routerLink="/debt/loans">Your loans</a></li>
+          <li><a class="fp-row" routerLink="/debt/emi-guard">EMI to income</a></li>
+          <li><a class="fp-row" routerLink="/debt/payoff">Payoff timeline</a></li>
+        </ul>
+      </nav>
+    </div>
   `,
 })
 export class DebtHubComponent {}

@@ -85,7 +85,7 @@ describe('FiPlannerComponent', () => {
     type(0, '60000');
     type(1, '15');
     submit();
-    const wrap = root.querySelector('.chart-wrap')!;
+    const wrap = root.querySelector('.fp-chart')!;
     expect(wrap.getAttribute('role')).toBe('img');
     const label = wrap.getAttribute('aria-label')!;
     expect(label).toContain('Low case');

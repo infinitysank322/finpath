@@ -22,7 +22,7 @@ import { PlanStepsState } from './plan-steps.state';
     </select>
     <label for="inc-amt">Amount per month (rupees)</label>
     <input id="inc-amt" type="text" inputmode="decimal" autocomplete="off" [value]="amountText()" (input)="amountText.set(val($event))" />
-    <button type="button" class="btn" [disabled]="amountPaise() === null || saving()" [attr.aria-busy]="saving()" (click)="add()">Add income</button>
+    <button type="button" class="fp-pill" [disabled]="amountPaise() === null || saving()" [attr.aria-busy]="saving()" (click)="add()">Add income</button>
     @if (items().length > 0) {
       <ul class="rows" aria-label="Income added">
         @for (i of items(); track i.id) {

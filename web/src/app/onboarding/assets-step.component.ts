@@ -23,7 +23,7 @@ const EPF_NAME = 'EPF';
     <label for="epf-balance">EPF balance (rupees)</label>
     <input id="epf-balance" type="text" inputmode="decimal" autocomplete="off" aria-describedby="epf-hint" [value]="epfText()" (input)="onEpf($event)" />
     <p id="epf-hint" class="muted small">Type the balance from your EPF passbook or statement. We never work it out for you. Leave it at 0 if you do not know it.</p>
-    <button type="button" class="btn" [disabled]="!canSaveEpf()" [attr.aria-busy]="savingEpf()" (click)="saveEpf()">{{ epfId() ? 'Update EPF balance' : 'Save EPF balance' }}</button>
+    <button type="button" class="fp-pill" [disabled]="!canSaveEpf()" [attr.aria-busy]="savingEpf()" (click)="saveEpf()">{{ epfId() ? 'Update EPF balance' : 'Save EPF balance' }}</button>
 
     <label for="asset-class">Another holding: type</label>
     <select id="asset-class" (change)="assetClass.set(asClass(val($event)))">
@@ -36,7 +36,7 @@ const EPF_NAME = 'EPF';
     <label for="asset-value">Current value (rupees)</label>
     <input id="asset-value" type="text" inputmode="decimal" autocomplete="off" aria-describedby="asset-hint" [value]="valueText()" (input)="valueText.set(val($event))" />
     <p id="asset-hint" class="muted small">{{ nameWarning }}</p>
-    <button type="button" class="btn" [disabled]="!canAdd()" [attr.aria-busy]="saving()" (click)="add()">Add holding</button>
+    <button type="button" class="fp-pill" [disabled]="!canAdd()" [attr.aria-busy]="saving()" (click)="add()">Add holding</button>
 
     @if (items().length > 0) {
       <ul class="rows" aria-label="Holdings added">

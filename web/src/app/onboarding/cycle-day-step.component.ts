@@ -18,7 +18,7 @@ export const DEFAULT_CYCLE_DAY = 25;
     @if (!valid()) {
       <p class="error" role="alert">Enter a whole number from 1 to 31.</p>
     }
-    <button type="button" class="btn" [disabled]="!valid() || saving() || state.cycleDaySaved()" (click)="save()">
+    <button type="button" class="fp-pill" [disabled]="!valid() || saving() || state.cycleDaySaved()" (click)="save()">
       {{ state.cycleDaySaved() ? 'Saved' : 'Save day' }}
     </button>
     @if (cycleStart(); as c) {

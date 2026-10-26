@@ -36,7 +36,7 @@ h1, h2, h3 { font-family: var(--fp-font-num); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Page wrapper for a signed-in screen: vertical rhythm and readable max width. Horizontal padding comes from <main> in the app shell. */
-.fp-page { display: flex; flex-direction: column; gap: var(--fp-space-4); max-width: 32rem; margin: 0 auto; padding: var(--fp-space-5) 0 var(--fp-space-4); min-width: 0; }
+.fp-page { display: flex; flex-direction: column; gap: var(--fp-space-4); max-width: var(--fp-page-max); margin: 0 auto; padding: var(--fp-space-5) 0 var(--fp-space-4); min-width: 0; }
 
 /* Buttons. .fp-btn is the lime primary action; add .fp-btn-ghost for a quiet secondary one, .fp-btn-block for full width. 44px minimum. */
 .fp-btn {
@@ -66,6 +66,53 @@ select.fp-input { appearance: auto; }
 /* A list row on a flat surface (loans, bills, queued items). */
 .fp-row { display: flex; flex-wrap: wrap; gap: var(--fp-space-1) var(--fp-space-3); align-items: center; justify-content: space-between; padding: var(--fp-space-3) var(--fp-space-4); background: var(--fp-surface); border: 1px solid var(--fp-card-border); border-radius: var(--fp-radius-md); overflow-wrap: anywhere; }
 
+/* Secondary and educational text. */
+.fp-note { margin: 0; font-size: var(--fp-fs-md); color: var(--fp-text-muted); }
+.fp-small { font-size: var(--fp-fs-sm); }
+.fp-ok { margin: 0; padding: var(--fp-space-3); border-left: 4px solid var(--fp-accent-edge); border-radius: var(--fp-radius-sm); background: var(--fp-chip-bg); color: var(--fp-text); }
+.fp-bullets { margin: 0; padding-left: var(--fp-space-5); font-size: var(--fp-fs-md); color: var(--fp-text-2); display: flex; flex-direction: column; gap: var(--fp-space-1); }
+
+/* Lists, forms, action rows. */
+.fp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--fp-space-2); }
+.fp-form { display: flex; flex-direction: column; gap: var(--fp-space-3); min-width: 0; }
+.fp-form .fp-note { font-size: var(--fp-fs-sm); }
+.fp-actions { display: flex; flex-wrap: wrap; gap: var(--fp-space-2); }
+.fp-badge { display: inline-block; padding: 0 var(--fp-space-2); border: 1px solid var(--fp-border-strong); border-radius: var(--fp-radius-pill); background: var(--fp-chip-bg-2); color: var(--fp-text-2); font-size: var(--fp-fs-xs); font-weight: 600; line-height: 1.6; }
+.fp-badge.warn { background: var(--fp-warn-bg); color: var(--fp-warn-text); border-color: var(--fp-warn-bar); }
+.fp-badge.breach { background: var(--fp-breach-bg); color: var(--fp-breach-text); border-color: var(--fp-breach-bar); }
+.fp-pill.on { background: var(--fp-segmented-on-bg); color: var(--fp-segmented-on-text); }
+.fp-link { display: flex; align-items: center; min-height: var(--fp-target); color: var(--fp-text); font-weight: 600; text-decoration: none; }
+
+/* Key / value list. */
+.fp-dl { margin: 0; }
+.fp-dl > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--fp-space-1) var(--fp-space-3); padding: var(--fp-space-2) 0; border-top: 1px solid var(--fp-border); }
+.fp-dl > div:first-child { border-top: 0; }
+.fp-dl dt { color: var(--fp-text-muted); font-size: var(--fp-fs-md); }
+.fp-dl dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+
+/* Data table: the text equivalent of a chart or a result set. Wrap wide ones in .fp-table-wrap. */
+.fp-table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--fp-card-border); border-radius: var(--fp-radius-md); }
+.fp-table-wrap.tall { max-height: var(--fp-scroll-max-h); overflow-y: auto; }
+.fp-table { width: 100%; border-collapse: collapse; font-size: var(--fp-fs-sm); }
+.fp-table caption { text-align: left; color: var(--fp-text-muted); padding: var(--fp-space-2); font-size: var(--fp-fs-xs); }
+.fp-table th, .fp-table td { text-align: left; padding: var(--fp-space-2); border-bottom: 1px solid var(--fp-border); vertical-align: top; overflow-wrap: anywhere; }
+.fp-table thead th { border-bottom-color: var(--fp-border-strong); color: var(--fp-text-muted); font-size: var(--fp-fs-xs); font-weight: 600; }
+.fp-table th[scope='row'] { font-weight: 600; }
+.fp-table tbody tr:last-child > *, .fp-table tfoot tr:last-child > * { border-bottom: 0; }
+.fp-table tfoot th, .fp-table tfoot td { font-weight: 700; }
+.fp-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Chart frame: aria-labelled role=img wrapper; the echarts element inside is aria-hidden and fills it. */
+.fp-chart { width: 100%; height: var(--fp-chart-h); min-width: 0; }
+.fp-chart.short { height: var(--fp-chart-h-short); }
+.fp-chart.bars { height: max(var(--fp-chart-min-h), calc(var(--fp-chart-bar-base) + var(--fp-chart-bar-step) * var(--fp-bars, 1))); }
+.fp-chart-canvas { width: 100%; height: 100%; }
+
+/* Bottom sheet over a scrim. */
+.fp-scrim { position: fixed; inset: 0; z-index: 40; background: var(--fp-scrim); }
+.fp-sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; max-width: var(--fp-page-max); max-height: 90vh; margin: 0 auto; overflow-y: auto; display: flex; flex-direction: column; gap: var(--fp-space-3); padding: var(--fp-space-4); background: var(--fp-bg); border: 1px solid var(--fp-border-strong); border-radius: var(--fp-radius-lg) var(--fp-radius-lg) 0 0; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+.fp-warn.breach { border-left-color: var(--fp-breach-bar); background: var(--fp-breach-bg); color: var(--fp-breach-text); }

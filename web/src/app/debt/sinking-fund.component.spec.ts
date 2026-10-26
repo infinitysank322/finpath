@@ -45,10 +45,10 @@ describe('SinkingFundComponent', () => {
     expect(cell('per-cycle')).toBe('₹12,345.68');
     expect(cell('catch-up')).toBe('₹30,000.01');
     expect(cell('progress')).toBe('₹10,000.01 set aside of ₹1,23,456.78 due');
-    const p = root.querySelector('progress')!;
-    expect(p.max).toBe(12345678);
-    expect(p.value).toBe(1000001);
-    expect(root.querySelector('.card.behind')).not.toBeNull();
+    const p = root.querySelector('[role=meter]')!;
+    expect(p.getAttribute('aria-valuemax')).toBe('12345678');
+    expect(p.getAttribute('aria-valuenow')).toBe('1000001');
+    expect(root.querySelector('fp-card.behind')).not.toBeNull();
   });
 
   it('hides catch-up when on track', () => {
@@ -58,7 +58,7 @@ describe('SinkingFundComponent', () => {
     fixture.detectChanges();
     expect(root.querySelector('[data-f=catch-up]')).toBeNull();
     expect(root.querySelector('[data-f=state]')!.textContent).toContain('On track');
-    expect(root.querySelector('.card.behind')).toBeNull();
+    expect(root.querySelector('fp-card.behind')).toBeNull();
   });
 
   it('rejects bad input without calling the API', () => {

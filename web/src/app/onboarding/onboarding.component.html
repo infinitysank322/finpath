@@ -8,11 +8,11 @@
     <div class="body"><ng-container [ngComponentOutlet]="s.component" /></div>
     <p class="error" role="alert">{{ message() }}</p>
     <nav class="nav" aria-label="Setup steps">
-      <button type="button" class="btn" [disabled]="index() === 0" (click)="back()">Back</button>
+      <button type="button" class="fp-pill" [disabled]="index() === 0" (click)="back()">Back</button>
       @if (isLast()) {
-        <button type="button" class="btn primary" [disabled]="!canNext() || finishing()" [attr.aria-busy]="finishing()" (click)="finish()">Finish</button>
+        <button type="button" class="fp-btn" [disabled]="!canNext() || finishing()" [attr.aria-busy]="finishing()" (click)="finish()">Finish</button>
       } @else {
-        <button type="button" class="btn primary" [disabled]="!canNext()" (click)="next()">Next</button>
+        <button type="button" class="fp-btn" [disabled]="!canNext()" (click)="next()">Next</button>
       }
     </nav>
   </section>

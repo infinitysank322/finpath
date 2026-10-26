@@ -1,87 +1,91 @@
-<fp-page-header title="Payoff timeline"><fp-profile-link fpTrailing /></fp-page-header>
-<p class="edu">Educational view of your own loans. It is not advice to take or change any loan or investment.</p>
+<div class="fp-page">
+  <fp-page-header title="Payoff timeline"><fp-profile-link fpTrailing /></fp-page-header>
+  <p class="edu fp-note">Educational view of your own loans. It is not advice to take or change any loan or investment.</p>
 
-<div role="group" aria-label="Payoff strategy" class="seg">
-  @for (s of strategies; track s.code) {
-    <button type="button" class="btn" [class.primary]="strategy() === s.code" [attr.aria-pressed]="strategy() === s.code" (click)="choose(s.code)">
-      {{ s.name }}<span class="hint"> ({{ s.hint }})</span>
-    </button>
+  <fp-segmented class="seg" label="Payoff strategy" ariaPrefix="Strategy " [options]="strategyOptions" [value]="strategy()" (valueChange)="choose($any($event))" />
+  <p class="fp-note" data-f="strategy-hint">Order: {{ strategyHint() }}.</p>
+
+  @if (error()) {
+    <p class="error fp-alert" role="alert">{{ error() }}</p>
   }
-</div>
-
-@if (error()) {
-  <p class="error" role="alert">{{ error() }}</p>
-}
-@if (loading()) {
-  <p class="muted" role="status">Loading payoff plan...</p>
-} @else {
-  @if (plan(); as p) {
-  @if (rows().length === 0) {
-    <p class="muted">No active loans, so there is no payoff timeline.</p>
+  @if (loading()) {
+    <p class="fp-note" role="status">Loading payoff plan...</p>
   } @else {
-    <h2>When each loan ends</h2>
-    <div role="img" [attr.aria-label]="description()" [class]="'chart-wrap ' + chartSizeClass()">
-      @if (timelineOptions(); as o) {
-        <div echarts [options]="o" [merge]="o" class="chart" aria-hidden="true"></div>
-      }
-    </div>
-    <p class="muted small">Bar length is cycles from now; the label at the end of each bar is the cycle in which the loan closes (C1 is the current cycle).</p>
+    @if (plan(); as p) {
+      @if (rows().length === 0) {
+        <p class="fp-note">No active loans, so there is no payoff timeline.</p>
+      } @else {
+        <fp-card variant="hero" class="headline">
+          <fp-stat label="Interest over the plan" [value]="fmt(p.totalInterestPaise)" size="lg"
+            [hint]="'of ' + fmt(p.totalPaidPaise) + ' paid across ' + p.cycles + ' cycles'" />
+        </fp-card>
 
-    <table>
-      <caption>Loans in {{ strategyName() }} payoff order</caption>
-      <thead>
-        <tr><th scope="col">Lender</th><th scope="col">Ends in</th><th scope="col">Final payment (cycle starting)</th><th scope="col">EMI freed from</th><th scope="col" class="num">Payment per cycle</th></tr>
-      </thead>
-      <tbody>
-        @for (r of rows(); track r.loanId) {
-          <tr>
-            <th scope="row">{{ r.lender }}</th>
-            <td>{{ r.cycle }}</td>
-            <td>{{ r.endsCycleStarting }}</td>
-            <td>{{ r.freedFrom ?? 'Not available' }}</td>
-            <td class="num">{{ fmt(r.monthlyPaymentPaise) }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-
-    <p class="headline">Interest over the plan <strong>{{ fmt(p.totalInterestPaise) }}</strong> <span class="muted small">of {{ fmt(p.totalPaidPaise) }} paid across {{ p.cycles }} cycles</span></p>
-
-    @if (rollOff(); as r) {
-      @if (r.steps.length > 0) {
-        <h2>EMI roll-off steps</h2>
-        <div class="chart-wrap h-roll" role="img" [attr.aria-label]="rollOffDescription()">
-          @if (rollOffOptions(); as o) {
-            <div echarts [options]="o" [merge]="o" class="chart" aria-hidden="true"></div>
-          }
-        </div>
-        <table>
-          <caption>Freed EMI by cycle</caption>
-          <thead>
-            <tr><th scope="col">Cycle starting</th><th scope="col" class="num">Freed</th><th scope="col" class="num">Total freed</th></tr>
-          </thead>
-          <tbody>
-            @for (s of r.steps; track s.cycleId) {
-              <tr>
-                <th scope="row">{{ s.cycleId }}</th>
-                <td class="num">{{ fmt(s.freedPaise) }}</td>
-                <td class="num">{{ fmt(s.cumulativeFreedPaise) }}</td>
-              </tr>
+        <fp-card heading="When each loan ends">
+          <div role="img" [attr.aria-label]="description()" class="fp-chart bars" [style.--fp-bars]="chartBars()">
+            @if (timelineOptions(); as o) {
+              <div echarts [options]="o" [merge]="o" class="fp-chart-canvas" aria-hidden="true"></div>
             }
-          </tbody>
-        </table>
+          </div>
+          <p class="fp-note fp-small">Bar length is cycles from now; the label at the end of each bar is the cycle in which the loan closes (C1 is the current cycle).</p>
+          <div class="fp-table-wrap" role="region" tabindex="0" aria-label="Loans in payoff order table">
+            <table class="fp-table">
+              <caption>Loans in {{ strategyName() }} payoff order</caption>
+              <thead>
+                <tr><th scope="col">Lender</th><th scope="col">Ends in</th><th scope="col">Final payment (cycle starting)</th><th scope="col">EMI freed from</th><th scope="col" class="num">Payment per cycle</th></tr>
+              </thead>
+              <tbody>
+                @for (r of rows(); track r.loanId) {
+                  <tr>
+                    <th scope="row">{{ r.lender }}</th>
+                    <td>{{ r.cycle }}</td>
+                    <td>{{ r.endsCycleStarting }}</td>
+                    <td>{{ r.freedFrom ?? 'Not available' }}</td>
+                    <td class="num">{{ fmt(r.monthlyPaymentPaise) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </fp-card>
+
+        @if (rollOff(); as r) {
+          @if (r.steps.length > 0) {
+            <fp-card heading="EMI roll-off steps">
+              <div class="fp-chart short" role="img" [attr.aria-label]="rollOffDescription()">
+                @if (rollOffOptions(); as o) {
+                  <div echarts [options]="o" [merge]="o" class="fp-chart-canvas" aria-hidden="true"></div>
+                }
+              </div>
+              <div class="fp-table-wrap">
+                <table class="fp-table">
+                  <caption>Freed EMI by cycle</caption>
+                  <thead>
+                    <tr><th scope="col">Cycle starting</th><th scope="col" class="num">Freed</th><th scope="col" class="num">Total freed</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (s of r.steps; track s.cycleId) {
+                      <tr>
+                        <th scope="row">{{ s.cycleId }}</th>
+                        <td class="num">{{ fmt(s.freedPaise) }}</td>
+                        <td class="num">{{ fmt(s.cumulativeFreedPaise) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </fp-card>
+          }
+        }
+        <fp-card heading="Assumptions" role="region" aria-label="Assumptions" class="assumptions">
+          <ul class="fp-bullets">
+            <li>Dates follow each loan's recorded rate and EMI, assuming every payment is made on time and rates do not change. A change in either moves the dates.</li>
+            <li>This is an educational projection, not advice to take, prepay or change any loan or investment.</li>
+            @if (rollOff(); as r) {
+              <li>Freed EMIs are redirected at {{ r.redirectPct }}% towards goals.</li>
+            }
+          </ul>
+        </fp-card>
       }
     }
-    <section aria-label="Assumptions" class="assumptions">
-      <h2>Assumptions</h2>
-      <ul>
-        <li>Dates follow each loan's recorded rate and EMI, assuming every payment is made on time and rates do not change. A change in either moves the dates.</li>
-        <li>This is an educational projection, not advice to take, prepay or change any loan or investment.</li>
-        @if (rollOff(); as r) {
-          <li>Freed EMIs are redirected at {{ r.redirectPct }}% towards goals.</li>
-        }
-      </ul>
-    </section>
   }
-}
-}
+</div>

@@ -61,7 +61,7 @@ describe('LoanInterestComponent', () => {
 
   it('gives the chart an accessible name and a legend-free text equivalent', () => {
     const { root } = setup();
-    const wrap = root.querySelector('.chart-wrap')!;
+    const wrap = root.querySelector('.fp-chart')!;
     expect(wrap.getAttribute('role')).toBe('img');
     expect(wrap.getAttribute('aria-label')).toContain('3 remaining instalments');
     expect(root.textContent).toContain('Educational');
@@ -72,7 +72,7 @@ describe('LoanInterestComponent', () => {
     api.result = of({ ...detail, closed: true, instalments: [], interestRemainingPaise: 0, totalRemainingPayablePaise: 0 });
     const { root } = setup();
     expect(root.textContent).toContain('closed');
-    expect(root.querySelector('.chart-wrap')).toBeNull();
+    expect(root.querySelector('.fp-chart')).toBeNull();
   });
 
   it('handles empty instalments on an open loan', () => {
@@ -113,11 +113,11 @@ describe('LoanInterestComponent', () => {
     api.result = throwError(() => new HttpErrorResponse({ status: 0 }));
     const { fixture, root } = setup();
     api.result = of(detail);
-    (root.querySelector('button.btn') as HTMLButtonElement).click();
+    (root.querySelector('button.retry') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(api.asked).toEqual(['L1', 'L1']);
     expect(root.querySelector('[role=alert]')).toBeNull();
-    expect(root.querySelector('.chart-wrap')).not.toBeNull();
+    expect(root.querySelector('.fp-chart')).not.toBeNull();
   });
 
   it('shows a friendly error', () => {

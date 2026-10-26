@@ -6,6 +6,9 @@ import { use } from 'echarts/core';
 import { PieChart } from 'echarts/charts';
 import { AriaComponent, TooltipComponent } from 'echarts/components';
 import { SVGRenderer } from 'echarts/renderers';
+import { FpCardComponent } from '../ui/fp-card.component';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import * as echarts from 'echarts/core';
 import { formatExactPaise } from '../expense/amount-entry';
@@ -34,7 +37,7 @@ export function readDonutPalette(dark: boolean, el: Element = document.documentE
 @Component({
   selector: 'app-investments',
   standalone: true,
-  imports: [PaiseInrPipe, NgxEchartsDirective],
+  imports: [PaiseInrPipe, NgxEchartsDirective, FpCardComponent, FpPageHeaderComponent, FpProfileLinkComponent],
   providers: [provideEchartsCore({ echarts })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './investments.component.html',

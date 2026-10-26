@@ -16,6 +16,9 @@ import { ChartPalette, rollOffOption, timelineOption } from './payoff-chart-opti
 import { PayoffApiService } from './payoff-api.service';
 import { describeTimeline, payoffRows } from './payoff-format';
 import { PayoffPlanView, PayoffStrategy, RollOffView } from './payoff.models';
+import { FpCardComponent } from '../ui/fp-card.component';
+import { FpSegmentedComponent } from '../ui/fp-segmented.component';
+import { FpStatComponent } from '../ui/fp-stat.component';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
 import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
@@ -39,11 +42,10 @@ export function readPalette(el: Element = document.documentElement): ChartPalett
 @Component({
   selector: 'app-payoff',
   standalone: true,
-  imports: [FpPageHeaderComponent, FpProfileLinkComponent, NgxEchartsDirective],
+  imports: [FpCardComponent, FpPageHeaderComponent, FpProfileLinkComponent, FpSegmentedComponent, FpStatComponent, NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './payoff.component.html',
-  styleUrl: './payoff.css',
 })
 export class PayoffComponent {
   private readonly api = inject(PayoffApiService);
@@ -81,8 +83,10 @@ export class PayoffComponent {
     return s.length > 0 ? rollOffOption(s, readPalette(), this.fmt) : null;
   });
   readonly strategyName = computed(() => this.strategies.find((s) => s.code === this.plan()?.strategy.toLowerCase())?.name ?? this.strategy());
-  /** Height class scales with the number of loans, avoiding inline styles. */
-  readonly chartSizeClass = computed(() => `h-${Math.min(10, Math.max(1, this.plan()?.order.length ?? 1))}`);
+  /** Bar chart height scales with the number of loans (the --fp-chart-bar-* tokens turn this into a height). */
+  readonly chartBars = computed(() => Math.min(10, Math.max(1, this.plan()?.order.length ?? 1)));
+  readonly strategyOptions = this.strategies.map((s) => ({ value: s.code, label: s.name }));
+  readonly strategyHint = computed(() => this.strategies.find((s) => s.code === this.strategy())?.hint ?? '');
 
   private readonly requests = new Subject<PayoffStrategy>();
 

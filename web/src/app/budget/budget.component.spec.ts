@@ -45,9 +45,9 @@ describe('BudgetComponent', () => {
 
   it('shows percentages exactly from the API usedFraction text', () => {
     const { root } = setup();
-    const bars = Array.from(root.querySelectorAll('[role=progressbar]'));
+    const bars = Array.from(root.querySelectorAll('[role=meter]'));
     expect(bars.map((b) => b.getAttribute('aria-valuenow'))).toEqual(['10', '85', '125']);
-    const pcts = Array.from(root.querySelectorAll('.pct')).map((e) => (e.textContent ?? '').trim());
+    const pcts = Array.from(root.querySelectorAll('fp-progress .cap, .zero')).map((e) => (e.textContent ?? '').trim());
     expect(pcts.slice(0, 3)).toEqual(['10% used', '85% used', '125% used']);
     expect(pcts[3]).toContain('Budget is zero');
     expect(bars.every((b) => b.getAttribute('aria-label'))).toBeTrue();
@@ -94,7 +94,7 @@ describe('BudgetComponent', () => {
   it('shows save errors inside the sheet, closes on Escape and returns focus', () => {
     api.put = () => throwError(() => new HttpErrorResponse({ status: 500 })) as never;
     const { fixture, root } = setup();
-    const edit = root.querySelector('li.line .btn') as HTMLElement;
+    const edit = root.querySelector('li.line button') as HTMLElement;
     edit.focus();
     edit.click();
     fixture.detectChanges();
@@ -116,7 +116,7 @@ describe('BudgetComponent', () => {
 
   it('sends the edited budget as integer paise', () => {
     const { fixture, root } = setup();
-    (root.querySelector('li.line .btn') as HTMLElement).click(); // Edit FOOD
+    (root.querySelector('li.line button') as HTMLElement).click(); // Edit FOOD
     fixture.detectChanges();
     const input = root.querySelector('#bud-amount') as HTMLInputElement;
     input.value = '12,500.50';

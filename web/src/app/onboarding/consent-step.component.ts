@@ -18,7 +18,7 @@ import { ConsentService } from './consent.service';
           <span>I have read this and I agree.</span>
         </label>
         <p class="muted small" id="consent-hint">Give consent to continue.</p>
-        <button type="button" class="btn primary" [disabled]="!agreed() || consent.busy()" [attr.aria-busy]="consent.busy()" (click)="grant()">
+        <button type="button" class="fp-btn" [disabled]="!agreed() || consent.busy()" [attr.aria-busy]="consent.busy()" (click)="grant()">
           Give consent
         </button>
       }
@@ -27,7 +27,7 @@ import { ConsentService } from './consent.service';
     }
     <p class="error" role="alert">{{ consent.error() }}</p>
     @if (!consent.state() && !consent.loading()) {
-      <button type="button" class="btn" (click)="consent.refresh()">Try again</button>
+      <button type="button" class="fp-pill" (click)="consent.refresh()">Try again</button>
     }
   `,
   styleUrl: './onboarding.css',

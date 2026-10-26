@@ -1,91 +1,93 @@
-<fp-page-header title="Cycle allocation"><fp-profile-link fpTrailing /></fp-page-header>
-<p class="edu">Educational view of how this cycle's surplus is split, in priority order. It is not advice about any security or product.</p>
+<div class="fp-page">
+  <fp-page-header title="Cycle allocation"><fp-profile-link fpTrailing /></fp-page-header>
+  <p class="edu fp-note">Educational view of how this cycle's surplus is split, in priority order. It is not advice about any security or product.</p>
 
-@if (error()) {
-  <p class="error" role="alert">{{ error() }}</p>
-}
-@if (loading()) {
-  <p class="muted" role="status">Loading the allocation...</p>
-}
-@if (missing()) {
-  <p class="muted" data-f="missing">No allocation has been run for this cycle yet.</p>
-}
-@if (!loading()) {
-  <button type="button" class="btn" (click)="run()">{{ view() ? 'Re-run allocation' : 'Run allocation' }}</button>
-}
-
-@if (view(); as v) {
-  <section class="card" aria-label="Cycle surplus">
-    <p class="small muted">Cycle starting {{ v.cycleStart }}</p>
-    <p class="big" data-f="surplus"><span class="muted">Surplus</span> {{ fmt(v.surplusPaise) }}</p>
-    @if (v.shortfallPaise > 0) {
-      <p class="warn" role="status" data-f="shortfall">Shortfall: mandatory outflows exceed income by {{ v.shortfallPaise | paiseInr }}. Nothing is allocated.</p>
-    }
-  </section>
-
-  @if (v.lines.length > 0) {
-    <table aria-label="Allocation steps in priority order">
-      <caption class="sr-only">Where the surplus goes, step by step</caption>
-      <thead><tr><th scope="col">Step</th><th scope="col" class="num">Amount</th></tr></thead>
-      <tbody>
-        @for (l of v.lines; track $index) {
-          <tr data-row>
-            <th scope="row">{{ name(l.step) }}</th>
-            <td class="num" data-f="amount">{{ fmt(l.amountPaise) }}</td>
-          </tr>
-        }
-      </tbody>
-      <tfoot>
-        <tr><th scope="row">Allocated (lines add up to this; the surplus is shown above)</th><td class="num" data-f="total">{{ fmt(v.allocatedPaise) }}</td></tr>
-      </tfoot>
-    </table>
+  @if (error()) {
+    <p class="error fp-alert" role="alert">{{ error() }}</p>
+  }
+  @if (loading()) {
+    <p class="fp-note" role="status">Loading the allocation...</p>
+  }
+  @if (missing()) {
+    <p class="fp-note" data-f="missing">No allocation has been run for this cycle yet.</p>
+  }
+  @if (!loading()) {
+    <button type="button" class="fp-pill run" (click)="run()">{{ view() ? 'Re-run allocation' : 'Run allocation' }}</button>
   }
 
-  <section aria-label="Unplanned spend check" class="check">
-    <h2>If an unplanned spend lands</h2>
-    <form (submit)="$event.preventDefault(); check()">
-      <label for="spend">Unplanned spend (₹)</label>
-      <input id="spend" inputmode="decimal" autocomplete="off" [value]="spend()" (input)="spend.set($any($event.target).value)" />
-      <button type="submit" class="btn" [disabled]="previewing()">See which step absorbs it</button>
-    </form>
-    @if (previewError()) {
-      <p class="error" role="alert">{{ previewError() }}</p>
-    }
-    @if (preview(); as p) {
-      <div class="card absorbed" aria-label="Absorbing step">
-        @if (p.primaryAbsorbingStep) {
-          <p class="state" data-f="absorber">Absorbed first by: {{ name(p.primaryAbsorbingStep) }}</p>
-        } @else {
-          <p class="state" data-f="absorber">No step absorbs this spend.</p>
-        }
-        @if (p.absorbed.length > 0) {
-          <ul>
-            @for (a of p.absorbed; track $index) {
-              <li data-absorbed>{{ name(a.step) }}: {{ a.amountPaise | paiseInr }} less</li>
+  @if (view(); as v) {
+    <fp-card variant="hero" role="region" aria-label="Cycle surplus">
+      <span class="fp-label">Cycle starting {{ v.cycleStart }}</span>
+      <p class="big fp-num" data-f="surplus"><span class="fp-label">Surplus</span> {{ fmt(v.surplusPaise) }}</p>
+      @if (v.shortfallPaise > 0) {
+        <p class="fp-warn breach" role="status" data-f="shortfall">Shortfall: mandatory outflows exceed income by {{ v.shortfallPaise | paiseInr }}. Nothing is allocated.</p>
+      }
+    </fp-card>
+
+    @if (v.lines.length > 0) {
+      <div class="fp-table-wrap">
+        <table class="fp-table fixed" aria-label="Allocation steps in priority order">
+          <caption class="sr-only">Where the surplus goes, step by step</caption>
+          <thead><tr><th scope="col">Step</th><th scope="col" class="num">Amount</th></tr></thead>
+          <tbody>
+            @for (l of v.lines; track $index) {
+              <tr data-row>
+                <th scope="row">{{ name(l.step) }}</th>
+                <td class="num" data-f="amount">{{ fmt(l.amountPaise) }}</td>
+              </tr>
             }
-          </ul>
-        }
-        @if (p.uncoveredPaise > 0) {
-          <p data-f="uncovered">Not covered by any step: {{ p.uncoveredPaise | paiseInr }}</p>
-        }
-        <dl>
-          <div><dt>Surplus after</dt><dd data-f="surplus-after">{{ p.surplusAfterPaise | paiseInr }}</dd></div>
-          <div><dt>Safe to spend before</dt><dd>{{ p.safeToSpendBeforePaise | paiseInr }}</dd></div>
-          <div><dt>Safe to spend after</dt><dd data-f="sts-after">{{ p.safeToSpendAfterPaise | paiseInr }}</dd></div>
-        </dl>
+          </tbody>
+          <tfoot>
+            <tr><th scope="row">Allocated (lines add up to this; the surplus is shown above)</th><td class="num" data-f="total">{{ fmt(v.allocatedPaise) }}</td></tr>
+          </tfoot>
+        </table>
       </div>
     }
-  </section>
 
-  <section aria-label="Assumptions" class="assumptions">
-    <h2>Assumptions</h2>
-    <ul>
-      <li>Surplus is income less mandatory outflows, as calculated by FinPath's rules engine.</li>
-      <li>Steps are funded in priority order; each takes what it needs or what is left.</li>
-      @if (v.prepayShare) {
-        <li>The share of the final remainder aimed at debt prepayment is {{ v.prepayShare }} (a fraction of 1).</li>
+    <fp-card heading="If an unplanned spend lands" role="region" aria-label="Unplanned spend check" class="check">
+      <form class="fp-form" (submit)="$event.preventDefault(); check()">
+        <label class="fp-field" for="spend"><span class="fp-label">Unplanned spend (₹)</span></label>
+        <input id="spend" class="fp-input" inputmode="decimal" autocomplete="off" [value]="spend()" (input)="spend.set($any($event.target).value)" />
+        <button type="submit" class="fp-btn" [disabled]="previewing()">See which step absorbs it</button>
+      </form>
+      @if (previewError()) {
+        <p class="error fp-alert" role="alert">{{ previewError() }}</p>
       }
-      <li>This is an educational illustration, not advice.</li>
-    </ul>
-  </section>
-}
+      @if (preview(); as p) {
+        <div class="absorbed" role="group" aria-label="Absorbing step">
+          @if (p.primaryAbsorbingStep) {
+            <p class="state" data-f="absorber">Absorbed first by: {{ name(p.primaryAbsorbingStep) }}</p>
+          } @else {
+            <p class="state" data-f="absorber">No step absorbs this spend.</p>
+          }
+          @if (p.absorbed.length > 0) {
+            <ul class="fp-bullets">
+              @for (a of p.absorbed; track $index) {
+                <li data-absorbed>{{ name(a.step) }}: {{ a.amountPaise | paiseInr }} less</li>
+              }
+            </ul>
+          }
+          @if (p.uncoveredPaise > 0) {
+            <p class="fp-note" data-f="uncovered">Not covered by any step: {{ p.uncoveredPaise | paiseInr }}</p>
+          }
+          <dl class="fp-dl">
+            <div><dt>Surplus after</dt><dd data-f="surplus-after">{{ p.surplusAfterPaise | paiseInr }}</dd></div>
+            <div><dt>Safe to spend before</dt><dd>{{ p.safeToSpendBeforePaise | paiseInr }}</dd></div>
+            <div><dt>Safe to spend after</dt><dd data-f="sts-after">{{ p.safeToSpendAfterPaise | paiseInr }}</dd></div>
+          </dl>
+        </div>
+      }
+    </fp-card>
+
+    <fp-card heading="Assumptions" role="region" aria-label="Assumptions" class="assumptions">
+      <ul class="fp-bullets">
+        <li>Surplus is income less mandatory outflows, as calculated by FinPath's rules engine.</li>
+        <li>Steps are funded in priority order; each takes what it needs or what is left.</li>
+        @if (v.prepayShare) {
+          <li>The share of the final remainder aimed at debt prepayment is {{ v.prepayShare }} (a fraction of 1).</li>
+        }
+        <li>This is an educational illustration, not advice.</li>
+      </ul>
+    </fp-card>
+  }
+</div>

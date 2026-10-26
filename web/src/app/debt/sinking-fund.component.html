@@ -1,41 +1,46 @@
-<fp-page-header title="Sinking fund"><fp-profile-link fpTrailing /></fp-page-header>
-<p class="edu">Educational view of setting money aside for your own bullet loan. It is not advice about any loan or investment.</p>
+<div class="fp-page">
+  <fp-page-header title="Sinking fund"><fp-profile-link fpTrailing /></fp-page-header>
+  <p class="edu fp-note">Educational view of setting money aside for your own bullet loan. It is not advice about any loan or investment.</p>
 
-<form (submit)="$event.preventDefault(); load()">
-  <label for="saved">Set aside so far (₹)</label>
-  <input id="saved" inputmode="decimal" autocomplete="off" [value]="saved()" (input)="saved.set($any($event.target).value)" />
-  <button type="submit" class="btn" [disabled]="loading()">Check progress</button>
-</form>
+  <fp-card>
+    <form class="fp-form" (submit)="$event.preventDefault(); load()">
+      <div class="fp-field"><label class="fp-label" for="saved">Set aside so far (₹)</label>
+        <input id="saved" class="fp-input" inputmode="decimal" autocomplete="off" [value]="saved()" (input)="saved.set($any($event.target).value)" /></div>
+      <button type="submit" class="fp-btn" [disabled]="loading()">Check progress</button>
+    </form>
+  </fp-card>
 
-@if (error()) {
-  <p class="error" role="alert">{{ error() }}</p>
-}
-@if (loading()) {
-  <p class="muted" role="status">Checking the fund...</p>
-}
-@if (fund(); as f) {
-  <section class="card" [class.behind]="f.behindSchedule" aria-label="Sinking fund status">
-    <p class="state" data-f="state">{{ label(f.status) }}</p>
-    @if (f.outstandingPaise > 0) {
-      <progress [value]="savedPaise()" [max]="f.outstandingPaise" aria-label="Set aside against the amount due"></progress>
-    }
-    <p class="small" data-f="progress">{{ fmt(savedPaise()) }} set aside of {{ fmt(f.outstandingPaise) }} due</p>
-    <dl>
-      <div><dt>Set aside each cycle</dt><dd data-f="per-cycle">{{ fmt(f.setAsidePerCyclePaise) }}</dd></div>
-      <div><dt>Cycles remaining</dt><dd data-f="cycles">{{ f.cyclesRemaining }}</dd></div>
-      <div><dt>Final cycle amount</dt><dd data-f="final">{{ fmt(f.finalCycleAmountPaise) }}</dd></div>
-      <div><dt>Expected set aside by now</dt><dd data-f="expected">{{ fmt(f.expectedSavedByNowPaise) }}</dd></div>
-      @if (f.catchUpPaise > 0) {
-        <div><dt>Catch-up needed now</dt><dd data-f="catch-up">{{ fmt(f.catchUpPaise) }}</dd></div>
+  @if (error()) {
+    <p class="error fp-alert" role="alert">{{ error() }}</p>
+  }
+  @if (loading()) {
+    <p class="fp-note" role="status">Checking the fund...</p>
+  }
+  @if (fund(); as f) {
+    <fp-card variant="hero" [class.behind]="f.behindSchedule" role="region" aria-label="Sinking fund status">
+      <p class="state fp-num" data-f="state">{{ label(f.status) }}</p>
+      @if (f.outstandingPaise > 0) {
+        <fp-progress data-f="progress" label="Set aside against the amount due" [value]="savedPaise()" [max]="f.outstandingPaise"
+          [tone]="f.behindSchedule ? 'warn' : 'accent'" [valueText]="fmt(savedPaise()) + ' set aside of ' + fmt(f.outstandingPaise) + ' due'" />
+      } @else {
+        <p class="fp-note" data-f="progress">{{ fmt(savedPaise()) }} set aside of {{ fmt(f.outstandingPaise) }} due</p>
       }
-    </dl>
-  </section>
-  <section aria-label="Assumptions" class="assumptions">
-    <h2>Assumptions</h2>
-    <ul>
-      <li>The amount set aside is the figure you typed; nothing about your savings is stored.</li>
-      <li>The schedule is a straight line from when the loan was recorded to its due date.</li>
-      <li>This is an educational projection, not advice about any loan or investment.</li>
-    </ul>
-  </section>
-}
+      <dl class="fp-dl">
+        <div><dt>Set aside each cycle</dt><dd data-f="per-cycle">{{ fmt(f.setAsidePerCyclePaise) }}</dd></div>
+        <div><dt>Cycles remaining</dt><dd data-f="cycles">{{ f.cyclesRemaining }}</dd></div>
+        <div><dt>Final cycle amount</dt><dd data-f="final">{{ fmt(f.finalCycleAmountPaise) }}</dd></div>
+        <div><dt>Expected set aside by now</dt><dd data-f="expected">{{ fmt(f.expectedSavedByNowPaise) }}</dd></div>
+        @if (f.catchUpPaise > 0) {
+          <div><dt>Catch-up needed now</dt><dd data-f="catch-up">{{ fmt(f.catchUpPaise) }}</dd></div>
+        }
+      </dl>
+    </fp-card>
+    <fp-card heading="Assumptions" role="region" aria-label="Assumptions" class="assumptions">
+      <ul class="fp-bullets">
+        <li>The amount set aside is the figure you typed; nothing about your savings is stored.</li>
+        <li>The schedule is a straight line from when the loan was recorded to its due date.</li>
+        <li>This is an educational projection, not advice about any loan or investment.</li>
+      </ul>
+    </fp-card>
+  }
+</div>

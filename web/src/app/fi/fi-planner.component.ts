@@ -14,6 +14,8 @@ import { FiPalette, fiOption } from './fi-chart-options';
 import { FiApiService } from './fi-api.service';
 import { describeFi, fiRows, fractionToPercent } from './fi-format';
 import { FiPlanRequest, FiPlanView } from './fi.models';
+import { FpCardComponent } from '../ui/fp-card.component';
+import { FpStatComponent } from '../ui/fp-stat.component';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
 import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
@@ -36,7 +38,7 @@ export function readFiPalette(el: Element = document.documentElement): FiPalette
 @Component({
   selector: 'app-fi-planner',
   standalone: true,
-  imports: [FpPageHeaderComponent, FpProfileLinkComponent, NgxEchartsDirective],
+  imports: [FpCardComponent, FpPageHeaderComponent, FpProfileLinkComponent, FpStatComponent, NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fi-planner.component.html',

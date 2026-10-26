@@ -102,13 +102,13 @@ describe('RecurringComponent', () => {
   it('needs a confirm step before removing, and Keep cancels', () => {
     const del = spyOn(api, 'templateDelete').and.callThrough();
     const { fixture, root } = setup();
-    click(root, 'li.row .actions button:nth-child(2)', fixture); // Remove
+    click(root, 'li.row .fp-actions button:nth-child(2)', fixture); // Remove
     expect(del).not.toHaveBeenCalled();
     expect(root.textContent).toContain('can be posted a second time');
-    click(root, 'li.row .actions button:nth-child(3)', fixture); // Keep
+    click(root, 'li.row .fp-actions button:nth-child(3)', fixture); // Keep
     expect(del).not.toHaveBeenCalled();
-    click(root, 'li.row .actions button:nth-child(2)', fixture);
-    click(root, 'li.row .actions button.primary', fixture); // Confirm remove
+    click(root, 'li.row .fp-actions button:nth-child(2)', fixture);
+    click(root, 'li.row .fp-actions button.fp-btn', fixture); // Confirm remove
     expect(del).toHaveBeenCalledTimes(1);
   });
 
@@ -116,8 +116,8 @@ describe('RecurringComponent', () => {
     const pending = new Subject<void>();
     spyOn(api, 'templateDelete').and.returnValue(pending);
     const { fixture, root } = setup();
-    click(root, 'li.row .actions button:nth-child(2)', fixture);
-    click(root, 'li.row .actions button.primary', fixture);
+    click(root, 'li.row .fp-actions button:nth-child(2)', fixture);
+    click(root, 'li.row .fp-actions button.fp-btn', fixture);
     root.querySelectorAll('li.row button').forEach((b) => expect((b as HTMLButtonElement).disabled).toBeTrue());
     pending.next();
     pending.complete();

@@ -1,80 +1,90 @@
-<fp-page-header title="FI planner"><fp-profile-link fpTrailing /></fp-page-header>
-<p class="edu">Educational projection, not investment advice. Returns are assumptions, not guarantees.</p>
+<div class="fp-page">
+  <fp-page-header title="FI planner"><fp-profile-link fpTrailing /></fp-page-header>
+  <p class="edu fp-note">Educational projection, not investment advice. Returns are assumptions, not guarantees.</p>
 
-<details class="form-box" [open]="!plan()">
-  <summary>Your inputs</summary>
-  <form (submit)="$event.preventDefault(); submit()" novalidate>
-    <label>Monthly expense today (INR)
-      <input inputmode="decimal" autocomplete="off" [value]="expense()" (input)="set('expense', $event)" />
-    </label>
-    <label>Years to FI
-      <input inputmode="numeric" autocomplete="off" [value]="years()" (input)="set('years', $event)" />
-    </label>
-    <label>Monthly passive income today (optional)
-      <input inputmode="decimal" autocomplete="off" [value]="passive()" (input)="set('passive', $event)" />
-    </label>
-    <label>Opening balance, e.g. EPF (optional)
-      <input inputmode="decimal" autocomplete="off" [value]="opening()" (input)="set('opening', $event)" />
-    </label>
-    <label>Current monthly SIP (optional)
-      <input inputmode="decimal" autocomplete="off" [value]="sip()" (input)="set('sip', $event)" />
-    </label>
-    <label>Yearly SIP step-up
-      <select [value]="stepUp()" (change)="set('stepUp', $event)">
-        @for (s of stepUps; track s.value) {
-          <option [value]="s.value" [selected]="s.value === stepUp()">{{ s.label }}</option>
+  <fp-card>
+    <details class="form-box" [open]="!plan()">
+      <summary>Your inputs</summary>
+      <form class="fp-form" (submit)="$event.preventDefault(); submit()" novalidate>
+        <label class="fp-field"><span class="fp-label">Monthly expense today (INR)</span>
+          <input class="fp-input" inputmode="decimal" autocomplete="off" [value]="expense()" (input)="set('expense', $event)" />
+        </label>
+        <label class="fp-field"><span class="fp-label">Years to FI</span>
+          <input class="fp-input" inputmode="numeric" autocomplete="off" [value]="years()" (input)="set('years', $event)" />
+        </label>
+        <label class="fp-field"><span class="fp-label">Monthly passive income today (optional)</span>
+          <input class="fp-input" inputmode="decimal" autocomplete="off" [value]="passive()" (input)="set('passive', $event)" />
+        </label>
+        <label class="fp-field"><span class="fp-label">Opening balance, e.g. EPF (optional)</span>
+          <input class="fp-input" inputmode="decimal" autocomplete="off" [value]="opening()" (input)="set('opening', $event)" />
+        </label>
+        <label class="fp-field"><span class="fp-label">Current monthly SIP (optional)</span>
+          <input class="fp-input" inputmode="decimal" autocomplete="off" [value]="sip()" (input)="set('sip', $event)" />
+        </label>
+        <label class="fp-field"><span class="fp-label">Yearly SIP step-up</span>
+          <select class="fp-input" [value]="stepUp()" (change)="set('stepUp', $event)">
+            @for (s of stepUps; track s.value) {
+              <option [value]="s.value" [selected]="s.value === stepUp()">{{ s.label }}</option>
+            }
+          </select>
+        </label>
+        @if (formError()) {
+          <p class="error fp-alert" role="alert">{{ formError() }}</p>
         }
-      </select>
-    </label>
-    @if (formError()) {
-      <p class="error" role="alert">{{ formError() }}</p>
-    }
-    <button type="submit" class="btn primary" [disabled]="loading()">Show projection</button>
-  </form>
-</details>
+        <button type="submit" class="fp-btn" [disabled]="loading()">Show projection</button>
+      </form>
+    </details>
+  </fp-card>
 
-@if (error()) {
-  <p class="error" role="alert">{{ error() }}</p>
-}
-@if (loading()) {
-  <p class="muted" role="status">Calculating...</p>
-}
-@if (plan(); as p) {
-  <section aria-label="Projection range">
-    <h2>Range after {{ p.yearsToFi }} years</h2>
-    <table>
-      <caption>Low, base and high return cases (corpus needed {{ fmt(p.netCorpusPaise) }})</caption>
-      <thead>
-        <tr><th scope="col">Case (return a year)</th><th scope="col" class="num">First-month SIP needed</th><th scope="col" class="num">Savings at end</th><th scope="col">FI date</th></tr>
-      </thead>
-      <tbody>
-        @for (r of rows(); track r.band) {
-          <tr>
-            <th scope="row">{{ r.band }} ({{ r.returnText }})</th>
-            <td class="num">{{ fmt(r.requiredSipPaise) }}</td>
-            <td class="num">{{ fmt(r.savingsPaise) }}</td>
-            <td>{{ r.fiDate }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-    <section aria-label="Assumptions" class="assumptions">
-      <h2>Assumptions</h2>
-      <ul>
+  @if (error()) {
+    <p class="error fp-alert" role="alert">{{ error() }}</p>
+  }
+  @if (loading()) {
+    <p class="fp-note" role="status">Calculating...</p>
+  }
+  @if (plan(); as p) {
+    <fp-card variant="hero" class="headline">
+      <fp-stat label="Corpus needed" [value]="fmt(p.netCorpusPaise)" size="lg" tone="accent"
+        [hint]="'Net of passive income; ' + fmt(p.grossCorpusPaise) + ' before it'" />
+    </fp-card>
+
+    <fp-card [heading]="'Range after ' + p.yearsToFi + ' years'" role="region" aria-label="Projection range">
+      <div class="fp-table-wrap" role="region" tabindex="0" aria-label="Projection range table">
+        <table class="fp-table">
+          <caption>Low, base and high return cases (corpus needed {{ fmt(p.netCorpusPaise) }})</caption>
+          <thead>
+            <tr><th scope="col">Case (return a year)</th><th scope="col" class="num">First-month SIP needed</th><th scope="col" class="num">Savings at end</th><th scope="col">FI date</th></tr>
+          </thead>
+          <tbody>
+            @for (r of rows(); track r.band) {
+              <tr>
+                <th scope="row">{{ r.band }} ({{ r.returnText }})</th>
+                <td class="num">{{ fmt(r.requiredSipPaise) }}</td>
+                <td class="num">{{ fmt(r.savingsPaise) }}</td>
+                <td>{{ r.fiDate }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </fp-card>
+
+    <fp-card heading="Assumptions" role="region" aria-label="Assumptions" class="assumptions">
+      <ul class="fp-bullets">
         <li>Inflation {{ pct(p.assumptions.inflation) }} a year; corpus is {{ p.assumptions.fiMultiplier }} times yearly expenses, net of passive income.</li>
         <li>Low case assumes debt-like returns of {{ pct(p.assumptions.debtReturnHigh) }} a year, high case equity-like returns of {{ pct(p.assumptions.equityReturn) }}; base sits between them.</li>
         <li>SIP step-up {{ pct(p.assumptions.stepUp) }} a year. Actual returns vary and can be negative.</li>
       </ul>
-      <p class="muted small">{{ p.disclaimer }}</p>
-    </section>
-  </section>
+      <p class="fp-note fp-small">{{ p.disclaimer }}</p>
+    </fp-card>
 
-  <h2>Savings against the corpus target</h2>
-  <div class="chart-wrap" role="img" [attr.aria-label]="description()">
-    @if (options(); as o) {
-      <div echarts [options]="o" [merge]="o" class="chart" aria-hidden="true"></div>
-    }
-  </div>
-  <p class="muted small">Only the three API cases are plotted; the lines between them are not projections. The table above has the same figures.</p>
-  <p class="headline">Corpus needed <strong>{{ fmt(p.netCorpusPaise) }}</strong> <span class="muted small">net of passive income; {{ fmt(p.grossCorpusPaise) }} before it</span></p>
-}
+    <fp-card heading="Savings against the corpus target">
+      <div class="fp-chart short" role="img" [attr.aria-label]="description()">
+        @if (options(); as o) {
+          <div echarts [options]="o" [merge]="o" class="fp-chart-canvas" aria-hidden="true"></div>
+        }
+      </div>
+      <p class="fp-note fp-small">Only the three API cases are plotted; the lines between them are not projections. The table above has the same figures.</p>
+    </fp-card>
+  }
+</div>

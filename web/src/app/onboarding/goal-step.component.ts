@@ -24,7 +24,7 @@ import { PlanStepsState } from './plan-steps.state';
     <input id="goal-target" type="text" inputmode="decimal" autocomplete="off" [value]="targetText()" (input)="targetText.set(val($event))" />
     <label for="goal-date">Target date</label>
     <input id="goal-date" type="date" [value]="date()" (input)="date.set(val($event))" />
-    <button type="button" class="btn" [disabled]="!canAdd()" [attr.aria-busy]="saving()" (click)="add()">Add goal</button>
+    <button type="button" class="fp-pill" [disabled]="!canAdd()" [attr.aria-busy]="saving()" (click)="add()">Add goal</button>
     @if (items().length > 0) {
       <ul class="rows" aria-label="Goals added">
         @for (g of items(); track g.id) {

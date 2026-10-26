@@ -21,50 +21,50 @@ import { DebtTrapBlockedBody, LoanInput, LoanType, LoanView } from './loan.model
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './loan.css',
   template: `
-    <form class="loan-form" (submit)="$event.preventDefault(); save()">
-      <label for="ln-lender">Lender (any name you like)</label>
-      <input id="ln-lender" type="text" maxlength="60" autocomplete="off" [value]="lender()" (input)="lender.set(val($event))" />
+    <form class="loan-form fp-form" (submit)="$event.preventDefault(); save()">
+      <div class="fp-field"><label class="fp-label" for="ln-lender">Lender (any name you like)</label>
+        <input class="fp-input" id="ln-lender" type="text" maxlength="60" autocomplete="off" [value]="lender()" (input)="lender.set(val($event))" /></div>
 
-      <label for="ln-type">Type of loan</label>
-      <select id="ln-type" (change)="type.set(asType(val($event)))">
+      <div class="fp-field"><label class="fp-label" for="ln-type">Type of loan</label>
+        <select class="fp-input" id="ln-type" (change)="type.set(asType(val($event)))">
         @for (t of types; track t.code) {
           <option [value]="t.code" [selected]="t.code === type()">{{ t.label }}</option>
         }
-      </select>
-      <p class="muted small">{{ typeHint() }}</p>
+      </select></div>
+      <p class="fp-note fp-small">{{ typeHint() }}</p>
 
-      <label for="ln-principal">Outstanding principal (rupees)</label>
-      <input id="ln-principal" type="text" inputmode="decimal" autocomplete="off" [value]="principalText()" (input)="principalText.set(val($event))" />
+      <div class="fp-field"><label class="fp-label" for="ln-principal">Outstanding principal (rupees)</label>
+        <input class="fp-input" id="ln-principal" type="text" inputmode="decimal" autocomplete="off" [value]="principalText()" (input)="principalText.set(val($event))" /></div>
 
-      <label for="ln-rate">Interest rate (% a year)</label>
-      <input id="ln-rate" type="text" inputmode="decimal" autocomplete="off" [value]="rateText()" (input)="rateText.set(val($event))" />
+      <div class="fp-field"><label class="fp-label" for="ln-rate">Interest rate (% a year)</label>
+        <input class="fp-input" id="ln-rate" type="text" inputmode="decimal" autocomplete="off" [value]="rateText()" (input)="rateText.set(val($event))" /></div>
 
-      <label for="ln-emi">{{ isBullet() ? 'Monthly interest (rupees, optional)' : 'EMI your lender charges (rupees)' }}</label>
-      <input id="ln-emi" type="text" inputmode="decimal" autocomplete="off" [value]="emiText()" (input)="emiText.set(val($event))" />
-      <p class="muted small">{{ emiHint() }}</p>
+      <div class="fp-field"><label class="fp-label" for="ln-emi">{{ isBullet() ? 'Monthly interest (rupees, optional)' : 'EMI your lender charges (rupees)' }}</label>
+        <input class="fp-input" id="ln-emi" type="text" inputmode="decimal" autocomplete="off" [value]="emiText()" (input)="emiText.set(val($event))" /></div>
+      <p class="fp-note fp-small">{{ emiHint() }}</p>
 
       @if (isBullet()) {
-        <label for="ln-due">Principal due on</label>
-        <input id="ln-due" type="date" [min]="today" [value]="dueDate()" (input)="dueDate.set(val($event))" />
+        <div class="fp-field"><label class="fp-label" for="ln-due">Principal due on</label>
+          <input class="fp-input" id="ln-due" type="date" [min]="today" [value]="dueDate()" (input)="dueDate.set(val($event))" /></div>
       } @else {
-        <label for="ln-left">EMIs left</label>
-        <input id="ln-left" type="text" inputmode="numeric" autocomplete="off" [value]="emisLeftText()" (input)="emisLeftText.set(val($event))" />
+        <div class="fp-field"><label class="fp-label" for="ln-left">EMIs left</label>
+          <input class="fp-input" id="ln-left" type="text" inputmode="numeric" autocomplete="off" [value]="emisLeftText()" (input)="emisLeftText.set(val($event))" /></div>
       }
       @if (type() === 'card_emi') {
-        <label for="ln-fee">Upfront fee (rupees, optional)</label>
-        <input id="ln-fee" type="text" inputmode="decimal" autocomplete="off" [value]="feeText()" (input)="feeText.set(val($event))" />
+        <div class="fp-field"><label class="fp-label" for="ln-fee">Upfront fee (rupees, optional)</label>
+          <input class="fp-input" id="ln-fee" type="text" inputmode="decimal" autocomplete="off" [value]="feeText()" (input)="feeText.set(val($event))" /></div>
       }
 
-      <label for="ln-dueday">Due day of month (optional)</label>
-      <input id="ln-dueday" type="text" inputmode="numeric" autocomplete="off" maxlength="2" aria-describedby="ln-dueday-help" [attr.aria-invalid]="dueDayInvalid()" [value]="dueDayText()" (input)="dueDayText.set(val($event))" />
-      <p id="ln-dueday-help" class="muted small">Reminders arrive 5 days before. Leave empty for none.</p>
+      <div class="fp-field"><label class="fp-label" for="ln-dueday">Due day of month (optional)</label>
+        <input class="fp-input" id="ln-dueday" type="text" inputmode="numeric" autocomplete="off" maxlength="2" aria-describedby="ln-dueday-help" [attr.aria-invalid]="dueDayInvalid()" [value]="dueDayText()" (input)="dueDayText.set(val($event))" /></div>
+      <p id="ln-dueday-help" class="fp-note fp-small">Reminders arrive 5 days before. Leave empty for none.</p>
       @if (dueDayInvalid()) {
-        <p class="error" role="alert">Enter a day from 1 to 31, or leave it empty.</p>
+        <p class="error fp-alert" role="alert">Enter a day from 1 to 31, or leave it empty.</p>
       }
 
-      <button type="submit" class="btn primary" [disabled]="input() === null || saving()" [attr.aria-busy]="saving()">Add loan</button>
+      <button type="submit" class="fp-btn" [disabled]="input() === null || saving()" [attr.aria-busy]="saving()">Add loan</button>
     </form>
-    <p class="error" role="alert">{{ error() }}</p>
+    <p class="error fp-alert" role="alert">{{ error() }}</p>
     <app-guard-dialog [guard]="blocked()" (confirmed)="confirm()" (cancelled)="blocked.set(null)" />
   `,
 })

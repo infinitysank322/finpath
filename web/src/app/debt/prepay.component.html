@@ -1,59 +1,70 @@
-<fp-page-header title="Prepayment simulator"><fp-profile-link fpTrailing /></fp-page-header>
-<p class="edu">Educational what-if for your own loan. It is not advice to prepay, take or change any loan or investment.</p>
+<div class="fp-page">
+  <fp-page-header title="Prepayment simulator"><fp-profile-link fpTrailing /></fp-page-header>
+  <p class="edu fp-note">Educational what-if for your own loan. It is not advice to prepay, take or change any loan or investment.</p>
 
-<form (submit)="$event.preventDefault(); run()">
-  <label for="mode">What do you want to try?</label>
-  <select id="mode" [value]="mode()" (change)="setMode($any($event.target).value)">
-    <option value="lump_sum">Pay a lump sum</option>
-    <option value="increase_emi">Raise the monthly EMI</option>
-    <option value="close_in">Close the loan in a set number of months</option>
-  </select>
+  <fp-card>
+    <form class="fp-form" (submit)="$event.preventDefault(); run()">
+      <div class="fp-field"><label class="fp-label" for="mode">What do you want to try?</label>
+        <select id="mode" class="fp-input" [value]="mode()" (change)="setMode($any($event.target).value)">
+        <option value="lump_sum">Pay a lump sum</option>
+        <option value="increase_emi">Raise the monthly EMI</option>
+        <option value="close_in">Close the loan in a set number of months</option>
+      </select></div>
 
-  @switch (mode()) {
-    @case ('lump_sum') {
-      <label for="lump">Lump sum (₹)</label>
-      <input id="lump" inputmode="decimal" autocomplete="off" [value]="lump()" (input)="lump.set($any($event.target).value)" />
-      <label for="after">Instalments paid before it (optional)</label>
-      <input id="after" inputmode="numeric" autocomplete="off" [value]="after()" (input)="after.set($any($event.target).value)" />
-    }
-    @case ('increase_emi') {
-      <label for="newEmi">New monthly EMI (₹)</label>
-      <input id="newEmi" inputmode="decimal" autocomplete="off" [value]="newEmi()" (input)="newEmi.set($any($event.target).value)" />
-    }
-    @case ('close_in') {
-      <label for="months">Months to close in</label>
-      <input id="months" inputmode="numeric" autocomplete="off" [value]="months()" (input)="months.set($any($event.target).value)" />
-    }
+      @switch (mode()) {
+        @case ('lump_sum') {
+          <div class="fp-field"><label class="fp-label" for="lump">Lump sum (₹)</label>
+            <input id="lump" class="fp-input" inputmode="decimal" autocomplete="off" [value]="lump()" (input)="lump.set($any($event.target).value)" /></div>
+          <div class="fp-field"><label class="fp-label" for="after">Instalments paid before it (optional)</label>
+            <input id="after" class="fp-input" inputmode="numeric" autocomplete="off" [value]="after()" (input)="after.set($any($event.target).value)" /></div>
+        }
+        @case ('increase_emi') {
+          <div class="fp-field"><label class="fp-label" for="newEmi">New monthly EMI (₹)</label>
+            <input id="newEmi" class="fp-input" inputmode="decimal" autocomplete="off" [value]="newEmi()" (input)="newEmi.set($any($event.target).value)" /></div>
+        }
+        @case ('close_in') {
+          <div class="fp-field"><label class="fp-label" for="months">Months to close in</label>
+            <input id="months" class="fp-input" inputmode="numeric" autocomplete="off" [value]="months()" (input)="months.set($any($event.target).value)" /></div>
+        }
+      }
+      <button type="submit" class="fp-btn" [disabled]="loading()">Simulate</button>
+    </form>
+  </fp-card>
+
+  @if (error()) {
+    <p class="error fp-alert" role="alert">{{ error() }}</p>
   }
-  <button type="submit" class="btn" [disabled]="loading()">Simulate</button>
-</form>
+  @if (loading()) {
+    <p class="fp-note" role="status">Running the simulation...</p>
+  }
+  @if (result(); as r) {
+    <fp-card variant="hero" class="headline">
+      <fp-stat label="Interest saved" data-r="saved" [value]="fmt(r.interestSavedPaise)" size="lg" tone="accent"
+        [hint]="'across ' + r.instalmentsSaved + ' fewer instalments'" />
+    </fp-card>
 
-@if (error()) {
-  <p class="error" role="alert">{{ error() }}</p>
-}
-@if (loading()) {
-  <p class="muted" role="status">Running the simulation...</p>
-}
-@if (result(); as r) {
-  <table aria-label="Simulation result">
-    <caption>Result from your loan's schedule</caption>
-    <thead><tr><th scope="col">Measure</th><th scope="col" class="num">Without</th><th scope="col" class="num">With</th></tr></thead>
-    <tbody>
-      <tr><th scope="row">Instalments left</th><td class="num" data-r="base-n">{{ r.baselineInstalments }}</td><td class="num" data-r="new-n">{{ r.newInstalments }}</td></tr>
-      <tr><th scope="row">Interest still to pay</th><td class="num" data-r="base-int">{{ fmt(r.baselineInterestPaise) }}</td><td class="num" data-r="new-int">{{ fmt(r.newInterestPaise) }}</td></tr>
-      <tr><th scope="row">Payoff</th><td class="num" data-r="base-end">{{ endLabel(r.baselinePayoffCycle) }}</td><td class="num" data-r="new-end">{{ endLabel(r.newPayoffCycle) }}</td></tr>
-      <tr><th scope="row">Monthly EMI</th><td class="num" data-r="base-emi">{{ fmt(r.assumptions.currentEmiPaise) }}</td><td class="num" data-r="new-emi">{{ fmt(r.newEmiPaise) }}</td></tr>
-    </tbody>
-  </table>
-  <p data-r="saved"><strong>Interest saved: {{ fmt(r.interestSavedPaise) }}</strong> across {{ r.instalmentsSaved }} fewer instalments.</p>
+    <fp-card heading="Result from your loan's schedule">
+      <div class="fp-table-wrap">
+        <table class="fp-table" aria-label="Simulation result">
+          <caption class="sr-only">Result from your loan's schedule</caption>
+          <thead><tr><th scope="col">Measure</th><th scope="col" class="num">Without</th><th scope="col" class="num">With</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Instalments left</th><td class="num" data-r="base-n">{{ r.baselineInstalments }}</td><td class="num" data-r="new-n">{{ r.newInstalments }}</td></tr>
+            <tr><th scope="row">Interest still to pay</th><td class="num" data-r="base-int">{{ fmt(r.baselineInterestPaise) }}</td><td class="num" data-r="new-int">{{ fmt(r.newInterestPaise) }}</td></tr>
+            <tr><th scope="row">Payoff</th><td class="num" data-r="base-end">{{ endLabel(r.baselinePayoffCycle) }}</td><td class="num" data-r="new-end">{{ endLabel(r.newPayoffCycle) }}</td></tr>
+            <tr><th scope="row">Monthly EMI</th><td class="num" data-r="base-emi">{{ fmt(r.assumptions.currentEmiPaise) }}</td><td class="num" data-r="new-emi">{{ fmt(r.newEmiPaise) }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </fp-card>
 
-  <section aria-label="Assumptions" class="assumptions">
-    <h2>Assumptions</h2>
-    <ul>
-      <li data-r="rate">Loan rate used: {{ r.assumptions.annualRate }}% a year on {{ fmt(r.assumptions.principalOutstandingPaise) }} outstanding with {{ r.assumptions.tenureMonths }} instalments left.</li>
-      <li>If your loan has a floating rate, it can change, and so can these figures.</li>
-      <li>{{ r.assumptions.note }}</li>
-      <li>This is an educational projection, not advice to prepay, take or change any loan or investment.</li>
-    </ul>
-  </section>
-}
+    <fp-card heading="Assumptions" role="region" aria-label="Assumptions" class="assumptions">
+      <ul class="fp-bullets">
+        <li data-r="rate">Loan rate used: {{ r.assumptions.annualRate }}% a year on {{ fmt(r.assumptions.principalOutstandingPaise) }} outstanding with {{ r.assumptions.tenureMonths }} instalments left.</li>
+        <li>If your loan has a floating rate, it can change, and so can these figures.</li>
+        <li>{{ r.assumptions.note }}</li>
+        <li>This is an educational projection, not advice to prepay, take or change any loan or investment.</li>
+      </ul>
+    </fp-card>
+  }
+</div>

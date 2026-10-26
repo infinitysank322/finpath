@@ -24,7 +24,7 @@ describe('LoanListComponent', () => {
     http.expectOne('/api/loans/debt-trap-guard').flush({ ratio: '0.4', status: 'OK', headroomPaise: 0, totalEmiPaise: SAMPLE_EMI_TOTAL_PAISE, monthlyIncomePaise: 1_234_500 });
     f.detectChanges();
     const el = f.nativeElement as HTMLElement;
-    expect(el.querySelectorAll('.card').length).toBe(5);
+    expect(el.querySelectorAll('ul[aria-label=Loans] > li').length).toBe(5);
     const text = el.textContent!;
     for (const label of ['EMI loan', 'Bullet loan', 'Card EMI']) expect(text).toContain(label);
     expect(el.querySelector('.total')!.textContent).toContain(rupees(SAMPLE_EMI_TOTAL_PAISE));
@@ -48,7 +48,7 @@ describe('LoanListComponent', () => {
     http.expectOne('/api/loans').flush([{ ...SAMPLE_VIEWS[0], dueDay: 2 }, SAMPLE_VIEWS[3]]);
     http.expectOne('/api/loans/debt-trap-guard').flush(guardBody(1));
     f.detectChanges();
-    const cards = (f.nativeElement as HTMLElement).querySelectorAll('.card');
+    const cards = (f.nativeElement as HTMLElement).querySelectorAll('ul[aria-label=Loans] > li');
     expect(cards[0].textContent).toContain('the 2nd');
     expect(cards[1].textContent).not.toContain('Due on');
   });

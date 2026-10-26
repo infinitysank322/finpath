@@ -1,106 +1,112 @@
-<fp-page-header title="Recurring bills"><fp-profile-link fpTrailing /></fp-page-header>
-<p class="muted">Enter the full bill. Quarterly and yearly bills are spread across cycles by the server.</p>
+<div class="fp-page">
+  <fp-page-header title="Recurring bills"><fp-profile-link fpTrailing /></fp-page-header>
+  <p class="fp-note">Enter the full bill. Quarterly and yearly bills are spread across cycles by the server.</p>
 
-@if (error()) { <p class="error" role="alert">{{ error() }}</p> }
-@if (message()) { <p class="ok" role="status">{{ message() }}</p> }
+  @if (error()) { <p class="error fp-alert" role="alert">{{ error() }}</p> }
+  @if (message()) { <p class="ok fp-ok" role="status">{{ message() }}</p> }
 
-<p>
-  <button type="button" class="btn" id="rec-post" [disabled]="posting()" (click)="post()">Post this cycle's bills</button>
-</p>
-@if (posted(); as p) {
-  <p role="status" class="headline">
-    @if (p.createdCount === 0) {
-      Nothing new to post this cycle.
-    } @else {
-      Posted {{ p.createdCount }} {{ p.createdCount === 1 ? 'bill' : 'bills' }}, {{ exact(p.postedPaise) }} in total.
-    }
-  </p>
-}
-
-<h2>Your bills</h2>
-@if (loading()) {
-  <p class="muted" role="status">Loading...</p>
-} @else if (items().length === 0 && !error()) {
-  <p class="muted">No recurring bills yet.</p>
-}
-<ul aria-label="Recurring bills">
-  @for (r of items(); track r.id) {
-    <li class="row">
-      <div class="main">
-        <strong>{{ categoryName(r.categoryCode) }}</strong>
-        <span class="badge">{{ freq(r.frequency)?.label }}</span>
-        <div>
-          <span class="bill">Bill {{ exact(r.amountPaise) }}</span>
-          <span class="muted"> {{ freq(r.frequency)?.every }}</span>
-        </div>
-        <ul class="spread" [attr.aria-label]="'Per-cycle spread for ' + categoryName(r.categoryCode) + ' bill of ' + exact(r.amountPaise)">
-          @for (s of r.perCycleSpread; track s.index) {
-            <li>Instalment {{ s.index + 1 }} of {{ r.perCycleSpread.length }}: {{ exact(s.amountPaise) }}</li>
-          }
-        </ul>
-        @if (r.currentInstalmentPaise !== null) {
-          <div class="muted">Due this cycle: {{ exact(r.currentInstalmentPaise) }}</div>
-        } @else {
-          <div class="muted">Nothing due this cycle</div>
-        }
-        @if (confirmingId() === r.id) {
-          <div class="muted" role="status">Removing keeps bills already posted. If you remove this and add the same bill again, this cycle's instalment can be posted a second time.</div>
-        }
-        <div class="muted">From {{ shortDate(r.startDate) }}@if (r.endDate) { to {{ shortDate(r.endDate) }} }</div>
-      </div>
-      <div class="actions">
-        <button type="button" class="btn" [disabled]="busy()" [attr.aria-label]="'Edit ' + categoryName(r.categoryCode) + ' bill of ' + exact(r.amountPaise)" (click)="openEdit(r)">Edit</button>
-        @if (confirmingId() === r.id) {
-          <button type="button" class="btn primary" [disabled]="busy()" [attr.aria-label]="'Confirm remove ' + categoryName(r.categoryCode) + ' bill of ' + exact(r.amountPaise)" (click)="remove(r)">Confirm remove</button>
-          <button type="button" class="btn" [disabled]="busy()" (click)="keep()">Keep</button>
-        } @else {
-          <button type="button" class="btn" [disabled]="busy()" [attr.aria-label]="'Remove ' + categoryName(r.categoryCode) + ' bill of ' + exact(r.amountPaise)" (click)="askRemove(r)">Remove</button>
-        }
-      </div>
-    </li>
+  <button type="button" class="fp-pill post" id="rec-post" [disabled]="posting()" (click)="post()">Post this cycle's bills</button>
+  @if (posted(); as p) {
+    <p role="status" class="headline fp-ok">
+      @if (p.createdCount === 0) {
+        Nothing new to post this cycle.
+      } @else {
+        Posted {{ p.createdCount }} {{ p.createdCount === 1 ? 'bill' : 'bills' }}, {{ exact(p.postedPaise) }} in total.
+      }
+    </p>
   }
-</ul>
 
-@if (formOpen()) {
-  <form (submit)="$event.preventDefault(); save()" aria-label="Recurring bill">
-    <label class="field"><span>Category</span>
-      <select id="rec-cat" (change)="category.set($any($event.target).value)">
-        @for (x of categories; track x.code) { <option [value]="x.code" [selected]="category() === x.code">{{ x.name }}</option> }
-      </select>
-    </label>
-    <label class="field"><span>Repeats</span>
-      <select id="rec-freq" (change)="frequency.set($any($event.target).value)">
-        @for (x of frequencies; track x.code) { <option [value]="x.code" [selected]="frequency() === x.code">{{ x.label }}</option> }
-      </select>
-    </label>
-    <label class="field"><span>Full bill amount in rupees</span>
-      <input type="text" id="rec-amount" inputmode="decimal" autocomplete="off" aria-describedby="rec-hint"
-        [value]="amountText()" (input)="on(amountText, $event)" />
-    </label>
-    <label class="field"><span>Paid by</span>
-      <select id="rec-mode" (change)="mode.set($any($event.target).value)">
-        @for (x of modes; track x.code) { <option [value]="x.code" [selected]="mode() === x.code">{{ x.label }}</option> }
-      </select>
-    </label>
-    <label class="field"><span>Tag (optional)</span>
-      <select id="rec-tag" (change)="tag.set($any($event.target).value)">
-        <option value="" [selected]="tag() === ''">None</option>
-        @for (x of tags; track x.code) { <option [value]="x.code" [selected]="tag() === x.code">{{ x.label }}</option> }
-      </select>
-    </label>
-    <label class="field"><span>First bill in the cycle containing</span>
-      <input type="date" id="rec-start" [attr.aria-describedby]="dateError() ? 'rec-date-err' : null" [value]="startDate()" (input)="on(startDate, $event)" />
-    </label>
-    <label class="field"><span>Ends on (optional)</span>
-      <input type="date" id="rec-end" [attr.aria-invalid]="dateError() ? true : null" [attr.aria-describedby]="dateError() ? 'rec-date-err' : null" [value]="endDate()" (input)="on(endDate, $event)" />
-    </label>
-    @if (dateError()) { <p id="rec-date-err" class="error" role="alert">{{ dateError() }}</p> }
-    <p id="rec-hint" class="muted">Do not enter account, card or reference numbers; there is no field for them.</p>
-    <div class="actions">
-      <button type="submit" class="btn primary" [disabled]="!canSave()">Save</button>
-      <button type="button" class="btn" (click)="cancel()">Cancel</button>
-    </div>
-  </form>
-} @else {
-  <p><button type="button" class="btn primary" id="rec-add" (click)="openAdd()">Add recurring bill</button></p>
-}
+  <h2 class="fp-label">Your bills</h2>
+  @if (loading()) {
+    <p class="fp-note" role="status">Loading...</p>
+  } @else if (items().length === 0 && !error()) {
+    <p class="fp-note">No recurring bills yet.</p>
+  }
+  <ul class="fp-list" aria-label="Recurring bills">
+    @for (r of items(); track r.id) {
+      <li class="row">
+        <fp-card>
+          <div class="main">
+            <div class="title">
+              <strong>{{ categoryName(r.categoryCode) }}</strong>
+              <span class="fp-badge">{{ freq(r.frequency)?.label }}</span>
+            </div>
+            <div>
+              <span class="bill fp-num">Bill {{ exact(r.amountPaise) }}</span>
+              <span class="fp-note"> {{ freq(r.frequency)?.every }}</span>
+            </div>
+            <ul class="spread fp-note" [attr.aria-label]="'Per-cycle spread for ' + categoryName(r.categoryCode) + ' bill of ' + exact(r.amountPaise)">
+              @for (s of r.perCycleSpread; track s.index) {
+                <li>Instalment {{ s.index + 1 }} of {{ r.perCycleSpread.length }}: {{ exact(s.amountPaise) }}</li>
+              }
+            </ul>
+            @if (r.currentInstalmentPaise !== null) {
+              <div class="fp-note">Due this cycle: {{ exact(r.currentInstalmentPaise) }}</div>
+            } @else {
+              <div class="fp-note">Nothing due this cycle</div>
+            }
+            @if (confirmingId() === r.id) {
+              <div class="fp-warn" role="status">Removing keeps bills already posted. If you remove this and add the same bill again, this cycle's instalment can be posted a second time.</div>
+            }
+            <div class="fp-note">From {{ shortDate(r.startDate) }}@if (r.endDate) { to {{ shortDate(r.endDate) }} }</div>
+          </div>
+          <div class="fp-actions">
+            <button type="button" class="fp-pill" [disabled]="busy()" [attr.aria-label]="'Edit ' + categoryName(r.categoryCode) + ' bill of ' + exact(r.amountPaise)" (click)="openEdit(r)">Edit</button>
+            @if (confirmingId() === r.id) {
+              <button type="button" class="fp-btn" [disabled]="busy()" [attr.aria-label]="'Confirm remove ' + categoryName(r.categoryCode) + ' bill of ' + exact(r.amountPaise)" (click)="remove(r)">Confirm remove</button>
+              <button type="button" class="fp-pill" [disabled]="busy()" (click)="keep()">Keep</button>
+            } @else {
+              <button type="button" class="fp-pill" [disabled]="busy()" [attr.aria-label]="'Remove ' + categoryName(r.categoryCode) + ' bill of ' + exact(r.amountPaise)" (click)="askRemove(r)">Remove</button>
+            }
+          </div>
+        </fp-card>
+      </li>
+    }
+  </ul>
+
+  @if (formOpen()) {
+    <form (submit)="$event.preventDefault(); save()" aria-label="Recurring bill">
+      <fp-card heading="Recurring bill" class="fp-form">
+        <label class="fp-field"><span class="fp-label">Category</span>
+          <select id="rec-cat" class="fp-input" (change)="category.set($any($event.target).value)">
+            @for (x of categories; track x.code) { <option [value]="x.code" [selected]="category() === x.code">{{ x.name }}</option> }
+          </select>
+        </label>
+        <label class="fp-field"><span class="fp-label">Repeats</span>
+          <select id="rec-freq" class="fp-input" (change)="frequency.set($any($event.target).value)">
+            @for (x of frequencies; track x.code) { <option [value]="x.code" [selected]="frequency() === x.code">{{ x.label }}</option> }
+          </select>
+        </label>
+        <label class="fp-field"><span class="fp-label">Full bill amount in rupees</span>
+          <input type="text" id="rec-amount" class="fp-input" inputmode="decimal" autocomplete="off" aria-describedby="rec-hint"
+            [value]="amountText()" (input)="on(amountText, $event)" />
+        </label>
+        <label class="fp-field"><span class="fp-label">Paid by</span>
+          <select id="rec-mode" class="fp-input" (change)="mode.set($any($event.target).value)">
+            @for (x of modes; track x.code) { <option [value]="x.code" [selected]="mode() === x.code">{{ x.label }}</option> }
+          </select>
+        </label>
+        <label class="fp-field"><span class="fp-label">Tag (optional)</span>
+          <select id="rec-tag" class="fp-input" (change)="tag.set($any($event.target).value)">
+            <option value="" [selected]="tag() === ''">None</option>
+            @for (x of tags; track x.code) { <option [value]="x.code" [selected]="tag() === x.code">{{ x.label }}</option> }
+          </select>
+        </label>
+        <label class="fp-field"><span class="fp-label">First bill in the cycle containing</span>
+          <input type="date" id="rec-start" class="fp-input" [attr.aria-describedby]="dateError() ? 'rec-date-err' : null" [value]="startDate()" (input)="on(startDate, $event)" />
+        </label>
+        <label class="fp-field"><span class="fp-label">Ends on (optional)</span>
+          <input type="date" id="rec-end" class="fp-input" [attr.aria-invalid]="dateError() ? true : null" [attr.aria-describedby]="dateError() ? 'rec-date-err' : null" [value]="endDate()" (input)="on(endDate, $event)" />
+        </label>
+        @if (dateError()) { <p id="rec-date-err" class="error fp-alert" role="alert">{{ dateError() }}</p> }
+        <p id="rec-hint" class="fp-note">Do not enter account, card or reference numbers; there is no field for them.</p>
+        <div class="fp-actions">
+          <button type="submit" class="fp-btn" [disabled]="!canSave()">Save</button>
+          <button type="button" class="fp-pill" (click)="cancel()">Cancel</button>
+        </div>
+      </fp-card>
+    </form>
+  } @else {
+    <button type="button" class="fp-btn fp-btn-block" id="rec-add" (click)="openAdd()">Add recurring bill</button>
+  }
+</div>

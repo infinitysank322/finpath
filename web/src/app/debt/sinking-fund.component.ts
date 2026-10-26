@@ -7,13 +7,15 @@ import { rupeesToPaise } from './prepay-format';
 import { SinkingFundApiService } from './sinking-fund-api.service';
 import { statusText } from './sinking-fund-format';
 import { SinkingFundView } from './sinking-fund.models';
+import { FpCardComponent } from '../ui/fp-card.component';
+import { FpProgressComponent } from '../ui/fp-progress.component';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
 import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 @Component({
   selector: 'app-sinking-fund',
   standalone: true,
-  imports: [FpPageHeaderComponent, FpProfileLinkComponent],
+  imports: [FpCardComponent, FpProgressComponent, FpPageHeaderComponent, FpProfileLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sinking-fund.component.html',
   styleUrl: './sinking-fund.css',

@@ -35,13 +35,13 @@
         @if (r.status.status === 'PAST_DUE') { <div>The target date has passed with {{ r.status.shortfallPaise | paiseInr }} still to go.</div> }
         @if (r.status.instrumentClass === 'SAFE_ONLY') { <div class="muted">Short horizon: keep this money in low-risk, easily withdrawn options.</div> }
       }
-      <div class="actions">
-        <button type="button" class="btn" [disabled]="busy()" [attr.aria-label]="'Edit ' + typeLabel(r.goal.type) + ' goal of ' + exact(r.goal.targetAmountPaise)" (click)="openEdit(r.goal)">Edit</button>
+      <div class="fp-actions">
+        <button type="button" class="fp-pill" [disabled]="busy()" [attr.aria-label]="'Edit ' + typeLabel(r.goal.type) + ' goal of ' + exact(r.goal.targetAmountPaise)" (click)="openEdit(r.goal)">Edit</button>
         @if (confirmingId() === r.goal.id) {
-          <button type="button" class="btn primary" [disabled]="busy()" [attr.aria-label]="'Confirm remove ' + typeLabel(r.goal.type) + ' goal'" (click)="remove(r.goal)">Confirm remove</button>
-          <button type="button" class="btn" [disabled]="busy()" (click)="keep()">Keep</button>
+          <button type="button" class="fp-btn" [disabled]="busy()" [attr.aria-label]="'Confirm remove ' + typeLabel(r.goal.type) + ' goal'" (click)="remove(r.goal)">Confirm remove</button>
+          <button type="button" class="fp-pill" [disabled]="busy()" (click)="keep()">Keep</button>
         } @else {
-          <button type="button" class="btn" [disabled]="busy()" [attr.aria-label]="'Remove ' + typeLabel(r.goal.type) + ' goal of ' + exact(r.goal.targetAmountPaise)" (click)="askRemove(r.goal)">Remove</button>
+          <button type="button" class="fp-pill" [disabled]="busy()" [attr.aria-label]="'Remove ' + typeLabel(r.goal.type) + ' goal of ' + exact(r.goal.targetAmountPaise)" (click)="askRemove(r.goal)">Remove</button>
         }
       </div>
     </li>
@@ -50,29 +50,29 @@
 
 @if (formOpen()) {
   <form (submit)="$event.preventDefault(); save()" aria-label="Goal">
-    <label class="field"><span>Type</span>
-      <select id="goal-type" (change)="type.set($any($event.target).value)">
+    <label class="fp-field"><span>Type</span>
+      <select class="fp-input" id="goal-type" (change)="type.set($any($event.target).value)">
         @for (x of types; track x.code) { <option [value]="x.code" [selected]="type() === x.code">{{ x.label }}</option> }
       </select>
     </label>
-    <label class="field"><span>Target amount in rupees</span>
-      <input type="text" id="goal-target" inputmode="decimal" autocomplete="off" [value]="targetText()" (input)="on(targetText, $event)" />
+    <label class="fp-field"><span>Target amount in rupees</span>
+      <input class="fp-input" type="text" id="goal-target" inputmode="decimal" autocomplete="off" [value]="targetText()" (input)="on(targetText, $event)" />
     </label>
-    <label class="field"><span>Saved so far in rupees (optional)</span>
-      <input type="text" id="goal-current" inputmode="decimal" autocomplete="off" aria-describedby="goal-hint" [value]="currentText()" (input)="on(currentText, $event)" />
+    <label class="fp-field"><span>Saved so far in rupees (optional)</span>
+      <input class="fp-input" type="text" id="goal-current" inputmode="decimal" autocomplete="off" aria-describedby="goal-hint" [value]="currentText()" (input)="on(currentText, $event)" />
     </label>
-    <label class="field"><span>Target date</span>
-      <input type="date" id="goal-date" [value]="targetDate()" (input)="on(targetDate, $event)" />
+    <label class="fp-field"><span>Target date</span>
+      <input class="fp-input" type="date" id="goal-date" [value]="targetDate()" (input)="on(targetDate, $event)" />
     </label>
-    <label class="field"><span>Priority, 1 (highest) to 10</span>
-      <input type="text" id="goal-priority" inputmode="numeric" autocomplete="off" [attr.aria-invalid]="priorityValue() === null ? true : null" [value]="priority()" (input)="on(priority, $event)" />
+    <label class="fp-field"><span>Priority, 1 (highest) to 10</span>
+      <input class="fp-input" type="text" id="goal-priority" inputmode="numeric" autocomplete="off" [attr.aria-invalid]="priorityValue() === null ? true : null" [value]="priority()" (input)="on(priority, $event)" />
     </label>
     <p id="goal-hint" class="muted">Whole rupees or up to two decimals. Do not enter account or ID numbers; there is no field for them.</p>
-    <div class="actions">
-      <button type="submit" class="btn primary" [disabled]="!canSave()">Save</button>
-      <button type="button" class="btn" (click)="cancel()">Cancel</button>
+    <div class="fp-actions">
+      <button type="submit" class="fp-btn" [disabled]="!canSave()">Save</button>
+      <button type="button" class="fp-pill" (click)="cancel()">Cancel</button>
     </div>
   </form>
 } @else {
-  <p><button type="button" class="btn primary" id="goal-add" (click)="openAdd()">Add goal</button></p>
+  <p><button type="button" class="fp-btn" id="goal-add" (click)="openAdd()">Add goal</button></p>
 }

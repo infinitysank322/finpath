@@ -1,8 +1,1 @@
-:host { display: block; max-width: 32rem; margin: 0 auto; }
-h1 { margin: 0 0 var(--fp-space-2); font-size: var(--fp-fs-xl); }
-h2 { margin: var(--fp-space-4) 0 var(--fp-space-2); font-size: var(--fp-fs-base); color: var(--fp-text-muted); }
-.edu { font-size: var(--fp-fs-md); color: var(--fp-text-muted); margin: 0 0 var(--fp-space-3); }
-.assumptions ul { margin: 0; padding-left: var(--fp-space-5); }
-.error { margin: var(--fp-space-2) 0 0; border-left: 4px solid; padding-left: var(--fp-space-2); }
-.muted { color: var(--fp-text-muted); }
-.btn { min-height: var(--fp-target); padding: 0 var(--fp-space-4); margin-top: var(--fp-space-2); border: 1px solid var(--fp-border-strong); border-radius: var(--fp-radius-pill); background: transparent; font: inherit; color: var(--fp-text); }
+.retry { align-self: flex-start; }

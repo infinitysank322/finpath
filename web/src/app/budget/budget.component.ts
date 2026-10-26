@@ -7,12 +7,15 @@ import { BudgetApiService } from './budget-api.service';
 import { barWidthText, remainingText, fractionToPercentText } from './budget-format';
 import { BudgetEvent, BudgetLevel, BudgetLine, BudgetStatus } from './budget.models';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpCardComponent } from '../ui/fp-card.component';
 import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
+import { FpProgressComponent } from '../ui/fp-progress.component';
+import { FpTone } from '../ui/fp-stat.component';
 
 @Component({
   selector: 'app-budget',
   standalone: true,
-  imports: [FpPageHeaderComponent, FpProfileLinkComponent],
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent, FpCardComponent, FpProgressComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './budget.component.html',
   styleUrl: './budget.css',
@@ -83,6 +86,17 @@ export class BudgetComponent implements OnInit {
         if (e.status === 404) this.error.set('Set up your plan cycle first.');
       },
     });
+  }
+
+  /** Bar inputs only: the API's percent text as a number, and a scale that keeps an over-100 value inside its bar. */
+  num(percentText: string): number {
+    return Number(percentText);
+  }
+  scale(percentText: string): number {
+    return Math.max(100, Number(percentText));
+  }
+  tone(level: BudgetLevel): FpTone {
+    return level === 'BREACH' ? 'breach' : level === 'WARN' ? 'warn' : 'accent';
   }
 
   levelText(level: BudgetLevel): string {

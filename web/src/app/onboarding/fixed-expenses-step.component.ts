@@ -27,7 +27,7 @@ import { RECURRING_FREQUENCIES, RecurringFrequency, TemplateView } from '../plan
     </select>
     <label for="fx-amt">Bill amount (rupees, per period)</label>
     <input id="fx-amt" type="text" inputmode="decimal" autocomplete="off" [value]="amountText()" (input)="amountText.set(val($event))" />
-    <button type="button" class="btn" [disabled]="amountPaise() === null || saving()" [attr.aria-busy]="saving()" (click)="add()">Add bill</button>
+    <button type="button" class="fp-pill" [disabled]="amountPaise() === null || saving()" [attr.aria-busy]="saving()" (click)="add()">Add bill</button>
     @if (items().length > 0) {
       <ul class="rows" aria-label="Bills added">
         @for (t of items(); track t.id) {

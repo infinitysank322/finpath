@@ -1,11 +1,11 @@
 <dialog #dlg aria-labelledby="guard-title" (cancel)="onCancel($event)">
   @if (guard(); as g) {
-    <h2 id="guard-title">{{ blocked() ? 'This loan would be blocked' : 'Check your EMI load' }}</h2>
+    <h2 id="guard-title" class="fp-num">{{ blocked() ? 'This loan would be blocked' : 'Check your EMI load' }}</h2>
     <app-emi-gauge [guard]="g" context="adding" />
-    <p class="edu">Educational view of your own figures. It is not advice to take or avoid any loan.</p>
+    <p class="edu fp-note">Educational view of your own figures. It is not advice to take or avoid any loan.</p>
     <div class="actions">
-      <button type="button" class="btn primary" autofocus (click)="cancelled.emit()">Go back</button>
-      <button type="button" class="btn" data-testid="proceed" (click)="confirmed.emit()">
+      <button type="button" class="fp-btn" autofocus (click)="cancelled.emit()">Go back</button>
+      <button type="button" class="fp-pill" data-testid="proceed" (click)="confirmed.emit()">
         {{ blocked() ? 'I understand, add it anyway' : 'Continue' }}
       </button>
     </div>

@@ -4,6 +4,7 @@ import { errorMessage } from '../plan/plan-format';
 import { EmiGaugeComponent } from './emi-gauge.component';
 import { GuardApiService } from './guard-api.service';
 import { GuardView } from './guard.models';
+import { FpCardComponent } from '../ui/fp-card.component';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
 import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
@@ -11,7 +12,7 @@ import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 @Component({
   selector: 'app-emi-guard',
   standalone: true,
-  imports: [FpPageHeaderComponent, FpProfileLinkComponent, EmiGaugeComponent],
+  imports: [FpCardComponent, FpPageHeaderComponent, FpProfileLinkComponent, EmiGaugeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './emi-guard.component.html',
   styleUrl: './emi-guard.css',

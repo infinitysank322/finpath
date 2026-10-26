@@ -103,6 +103,13 @@
 
   /* --- layout --- */
   --fp-nav-h: calc(84px + env(safe-area-inset-bottom, 0px)); /* fixed bottom nav; pages pad by this */
+  --fp-page-max: 32rem;           /* readable width of every signed-in screen and of bottom sheets */
+  --fp-chart-h: 17.5rem;          /* standard chart height */
+  --fp-chart-h-short: 15rem;      /* compact chart (line charts with few series, roll-off steps) */
+  --fp-chart-min-h: 10rem;        /* floor for a bar chart with one or two bars */
+  --fp-chart-bar-base: 3.5rem;    /* bar chart height = base + step x number of bars */
+  --fp-chart-bar-step: 2.75rem;
+  --fp-scroll-max-h: 20rem;       /* tall tables scroll inside their own region instead of stretching the page */
 }
 
 /* Light: a warm off-white counterpart. The lime stays a FILL with dark text on it; as text it becomes olive. */

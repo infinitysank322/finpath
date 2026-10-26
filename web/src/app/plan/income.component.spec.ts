@@ -36,7 +36,7 @@ describe('IncomeComponent', () => {
 
   it('shows the API cycle total as the headline, in lakh grouping', () => {
     const { root } = setup();
-    expect(root.querySelector('.headline strong')?.textContent).toBe('₹1,27,000');
+    expect(root.querySelector('.headline .value')?.textContent).toBe('₹1,27,000');
   });
 
   it('lists sources with a recurring or one-off badge and the API counts-this-cycle flag', () => {
@@ -85,19 +85,19 @@ describe('IncomeComponent', () => {
   it('needs a confirm step before removing', () => {
     const del = spyOn(api, 'incomeDelete').and.callThrough();
     const { fixture, root } = setup();
-    click(root, 'li.row .actions button:nth-child(2)', fixture);
+    click(root, 'li.row .fp-actions button:nth-child(2)', fixture);
     expect(del).not.toHaveBeenCalled();
-    click(root, 'li.row .actions button:nth-child(3)', fixture); // Keep
-    click(root, 'li.row .actions button:nth-child(2)', fixture);
-    click(root, 'li.row .actions button.primary', fixture);
+    click(root, 'li.row .fp-actions button:nth-child(3)', fixture); // Keep
+    click(root, 'li.row .fp-actions button:nth-child(2)', fixture);
+    click(root, 'li.row .fp-actions button.fp-btn', fixture);
     expect(del).toHaveBeenCalledTimes(1);
   });
 
   it('disables Remove while the request is pending', () => {
     spyOn(api, 'incomeDelete').and.returnValue(new Subject<void>());
     const { fixture, root } = setup();
-    click(root, 'li.row .actions button:nth-child(2)', fixture);
-    click(root, 'li.row .actions button.primary', fixture);
+    click(root, 'li.row .fp-actions button:nth-child(2)', fixture);
+    click(root, 'li.row .fp-actions button.fp-btn', fixture);
     root.querySelectorAll('li.row button').forEach((b) => expect((b as HTMLButtonElement).disabled).toBeTrue());
   });
 

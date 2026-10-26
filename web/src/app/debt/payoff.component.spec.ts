@@ -47,8 +47,8 @@ describe('PayoffComponent', () => {
 
   it('gives the chart an accessible name that describes every loan', () => {
     const { root } = setup();
-    const label = root.querySelector('.chart-wrap')!.getAttribute('aria-label')!;
-    expect(root.querySelector('.chart-wrap')!.getAttribute('role')).toBe('img');
+    const label = root.querySelector('.fp-chart')!.getAttribute('aria-label')!;
+    expect(root.querySelector('.fp-chart')!.getAttribute('role')).toBe('img');
     expect(label).toContain('Bank A closes in cycle 1');
     expect(label).toContain('Bank B closes in cycle 12');
   });
@@ -74,7 +74,7 @@ describe('PayoffComponent', () => {
     api.planResult = of({ ...plan, order: [], cycles: 0 });
     const { root } = setup();
     expect(root.textContent).toContain('No active loans');
-    expect(root.querySelector('.chart-wrap')).toBeNull();
+    expect(root.querySelector('.fp-chart')).toBeNull();
   });
 
   it('shows a friendly error', () => {
@@ -105,7 +105,7 @@ describe('PayoffComponent', () => {
     expect(root.textContent).toContain('Assumptions');
     expect(root.textContent).toContain('rates do not change');
     expect(root.textContent).not.toContain('redirected at');
-    expect(root.querySelector('.chart-wrap')!.getAttribute('aria-label')).toContain('final payment in the cycle starting 25/11/2026');
+    expect(root.querySelector('.fp-chart')!.getAttribute('aria-label')).toContain('final payment in the cycle starting 25/11/2026');
   });
 
   it('applies only the latest strategy response', () => {

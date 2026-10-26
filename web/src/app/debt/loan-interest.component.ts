@@ -16,6 +16,7 @@ import { LoanInterestApiService } from './loan-interest-api.service';
 import { InterestPalette, interestOption } from './loan-interest-chart-options';
 import { describeInterest, exactInr, instalmentTotals } from './loan-interest-format';
 import { LoanDetailView } from './loan-interest.models';
+import { FpCardComponent } from '../ui/fp-card.component';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
 import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
@@ -39,7 +40,7 @@ export function readInterestPalette(el: Element = document.documentElement): Int
 @Component({
   selector: 'app-loan-interest',
   standalone: true,
-  imports: [FpPageHeaderComponent, FpProfileLinkComponent, NgxEchartsDirective],
+  imports: [FpCardComponent, FpPageHeaderComponent, FpProfileLinkComponent, NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './loan-interest.component.html',
