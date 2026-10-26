@@ -12,3 +12,21 @@ export function setInputs<T>(fixture: ComponentFixture<T>, inputs: Record<string
   for (const [k, v] of Object.entries(inputs)) fixture.componentRef.setInput(k, v);
   fixture.detectChanges();
 }
+
+/** The phone width every screen must fit (T06b): no horizontal scroll in dark or light. */
+export function expectFitsPhone(el: HTMLElement, context = ''): void {
+  const host = document.createElement('div');
+  host.style.width = '380px';
+  host.appendChild(el);
+  document.body.appendChild(host);
+  try {
+    for (const theme of ['dark', 'light']) {
+      document.documentElement.dataset['theme'] = theme;
+      expect(host.scrollWidth).withContext(`${context} ${theme} host`).toBeLessThanOrEqual(380);
+      expect(el.scrollWidth).withContext(`${context} ${theme} content`).toBeLessThanOrEqual(380);
+    }
+  } finally {
+    delete document.documentElement.dataset['theme'];
+    host.remove();
+  }
+}

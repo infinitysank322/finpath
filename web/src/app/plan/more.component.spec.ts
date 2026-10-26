@@ -5,6 +5,7 @@ import { ExpenseApiService } from '../expense/expense-api.service';
 import { QUEUE_OWNER, QUEUE_STORAGE, queueKeyFor } from '../expense/expense-queue.service';
 import { memoryStorage } from '../expense/queue-testing';
 import { THEME_KEY } from '../theme.service';
+import { expectFitsPhone } from '../ui/ui-testing';
 import { MoreComponent } from './more.component';
 
 const item = (key: string) => ({
@@ -98,6 +99,23 @@ describe('MoreComponent sign-out', () => {
 });
 
 describe('MoreComponent theme', () => {
+  it('fits 380 px in dark and light with no horizontal scroll', () => {
+    TestBed.configureTestingModule({
+      imports: [MoreComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { signOut: () => Promise.resolve() } },
+        { provide: ExpenseApiService, useValue: { categories: () => [] } },
+        { provide: QUEUE_STORAGE, useValue: memoryStorage() },
+        { provide: QUEUE_OWNER, useValue: () => null },
+      ],
+    });
+    const f = TestBed.createComponent(MoreComponent);
+    f.detectChanges();
+    expectFitsPhone(f.nativeElement, 'more');
+  });
+
+
   it('Light / Dark segments set data-theme and persist the choice', () => {
     localStorage.removeItem(THEME_KEY);
     TestBed.configureTestingModule({

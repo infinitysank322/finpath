@@ -11,6 +11,7 @@ import { ExpenseApiService } from './expense-api.service';
 import { ExpenseQueueService, QUEUE_OWNER, QUEUE_STORAGE } from './expense-queue.service';
 import { memoryStorage } from './queue-testing';
 import { ExpenseInput, ExpenseView, OUT_CATEGORIES } from './expense.models';
+import { expectFitsPhone } from '../ui/ui-testing';
 
 class FakeApi {
   calls: { input: ExpenseInput; key: string }[] = [];
@@ -326,5 +327,11 @@ describe('AddExpenseComponent', () => {
       expect(queue.pending()[0].key).toBe(api.calls[0].key);
       expect(errorText()).toBe('');
     });
+  });
+
+  it('fits 380 px in dark and light with no horizontal scroll', () => {
+    tapKey('1');
+    tapKey('2');
+    expectFitsPhone(root, 'add expense');
   });
 });
