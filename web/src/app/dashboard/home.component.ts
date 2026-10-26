@@ -36,10 +36,21 @@ const isUnreachable = (e: unknown): boolean => e instanceof HttpErrorResponse &&
       <p role="alert" data-f="failed">Could not load your dashboard. Check your connection and try again.</p>
       <button type="button" (click)="load()">Retry</button>
     } @else {
-      <p class="muted" aria-busy="true" data-f="loading">Loading your dashboard</p>
+      <div class="skeleton" role="status" data-f="loading">
+        <span class="sr-only">Loading your dashboard</span>
+        <div class="bar wide"></div>
+        <div class="bar"></div>
+      </div>
     }
   `,
-  styles: [`h1 { margin: 0 0 .5rem; font-size: 1.5rem; }`],
+  styles: [`
+    h1 { margin: 0 0 .5rem; font-size: 1.5rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .bar { height: 1.25rem; width: 50%; margin: .5rem 0; border-radius: .25rem; background: currentColor; opacity: .12; }
+    .bar.wide { width: 75%; }
+    @media (prefers-reduced-motion: no-preference) { .bar { animation: pulse 1.4s ease-in-out infinite; } }
+    @keyframes pulse { 50% { opacity: .22; } }
+  `],
 })
 export class HomeComponent implements OnInit, OnDestroy {
   private readonly api = inject(DashboardApiService);

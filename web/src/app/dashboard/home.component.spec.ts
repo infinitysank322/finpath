@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { TestBed } from '@angular/core/testing';
-import { Observable, of, throwError } from 'rxjs';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { Observable, of, throwError, timer } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { USER_A, tokenResponse } from '../auth/auth-testing';
 import { AUTH_STORAGE, AuthSessionStore } from '../auth/session.store';
 import { memoryStorage } from '../expense/queue-testing';
@@ -79,4 +80,18 @@ describe('HomeComponent offline behaviour (T79)', () => {
     expect(has(f, '[data-f=stale]')).toBeFalse();
     expect(has(f, '[data-f=failed]')).toBeTrue();
   });
+
+  it('T82: a 12 s cold first request shows a skeleton, never an error, then succeeds', fakeAsync(() => {
+    next = () => timer(12_000).pipe(map(() => view));
+    const f = render();
+    expect(has(f, '[data-f=loading]')).toBeTrue();
+    tick(11_999);
+    f.detectChanges();
+    expect(has(f, '[data-f=loading]')).toBeTrue();
+    expect(has(f, '[data-f=failed]')).toBeFalse();
+    tick(1);
+    f.detectChanges();
+    expect(has(f, '[data-f=loading]')).toBeFalse();
+    expect(text(f)).toContain('6 days left');
+  }));
 });
