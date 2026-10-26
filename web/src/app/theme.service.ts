@@ -38,6 +38,6 @@ export class ThemeService {
     } catch {
       /* ignore */
     }
-    return this.doc.defaultView?.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'dark';
   }
 }
