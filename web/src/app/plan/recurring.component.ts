@@ -6,10 +6,12 @@ import { MODES, OUT_CATEGORIES, PaymentMode, SpendTag, TAGS } from '../expense/e
 import { PlanApiService } from './plan-api.service';
 import { errorMessage, paiseToRupeesText, rupeesTextToPaise, shortDate } from './plan-format';
 import { MaterialiseResult, RECURRING_FREQUENCIES, RecurringFrequency, TemplateView } from './plan.models';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
 
 @Component({
   selector: 'app-recurring',
   standalone: true,
+  imports: [FpPageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './recurring.component.html',
   styleUrl: './plan.css',

@@ -7,11 +7,12 @@ import { errorMessage } from '../plan/plan-format';
 import { stepName } from './allocation-format';
 import { AllocationApiService } from './allocation-api.service';
 import { AllocationView, RebalancePreview } from './allocation.models';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
 
 @Component({
   selector: 'app-allocation',
   standalone: true,
-  imports: [PaiseInrPipe],
+  imports: [FpPageHeaderComponent, PaiseInrPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './allocation.component.html',
   styleUrl: './allocation.css',
