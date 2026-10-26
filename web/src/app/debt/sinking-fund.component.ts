@@ -36,7 +36,7 @@ export class SinkingFundComponent {
     if (this.loading()) return;
     const paise = rupeesToPaise(this.saved());
     if (paise === null) {
-      this.error.set('Enter the amount set aside in rupees, for example 50000.');
+      this.error.set('Enter the amount set aside in rupees, as a number.');
       this.fund.set(null);
       return;
     }
