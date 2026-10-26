@@ -14,6 +14,8 @@ import { FiPalette, fiOption } from './fi-chart-options';
 import { FiApiService } from './fi-api.service';
 import { describeFi, fiRows, fractionToPercent } from './fi-format';
 import { FiPlanRequest, FiPlanView } from './fi.models';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, AriaComponent, SVGRenderer]);
 
@@ -21,20 +23,20 @@ const inr = new PaiseInrPipe();
 
 export function readFiPalette(el: Element = document.documentElement): FiPalette {
   const css = getComputedStyle(el);
-  const v = (n: string, d: string) => css.getPropertyValue(n).trim() || d;
+  const v = (n: string) => css.getPropertyValue(n).trim();
   return {
-    text: v('--fp-text', '#1b1f24'),
-    muted: v('--fp-text-muted', '#4a5563'),
-    border: v('--fp-border', '#d3d9e0'),
-    line: v('--fp-primary', '#0b5cad'),
-    target: v('--fp-warn-bar', '#8a5a00'),
+    text: v('--fp-text'),
+    muted: v('--fp-text-muted'),
+    border: v('--fp-border'),
+    line: v('--fp-primary'),
+    target: v('--fp-warn-bar'),
   };
 }
 
 @Component({
   selector: 'app-fi-planner',
   standalone: true,
-  imports: [NgxEchartsDirective],
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent, NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fi-planner.component.html',

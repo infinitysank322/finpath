@@ -7,11 +7,13 @@ import { PaiseInrPipe } from '../paise-inr.pipe';
 import { PlanApiService } from './plan-api.service';
 import { errorMessage, paiseToRupeesText, rupeesTextToPaise, shortDate } from './plan-format';
 import { CycleTotalView, INCOME_FREQUENCIES, INCOME_TYPES, IncomeFrequency, IncomeType, IncomeView } from './plan.models';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 @Component({
   selector: 'app-income',
   standalone: true,
-  imports: [PaiseInrPipe],
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent, PaiseInrPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './income.component.html',
   styleUrl: './plan.css',

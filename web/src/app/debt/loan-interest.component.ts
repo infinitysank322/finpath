@@ -16,6 +16,8 @@ import { LoanInterestApiService } from './loan-interest-api.service';
 import { InterestPalette, interestOption } from './loan-interest-chart-options';
 import { describeInterest, exactInr, instalmentTotals } from './loan-interest-format';
 import { LoanDetailView } from './loan-interest.models';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, AriaComponent, SVGRenderer]);
 
@@ -24,20 +26,20 @@ const inr = new PaiseInrPipe();
 /** Reads the active theme's tokens so chart colours follow dark mode. */
 export function readInterestPalette(el: Element = document.documentElement): InterestPalette {
   const css = getComputedStyle(el);
-  const v = (n: string, d: string) => css.getPropertyValue(n).trim() || d;
+  const v = (n: string) => css.getPropertyValue(n).trim();
   return {
-    text: v('--fp-text', '#1b1f24'),
-    muted: v('--fp-text-muted', '#4a5563'),
-    border: v('--fp-border', '#d3d9e0'),
-    principal: v('--fp-primary', '#0b5cad'),
-    interest: v('--fp-warn-bar', '#8a5a00'),
+    text: v('--fp-text'),
+    muted: v('--fp-text-muted'),
+    border: v('--fp-border'),
+    principal: v('--fp-primary'),
+    interest: v('--fp-warn-bar'),
   };
 }
 
 @Component({
   selector: 'app-loan-interest',
   standalone: true,
-  imports: [NgxEchartsDirective],
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent, NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './loan-interest.component.html',

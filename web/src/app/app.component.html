@@ -1,29 +1,7 @@
 <a class="skip" href="#main">Skip to content</a>
-<header class="bar">
-  <span class="brand">FinPath</span>
-  @if (chrome()) {
-    <a routerLink="/spending/add" class="add-link">Add expense</a>
-  }
-  <button
-    type="button"
-    class="theme-toggle"
-    (click)="themeService.toggle()"
-    [attr.aria-pressed]="themeService.theme() === 'dark'"
-    aria-label="Dark mode"
-  >
-    {{ themeService.theme() === 'dark' ? 'Dark' : 'Light' }}
-  </button>
-</header>
-<main id="main" tabindex="-1">
+<main id="main" tabindex="-1" [class.has-nav]="chrome()">
   <router-outlet />
 </main>
 @if (chrome()) {
-  <nav class="tabs" aria-label="Primary">
-    @for (item of nav; track item.path) {
-      <a [routerLink]="item.path" routerLinkActive="active" ariaCurrentWhenActive="page">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path [attr.d]="item.icon" fill="currentColor" /></svg>
-        <span>{{ item.label }}</span>
-      </a>
-    }
-  </nav>
+  <fp-bottom-nav />
 }

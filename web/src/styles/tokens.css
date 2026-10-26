@@ -1,0 +1,149 @@
+/*
+ * FinPath design tokens: the single source for colour, type, spacing, radius, shadow and motion.
+ * Dark is the identity and the default (no data-theme attribute = dark). Light is selected by
+ * :root[data-theme='light'] and re-values the SAME names, so components never branch on theme.
+ *
+ * Rules for the contrast spec (app/tokens.spec.ts):
+ *   - every colour that is tested stays a plain #rrggbb; gradients and shadows are separate tokens;
+ *   - text pairs >= 4.5:1, non-text pairs (control borders, focus ring, bars, accent edge) >= 3:1, in BOTH themes.
+ * Legacy names (--fp-primary*, --fp-warn-*, --fp-breach-*, --fp-border*) keep working; primary now IS the accent.
+ */
+:root {
+  color-scheme: dark;
+
+  /* --- surfaces --- */
+  --fp-bg: #0b0b0c;               /* page */
+  --fp-surface: #161618;          /* flat surface (list cards, inputs) */
+  --fp-card-from: #1a1a1d;        /* hero card gradient start (top) */
+  --fp-card-to: #141416;          /* hero card gradient end (bottom) */
+  --fp-card-gradient: linear-gradient(180deg, var(--fp-card-from) 0%, var(--fp-card-to) 100%);
+  --fp-card-border: #2a2a2e;      /* decorative card edge (cards are identified by content, not by this line) */
+  --fp-border: #2a2a2e;           /* decorative divider */
+  --fp-border-strong: #75757d;    /* control boundary: inputs, chips, keypad (>= 3:1) */
+  --fp-chip-bg: #1e1e21;
+  --fp-chip-bg-2: #232326;        /* pill badges, raised chips */
+  --fp-track: #232326;            /* empty part of a progress bar (decorative) */
+  --fp-nav-bg: #0f0f11;
+  --fp-nav-border: #1e1e21;
+  --fp-segmented-bg: #161618;     /* segmented tray */
+  --fp-segmented-on-bg: #f4f2ec;  /* selected segment fill */
+  --fp-segmented-on-text: #0b0b0c;
+  --fp-key-bg: #131315;
+
+  /* --- text --- */
+  --fp-text: #f4f2ec;
+  --fp-text-2: #d6d4ce;           /* secondary body */
+  --fp-text-muted: #a1a1a8;       /* section labels, hints */
+
+  /* --- accent (one lime) --- */
+  --fp-accent: #c8f26b;           /* FILL: buttons, selected chips, bars, the + button */
+  --fp-on-accent: #0b0b0c;        /* text/icon on the accent fill */
+  --fp-accent-text: #c8f26b;      /* accent used AS text or icon on bg/surface/card */
+  --fp-accent-edge: #c8f26b;      /* outline/bar of accent things (darker than the fill in light so it reads as a boundary) */
+  --fp-primary: var(--fp-accent);
+  --fp-on-primary: var(--fp-on-accent);
+  --fp-primary-text: var(--fp-accent-text);
+  --fp-focus: #c8f26b;
+
+  /* --- status --- */
+  --fp-warn-bg: #2a2215;
+  --fp-warn-text: #f5b547;        /* amber: nearing a limit / needs a look */
+  --fp-warn-bar: #f5b547;
+  --fp-breach-bg: #3b1714;
+  --fp-breach-text: #ffb4ab;      /* coral/red: over the limit; distinct from amber */
+  --fp-breach-bar: #ff6b5e;
+  --fp-series-neutral: #6e6e76;   /* the grey series in charts / "other" slices (>= 3:1 on bg and card) */
+
+  /* --- fonts --- */
+  --fp-font-text: 'Manrope Variable', Manrope, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fp-font-num: 'Space Grotesk Variable', 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* --- type scale (rem so user font settings apply) --- */
+  --fp-fs-label: 0.6875rem;       /* 11px section label */
+  --fp-fs-xs: 0.75rem;            /* 12px */
+  --fp-fs-sm: 0.8125rem;          /* 13px */
+  --fp-fs-md: 0.875rem;           /* 14px */
+  --fp-fs-base: 1rem;             /* 16px */
+  --fp-fs-lg: 1.125rem;           /* 18px page title */
+  --fp-fs-xl: 1.625rem;           /* 26px */
+  --fp-fs-2xl: 2.5rem;            /* 40px big stat */
+  --fp-fs-hero: 3.5rem;           /* 56px amount entry */
+  --fp-label-tracking: 0.16em;
+  --fp-num-tracking: -0.03em;
+
+  /* --- spacing --- */
+  --fp-space-1: 0.25rem;          /* 4 */
+  --fp-space-2: 0.5rem;           /* 8 */
+  --fp-space-3: 0.75rem;          /* 12 */
+  --fp-space-4: 1rem;             /* 16 */
+  --fp-space-5: 1.25rem;          /* 20 */
+  --fp-space-6: 1.5rem;           /* 24 */
+  --fp-space-7: 2rem;             /* 32 */
+  --fp-space-8: 3rem;             /* 48 */
+  --fp-page-pad: 1.25rem;         /* horizontal page padding */
+  --fp-target: 44px;              /* minimum touch target */
+
+  /* --- radius --- */
+  --fp-radius-sm: 10px;
+  --fp-radius-md: 14px;
+  --fp-radius-lg: 20px;
+  --fp-radius-xl: 24px;
+  --fp-radius-pill: 999px;
+
+  /* --- shadow --- */
+  --fp-shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 40px rgba(0, 0, 0, 0.5);
+  --fp-shadow-fab: 0 10px 24px rgba(0, 0, 0, 0.5);
+  --fp-scrim: rgba(0, 0, 0, 0.55);   /* modal backdrop */
+  --fp-shadow-none: none;
+
+  /* --- motion --- */
+  --fp-motion-fast: 120ms;
+  --fp-motion-base: 200ms;
+  --fp-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* --- layout --- */
+  --fp-nav-h: calc(84px + env(safe-area-inset-bottom, 0px)); /* fixed bottom nav; pages pad by this */
+}
+
+/* Light: a warm off-white counterpart. The lime stays a FILL with dark text on it; as text it becomes olive. */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --fp-bg: #f6f4ee;
+  --fp-surface: #ffffff;
+  --fp-card-from: #ffffff;
+  --fp-card-to: #faf8f2;
+  --fp-card-border: #e2dfd4;
+  --fp-border: #e2dfd4;
+  --fp-border-strong: #74747c;
+  --fp-chip-bg: #ece9df;
+  --fp-chip-bg-2: #e6e3d8;
+  --fp-track: #e4e1d6;
+  --fp-nav-bg: #fffefb;
+  --fp-nav-border: #e2dfd4;
+  --fp-segmented-bg: #ece9df;
+  --fp-segmented-on-bg: #1a1a1c;
+  --fp-segmented-on-text: #f6f4ee;
+  --fp-key-bg: #ffffff;
+
+  --fp-text: #1a1a1c;
+  --fp-text-2: #3d3d42;
+  --fp-text-muted: #5a5a62;
+
+  --fp-accent: #c8f26b;
+  --fp-on-accent: #11140a;
+  --fp-accent-text: #3f6212;
+  --fp-accent-edge: #4d7c0f;
+  --fp-focus: #3f6212;
+
+  --fp-warn-bg: #fff1d6;
+  --fp-warn-text: #6b4300;
+  --fp-warn-bar: #b7791f;
+  --fp-breach-bg: #fde8e6;
+  --fp-breach-text: #8a1111;
+  --fp-breach-bar: #c0392b;
+  --fp-series-neutral: #74747c;
+
+  --fp-shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 10px 28px rgba(60, 50, 20, 0.1);
+  --fp-shadow-fab: 0 8px 20px rgba(60, 50, 20, 0.22);
+}

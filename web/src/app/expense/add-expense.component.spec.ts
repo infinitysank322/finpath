@@ -11,6 +11,7 @@ import { ExpenseApiService } from './expense-api.service';
 import { ExpenseQueueService, QUEUE_OWNER, QUEUE_STORAGE } from './expense-queue.service';
 import { memoryStorage } from './queue-testing';
 import { ExpenseInput, ExpenseView, OUT_CATEGORIES } from './expense.models';
+import { expectFitsPhone } from '../ui/ui-testing';
 
 class FakeApi {
   calls: { input: ExpenseInput; key: string }[] = [];
@@ -157,7 +158,7 @@ describe('AddExpenseComponent', () => {
     expect(travel.checked).toBeTrue();
     expect((root.querySelector('[aria-label="Category Dining"]') as HTMLInputElement).checked).toBeFalse();
     expect(travel.name).toBe((root.querySelector('[aria-label="Category Dining"]') as HTMLInputElement).name);
-    expect(root.querySelectorAll('fieldset legend').length).toBe(2);
+    expect(root.querySelectorAll('fp-chip-grid [role=group][aria-label]').length).toBe(2);
     tap('[aria-label="Tag Need"]');
     expect(root.querySelector('[aria-label="Tag Need"]')?.getAttribute('aria-pressed')).toBe('true');
   });
@@ -231,7 +232,7 @@ describe('AddExpenseComponent', () => {
     fill('5');
     tap('[aria-label="Save expense"]');
     expect(errorText()).toContain('Sign in to save');
-    expect(root.querySelector('button.chip:not([aria-label])')?.textContent?.trim()).toBe('Sign in to save');
+    expect(root.querySelector('button.fp-btn-ghost:not([aria-label])')?.textContent?.trim()).toBe('Sign in to save');
     api.failWith = 500;
     tap('[aria-label="Save expense"]');
     expect(errorText()).toContain('server had a problem');
@@ -326,5 +327,11 @@ describe('AddExpenseComponent', () => {
       expect(queue.pending()[0].key).toBe(api.calls[0].key);
       expect(errorText()).toBe('');
     });
+  });
+
+  it('fits 380 px in dark and light with no horizontal scroll', () => {
+    tapKey('1');
+    tapKey('2');
+    expectFitsPhone(root, 'add expense');
   });
 });

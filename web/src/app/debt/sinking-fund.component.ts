@@ -7,10 +7,13 @@ import { rupeesToPaise } from './prepay-format';
 import { SinkingFundApiService } from './sinking-fund-api.service';
 import { statusText } from './sinking-fund-format';
 import { SinkingFundView } from './sinking-fund.models';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 @Component({
   selector: 'app-sinking-fund',
   standalone: true,
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sinking-fund.component.html',
   styleUrl: './sinking-fund.css',
@@ -33,7 +36,7 @@ export class SinkingFundComponent {
     if (this.loading()) return;
     const paise = rupeesToPaise(this.saved());
     if (paise === null) {
-      this.error.set('Enter the amount set aside in rupees, for example 50000.');
+      this.error.set('Enter the amount set aside in rupees, as a number.');
       this.fund.set(null);
       return;
     }

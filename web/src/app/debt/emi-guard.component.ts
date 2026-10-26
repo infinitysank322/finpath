@@ -4,12 +4,14 @@ import { errorMessage } from '../plan/plan-format';
 import { EmiGaugeComponent } from './emi-gauge.component';
 import { GuardApiService } from './guard-api.service';
 import { GuardView } from './guard.models';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 /** FR-18 page: where the user's EMIs stand against the 40% line. */
 @Component({
   selector: 'app-emi-guard',
   standalone: true,
-  imports: [EmiGaugeComponent],
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent, EmiGaugeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './emi-guard.component.html',
   styleUrl: './emi-guard.css',

@@ -29,6 +29,9 @@ export class ThemeService {
 
   private apply(theme: Theme): void {
     this.doc.documentElement.dataset['theme'] = theme;
+    // Browser chrome and native controls follow the chosen theme, not the OS.
+    this.doc.querySelector('meta[name=theme-color]')?.setAttribute('content', theme === 'dark' ? '#0b0b0c' : '#ffffff');
+    this.doc.querySelector('meta[name=color-scheme]')?.setAttribute('content', theme);
   }
 
   private initial(): Theme {
@@ -38,6 +41,6 @@ export class ThemeService {
     } catch {
       /* ignore */
     }
-    return this.doc.defaultView?.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'dark';
   }
 }

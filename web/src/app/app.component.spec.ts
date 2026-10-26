@@ -10,7 +10,7 @@ import { QUEUE_STORAGE } from './expense/expense-queue.service';
 import { memoryStorage } from './expense/queue-testing';
 import { routes } from './app.routes';
 import { serviceWorkerOptions } from './app.config';
-import { THEME_KEY, ThemeService } from './theme.service';
+import { THEME_KEY } from './theme.service';
 
 describe('AppComponent shell', () => {
   let authStorage: ReturnType<typeof memoryStorage>;
@@ -26,22 +26,22 @@ describe('AppComponent shell', () => {
     }).compileComponents();
   });
 
-  it('renders a labelled bottom nav with five destinations', () => {
+  it('renders a labelled bottom nav with four destinations and a central Add expense button', () => {
     const f = TestBed.createComponent(AppComponent);
     f.detectChanges();
     const nav = f.nativeElement.querySelector('nav[aria-label="Primary"]') as HTMLElement;
     const labels = Array.from(nav.querySelectorAll('a')).map((a) => a.textContent?.trim());
-    expect(labels).toEqual(['Home', 'Spending', 'Debt', 'Goals', 'More']);
+    expect(labels).toEqual(['Home', 'Spend', '', 'Debt', 'Goals']);
+    expect(nav.querySelector('a.add')?.getAttribute('aria-label')).toBe('Add expense');
   });
 
-  it('hides the bottom nav and Add expense on /sign-in, keeping the theme toggle', async () => {
+  it('hides the bottom nav and More link on /sign-in', async () => {
     const f = TestBed.createComponent(AppComponent);
     await TestBed.inject(Router).navigateByUrl('/sign-in');
     f.detectChanges();
     const root: HTMLElement = f.nativeElement;
     expect(root.querySelector('nav[aria-label="Primary"]')).toBeNull();
-    expect(root.querySelector('.add-link')).toBeNull();
-    expect(root.querySelector('button.theme-toggle')).not.toBeNull();
+    expect(root.querySelector('a[aria-label="More"]')).toBeNull();
   });
 
   it('session lost while signed in (another tab signed out): goes to /sign-in, remembering where the user was', async () => {
@@ -82,20 +82,6 @@ describe('AppComponent shell', () => {
     expect(nav).not.toHaveBeenCalled();
   });
 
-  it('theme toggle flips data-theme, persists it and updates aria-pressed', () => {
-    const f = TestBed.createComponent(AppComponent);
-    TestBed.inject(ThemeService).set('light');
-    f.detectChanges();
-    const btn = f.nativeElement.querySelector('button.theme-toggle') as HTMLButtonElement;
-    expect(btn.getAttribute('aria-pressed')).toBe('false');
-    btn.click();
-    f.detectChanges();
-    expect(document.documentElement.dataset['theme']).toBe('dark');
-    expect(localStorage.getItem(THEME_KEY)).toBe('dark');
-    expect(btn.getAttribute('aria-pressed')).toBe('true');
-    btn.click();
-    expect(document.documentElement.dataset['theme']).toBe('light');
-  });
 });
 
 describe('service worker registration', () => {

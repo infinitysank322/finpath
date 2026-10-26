@@ -1,88 +1,65 @@
-<h1>Add expense</h1>
+<div class="fp-page">
+  <fp-page-header title="Add expense" [centered]="true">
+    <a fpLeading class="icon-btn" routerLink="/home" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+    </a>
+    <span fpTrailing class="today">Today</span>
+  </fp-page-header>
 
-<section aria-labelledby="amt-h">
-  <h2 id="amt-h" class="sr-only">Amount</h2>
-  <p class="amount" role="status">
-    <span class="sr-only">Amount {{ amountLabel() }}</span>
-    <span aria-hidden="true">₹{{ amountShown() }}</span>
-  </p>
-  <div class="keypad" role="group" aria-label="Amount keypad">
-    @for (k of keys; track k) {
-      <button type="button" class="key" [attr.aria-label]="keyLabel(k)" (click)="press(k)">
-        {{ k === 'back' ? '⌫' : k }}
-      </button>
-    }
+  <section class="amount-block" aria-labelledby="amt-h">
+    <span id="amt-h" class="fp-label">Amount</span>
+    <p class="amount fp-num" role="status">
+      <span class="sr-only">Amount {{ amountLabel() }}</span>
+      <span aria-hidden="true">₹{{ amountShown() }}</span>
+    </p>
+  </section>
+
+  <section class="block">
+    <span class="fp-label" aria-hidden="true">Category</span>
+    <fp-chip-grid label="Category" ariaPrefix="Category " [options]="categoryOptions" [value]="category()" (valueChange)="category.set($event)" />
+  </section>
+
+  <section class="block">
+    <span class="fp-label" aria-hidden="true">Paid by</span>
+    <fp-chip-grid label="Paid by" ariaPrefix="Payment mode " [options]="modeOptions" [value]="mode()" (valueChange)="onMode($event)" />
+  </section>
+
+  <section class="block">
+    <span class="fp-label" aria-hidden="true">Tag (optional)</span>
+    <fp-segmented label="Tag, optional" ariaPrefix="Tag " [options]="tagOptions" [value]="tag()" [deselectable]="true" (valueChange)="onTag($event)" />
+  </section>
+
+  <fp-keypad label="Amount keypad" (keyPress)="press($event)" />
+
+  <section class="block">
+    <label class="fp-field">
+      <span class="fp-label">Note</span>
+      <input
+        class="fp-input"
+        type="text"
+        maxlength="140"
+        autocomplete="off"
+        aria-label="Note"
+        aria-describedby="note-hint"
+        [value]="note()"
+        (input)="onNote($event)"
+      />
+    </label>
+    <p id="note-hint" class="muted hint">Do not enter account, card or ID numbers.</p>
+  </section>
+
+  <p class="error fp-alert" role="alert">{{ error() }}</p>
+  @if (signInNeeded()) {
+    <button type="button" class="fp-btn fp-btn-ghost" (click)="signInToSave()">Sign in to save</button>
+  }
+  <p class="ok" role="status">{{ message() }}</p>
+
+  <app-pending-expenses />
+
+  <div class="savebar">
+    <button type="button" class="fp-btn fp-btn-block" aria-label="Save expense" [disabled]="!canSave()" (click)="save()">
+      Save expense
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+    </button>
   </div>
-</section>
-
-<section>
-  <fieldset class="chips">
-    <legend id="cat-h">Category</legend>
-    @for (x of categories; track x.code) {
-      <label class="chip">
-        <input type="radio" name="category" [value]="x.code" [checked]="category() === x.code"
-          [attr.aria-label]="'Category ' + x.name" (change)="category.set(x.code)" />
-        <span>{{ x.name }}</span>
-      </label>
-    }
-  </fieldset>
-</section>
-
-<section>
-  <fieldset class="chips">
-    <legend id="mode-h">Paid by</legend>
-    @for (x of modes; track x.code) {
-      <label class="chip">
-        <input type="radio" name="mode" [value]="x.code" [checked]="mode() === x.code"
-          [attr.aria-label]="'Payment mode ' + x.label" (change)="mode.set(x.code)" />
-        <span>{{ x.label }}</span>
-      </label>
-    }
-  </fieldset>
-</section>
-
-<section aria-labelledby="more-h">
-  <h2 id="more-h">Optional</h2>
-  <div class="chips" role="group" aria-label="Tag, optional">
-    @for (t of tags; track t.code) {
-      <button
-        type="button"
-        class="chip"
-        [attr.aria-pressed]="tag() === t.code"
-        [attr.aria-label]="'Tag ' + t.label"
-        (click)="toggleTag(t.code)"
-      >{{ t.label }}</button>
-    }
-  </div>
-  <label class="field">
-    <span>Note</span>
-    <input
-      type="text"
-      maxlength="140"
-      autocomplete="off"
-      aria-label="Note"
-      aria-describedby="note-hint"
-      [value]="note()"
-      (input)="onNote($event)"
-    />
-  </label>
-  <p id="note-hint" class="muted hint">Do not enter account, card or ID numbers.</p>
-</section>
-
-<p class="error" role="alert">{{ error() }}</p>
-@if (signInNeeded()) {
-  <button type="button" class="chip" (click)="signInToSave()">Sign in to save</button>
-}
-<p class="ok" role="status">{{ message() }}</p>
-
-<app-pending-expenses />
-
-<div class="savebar">
-  <button
-    type="button"
-    class="save"
-    aria-label="Save expense"
-    [disabled]="!canSave()"
-    (click)="save()"
-  >Save</button>
 </div>
