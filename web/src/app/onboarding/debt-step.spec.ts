@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { API_BASE } from '../api-base';
 import { LoanInput } from '../debt/loan.models';
-import { SAMPLE_EMI_TOTAL_PAISE, SAMPLE_LOANS, viewOf } from '../debt/loan.fixture';
+import { rupees, SAMPLE_EMI_TOTAL_PAISE, SAMPLE_LOANS, viewOf } from '../debt/loan.fixture';
 import { rateToPctText } from '../debt/loan-format';
 import { paiseToRupeesText } from '../plan/plan-format';
 import { DebtStepComponent } from './debt-step.component';
@@ -62,14 +62,14 @@ describe('onboarding debt step', () => {
       post.flush(viewOf(loan, n));
       http.expectOne('/api/loans').flush(SAMPLE_LOANS.slice(0, n + 1).map(viewOf));
       const emiSoFar = SAMPLE_LOANS.slice(0, n + 1).reduce((a, x) => a + (x.emiPaise ?? 0), 0);
-      http.expectOne('/api/loans/debt-trap-guard').flush({ ratio: '0.4', status: 'OK', headroomPaise: 0, totalEmiPaise: emiSoFar, monthlyIncomePaise: 22_222_200 });
+      http.expectOne('/api/loans/debt-trap-guard').flush({ ratio: '0.4', status: 'OK', headroomPaise: 0, totalEmiPaise: emiSoFar, monthlyIncomePaise: 1_234_500 });
       f.detectChanges();
     });
 
     expect(el(f).querySelectorAll('[aria-label="Loans added"] li').length).toBe(5);
     expect(TestBed.inject(PlanStepsState).loanCount()).toBe(5);
     expect(SAMPLE_LOANS.reduce((a, x) => a + (x.emiPaise ?? 0), 0)).toBe(SAMPLE_EMI_TOTAL_PAISE);
-    expect(el(f).querySelector('[role=status]')!.textContent).toContain('₹88,888');
+    expect(el(f).querySelector('[role=status]')!.textContent).toContain(rupees(SAMPLE_EMI_TOTAL_PAISE));
   });
 
   it('keeps the form disabled until it is complete and never asks for an account number', () => {

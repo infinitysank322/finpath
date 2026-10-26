@@ -64,8 +64,8 @@ describe('FR-01 full wizard run (automated, mocked HTTP)', () => {
     TestBed.resetTestingModule();
   });
 
-  it('walks consent, cycle day, income, bills, goals, assets and done, posting the right paise at each step', async () => {
-    expect(progress()).toBe('Step 1 of 7');
+  it('walks consent, cycle day, income, bills, loans, goals, assets and done, posting the right paise at each step', async () => {
+    expect(progress()).toBe('Step 1 of 8');
 
     // 1. consent: Next stays disabled until the server says given
     http.expectOne('/api/me/consent').flush({ statement: STATEMENT, given: false });
@@ -83,7 +83,7 @@ describe('FR-01 full wizard run (automated, mocked HTTP)', () => {
     await click('Next');
 
     // 2. cycle day: change 25 -> 26, saved to the server before Next opens
-    expect(progress()).toBe('Step 2 of 7');
+    expect(progress()).toBe('Step 2 of 8');
     http.expectOne('/api/plan-cycles/current').flush(CYCLE);
     await settle();
     await type('cycle-day', '26');
@@ -97,7 +97,7 @@ describe('FR-01 full wizard run (automated, mocked HTTP)', () => {
     await click('Next');
 
     // 3. income: Next is gated on at least one income source
-    expect(progress()).toBe('Step 3 of 7');
+    expect(progress()).toBe('Step 3 of 8');
     http.expectOne('/api/income-sources').flush([]);
     http.expectOne('/api/income-sources/cycle-total').flush({ cycleStart: '2026-10-26', cycleEndExclusive: '2026-11-26', totalPaise: 0, items: [] });
     await settle();
@@ -116,7 +116,7 @@ describe('FR-01 full wizard run (automated, mocked HTTP)', () => {
     await click('Next');
 
     // 4. fixed expenses (optional)
-    expect(progress()).toBe('Step 4 of 7');
+    expect(progress()).toBe('Step 4 of 8');
     http.expectOne('/api/recurring-templates').flush([]);
     await settle();
     await type('fx-amt', '1234.50');
@@ -128,8 +128,16 @@ describe('FR-01 full wizard run (automated, mocked HTTP)', () => {
     await settle();
     await click('Next');
 
-    // 5. goals (optional)
-    expect(progress()).toBe('Step 5 of 7');
+    // 5. loans (optional): skipped here, a debt-free user just presses Next
+    expect(progress()).toBe('Step 5 of 8');
+    http.expectOne('/api/loans').flush([]);
+    http.expectOne('/api/loans/debt-trap-guard').flush({ ratio: null, status: 'OK', headroomPaise: 0, totalEmiPaise: 0, monthlyIncomePaise: 0 });
+    await settle();
+    expect(nextDisabled()).toBeFalse();
+    await click('Next');
+
+    // 6. goals (optional)
+    expect(progress()).toBe('Step 6 of 8');
     http.expectOne('/api/goals').flush([]);
     await settle();
     await type('goal-target', '5,00,000');
@@ -142,8 +150,8 @@ describe('FR-01 full wizard run (automated, mocked HTTP)', () => {
     await settle();
     await click('Next');
 
-    // 6. assets (optional): explicit EPF balance, then one more holding
-    expect(progress()).toBe('Step 6 of 7');
+    // 7. assets (optional): explicit EPF balance, then one more holding
+    expect(progress()).toBe('Step 7 of 8');
     expect(heading()).toContain('already have invested');
     http.expectOne('/api/holdings').flush([]);
     await settle();
@@ -166,10 +174,10 @@ describe('FR-01 full wizard run (automated, mocked HTTP)', () => {
     await settle();
     await click('Next');
 
-    // 7. done: Finish re-asks the server, clears the saved position and goes home
-    expect(progress()).toBe('Step 7 of 7');
+    // 8. done: Finish re-asks the server, clears the saved position and goes home
+    expect(progress()).toBe('Step 8 of 8');
     expect(heading()).toContain("You're set");
-    expect(JSON.parse(storage.data[wizardKeyFor(USER_A)])).toEqual({ id: 'done', index: 6 });
+    expect(JSON.parse(storage.data[wizardKeyFor(USER_A)])).toEqual({ id: 'done', index: 7 });
     const router = TestBed.inject(Router);
     spyOn(router, 'navigateByUrl').and.resolveTo(true);
     await click('Finish');
@@ -179,7 +187,7 @@ describe('FR-01 full wizard run (automated, mocked HTTP)', () => {
     expect(storage.data[wizardKeyFor(USER_A)]).toBeUndefined();
   });
 
-  it('lets the user skip the optional steps (bills, goals, assets) without sending anything', async () => {
+  it('lets the user skip the optional steps (bills, loans, goals, assets) without sending anything', async () => {
     http.expectOne('/api/me/consent').flush({ statement: STATEMENT, given: true });
     await settle();
     await click('Next');
@@ -193,13 +201,17 @@ describe('FR-01 full wizard run (automated, mocked HTTP)', () => {
     http.expectOne('/api/recurring-templates').flush([]);
     await settle();
     await click('Next');
+    http.expectOne('/api/loans').flush([]);
+    http.expectOne('/api/loans/debt-trap-guard').flush({ ratio: null, status: 'OK', headroomPaise: 0, totalEmiPaise: 0, monthlyIncomePaise: 0 });
+    await settle();
+    await click('Next');
     http.expectOne('/api/goals').flush([]);
     await settle();
     await click('Next');
     http.expectOne('/api/holdings').flush([]);
     await settle();
     await click('Next');
-    expect(progress()).toBe('Step 7 of 7');
+    expect(progress()).toBe('Step 8 of 8');
     http.expectNone((r) => r.method !== 'GET');
   });
 });

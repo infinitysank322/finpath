@@ -6,7 +6,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { API_BASE } from '../api-base';
 import { LoanDetailComponent } from './loan-detail.component';
 import { LoanDetailView } from './loan.models';
-import { DETAIL_BULLET, DETAIL_CARD, DETAIL_EMI } from './loan.fixture';
+import { rupees, DETAIL_BULLET, DETAIL_CARD, DETAIL_EMI } from './loan.fixture';
 
 describe('LoanDetailComponent', () => {
   let http: HttpTestingController;
@@ -34,9 +34,9 @@ describe('LoanDetailComponent', () => {
     const t = el.textContent!;
     expect(t).toContain('EMI loan');
     expect(t).toContain('From your lender');
-    expect(t).toContain('₹33,500');
+    expect(t).toContain(rupees(DETAIL_EMI.emiUsedPaise));
     expect(t).toContain('comparison only');
-    expect(t).toContain('₹33,462');
+    expect(t).toContain(rupees(DETAIL_EMI.computedEmiComparison!.emiPaise));
     expect(el.querySelectorAll('tbody tr').length).toBe(12);
     expect(el.querySelector('a[href="/debt/loans/loan-0/prepay"]')).not.toBeNull();
     (el.querySelector('button[aria-expanded]') as HTMLButtonElement).click();

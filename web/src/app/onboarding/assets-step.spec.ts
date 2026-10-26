@@ -26,7 +26,7 @@ describe('assets step', () => {
 
   it('is registered after goals and before done, optional (no ready gate)', () => {
     const steps = (TestBed.inject(ONBOARDING_STEP) as unknown as OnboardingStep[]).sort((a, b) => a.order - b.order);
-    expect(steps.map((s) => s.id)).toEqual(['consent', 'cycle-day', 'income', 'fixed-expenses', 'goals', 'assets', 'done']);
+    expect(steps.map((s) => s.id)).toEqual(['consent', 'cycle-day', 'income', 'fixed-expenses', 'debts', 'goals', 'assets', 'done']);
     expect(steps.find((s) => s.id === 'assets')!.ready).toBeUndefined();
   });
 

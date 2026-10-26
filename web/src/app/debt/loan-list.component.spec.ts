@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { API_BASE } from '../api-base';
 import { LoanListComponent } from './loan-list.component';
-import { SAMPLE_EMI_TOTAL_PAISE, SAMPLE_VIEWS } from './loan.fixture';
+import { rupees, SAMPLE_EMI_TOTAL_PAISE, SAMPLE_VIEWS } from './loan.fixture';
 
 describe('LoanListComponent', () => {
   let http: HttpTestingController;
@@ -20,13 +20,13 @@ describe('LoanListComponent', () => {
     const f = TestBed.createComponent(LoanListComponent);
     f.detectChanges();
     http.expectOne('/api/loans').flush(SAMPLE_VIEWS);
-    http.expectOne('/api/loans/debt-trap-guard').flush({ ratio: '0.4', status: 'OK', headroomPaise: 0, totalEmiPaise: SAMPLE_EMI_TOTAL_PAISE, monthlyIncomePaise: 22_222_200 });
+    http.expectOne('/api/loans/debt-trap-guard').flush({ ratio: '0.4', status: 'OK', headroomPaise: 0, totalEmiPaise: SAMPLE_EMI_TOTAL_PAISE, monthlyIncomePaise: 1_234_500 });
     f.detectChanges();
     const el = f.nativeElement as HTMLElement;
     expect(el.querySelectorAll('.card').length).toBe(5);
     const text = el.textContent!;
     for (const label of ['EMI loan', 'Bullet loan', 'Card EMI']) expect(text).toContain(label);
-    expect(el.querySelector('.total')!.textContent).toContain('₹88,888');
+    expect(el.querySelector('.total')!.textContent).toContain(rupees(SAMPLE_EMI_TOTAL_PAISE));
     expect(el.querySelector('a.card-link')!.getAttribute('href')).toBe('/debt/loans/loan-0');
     expect(text).toContain('Monthly interest');
     expect(text).not.toMatch(/account number/i);
