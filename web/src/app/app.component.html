@@ -1,29 +1,26 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="bar">
   <span class="brand">FinPath</span>
-  @if (chrome()) {
-    <a routerLink="/spending/add" class="add-link">Add expense</a>
-  }
-  <button
-    type="button"
-    class="theme-toggle"
-    (click)="themeService.toggle()"
-    [attr.aria-pressed]="themeService.theme() === 'dark'"
-    aria-label="Dark mode"
-  >
-    {{ themeService.theme() === 'dark' ? 'Dark' : 'Light' }}
-  </button>
+  <div class="actions">
+    @if (chrome()) {
+      <a routerLink="/more" class="more-link" aria-label="More">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
+      </a>
+    }
+    <button
+      type="button"
+      class="theme-toggle"
+      (click)="themeService.toggle()"
+      [attr.aria-pressed]="themeService.theme() === 'dark'"
+      aria-label="Dark mode"
+    >
+      {{ themeService.theme() === 'dark' ? 'Dark' : 'Light' }}
+    </button>
+  </div>
 </header>
-<main id="main" tabindex="-1">
+<main id="main" tabindex="-1" [class.has-nav]="chrome()">
   <router-outlet />
 </main>
 @if (chrome()) {
-  <nav class="tabs" aria-label="Primary">
-    @for (item of nav; track item.path) {
-      <a [routerLink]="item.path" routerLinkActive="active" ariaCurrentWhenActive="page">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path [attr.d]="item.icon" fill="currentColor" /></svg>
-        <span>{{ item.label }}</span>
-      </a>
-    }
-  </nav>
+  <fp-bottom-nav />
 }

@@ -26,12 +26,14 @@ describe('AppComponent shell', () => {
     }).compileComponents();
   });
 
-  it('renders a labelled bottom nav with five destinations', () => {
+  it('renders a labelled bottom nav with four destinations and a central Add expense button, and More in the header', () => {
     const f = TestBed.createComponent(AppComponent);
     f.detectChanges();
     const nav = f.nativeElement.querySelector('nav[aria-label="Primary"]') as HTMLElement;
     const labels = Array.from(nav.querySelectorAll('a')).map((a) => a.textContent?.trim());
-    expect(labels).toEqual(['Home', 'Spending', 'Debt', 'Goals', 'More']);
+    expect(labels).toEqual(['Home', 'Spend', '', 'Debt', 'Goals']);
+    expect(nav.querySelector('a.add')?.getAttribute('aria-label')).toBe('Add expense');
+    expect(f.nativeElement.querySelector('header a[aria-label="More"]')?.getAttribute('href')).toBe('/more');
   });
 
   it('hides the bottom nav and Add expense on /sign-in, keeping the theme toggle', async () => {
@@ -40,7 +42,7 @@ describe('AppComponent shell', () => {
     f.detectChanges();
     const root: HTMLElement = f.nativeElement;
     expect(root.querySelector('nav[aria-label="Primary"]')).toBeNull();
-    expect(root.querySelector('.add-link')).toBeNull();
+    expect(root.querySelector('a[aria-label="More"]')).toBeNull();
     expect(root.querySelector('button.theme-toggle')).not.toBeNull();
   });
 
