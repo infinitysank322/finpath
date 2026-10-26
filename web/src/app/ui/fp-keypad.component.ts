@@ -8,7 +8,7 @@ export type KeypadKey = (typeof KEYPAD_KEYS)[number];
  * 3x4 digit pad. It only emits key presses; all amount logic stays in expense/amount-entry.ts (`pressKey`).
  *   <fp-keypad (keyPress)="amount.update(t => pressKey(t, $event))" />
  * Emits '0'..'9', '.', or 'back'. Buttons are real <button>s (Enter / Space work), 54px tall, with aria-labels
- * "Digit N", "Decimal point" and "Delete digit". The wrapper is role="group" labelled by `label`.
+ * "Digit N", "Decimal point" and "Delete last digit". The wrapper is role="group" labelled by `label`.
  */
 @Component({
   selector: 'fp-keypad',
@@ -39,6 +39,6 @@ export class FpKeypadComponent {
   readonly keyPress = output<KeypadKey>();
   protected readonly keys = KEYPAD_KEYS;
   protected name(k: KeypadKey): string {
-    return k === 'back' ? 'Delete digit' : k === '.' ? 'Decimal point' : `Digit ${k}`;
+    return k === 'back' ? 'Delete last digit' : k === '.' ? 'Decimal point' : `Digit ${k}`;
   }
 }

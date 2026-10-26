@@ -7,11 +7,12 @@ import { BudgetApiService } from './budget-api.service';
 import { barWidthText, remainingText, fractionToPercentText } from './budget-format';
 import { BudgetEvent, BudgetLevel, BudgetLine, BudgetStatus } from './budget.models';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 @Component({
   selector: 'app-budget',
   standalone: true,
-  imports: [FpPageHeaderComponent],
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './budget.component.html',
   styleUrl: './budget.css',

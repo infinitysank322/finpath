@@ -7,11 +7,12 @@ import { PrepayApiService } from './prepay-api.service';
 import { buildQuery, cycleEndLabel } from './prepay-format';
 import { PrepayMode, PrepaymentView } from './prepay.models';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 @Component({
   selector: 'app-prepay',
   standalone: true,
-  imports: [FpPageHeaderComponent],
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './prepay.component.html',
   styleUrl: './prepay.css',

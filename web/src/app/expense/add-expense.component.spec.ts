@@ -197,7 +197,7 @@ describe('AddExpenseComponent', () => {
     expect(status().getAttribute('role')).toBe('status');
     expect(status().getAttribute('aria-label')).toBeNull();
     expect(status().querySelector('.sr-only')?.textContent).toBe('Amount ₹12.50');
-    for (let i = 0; i < 4; i++) tap('.keypad button[aria-label="Delete digit"]');
+    for (let i = 0; i < 4; i++) tap('.keypad button[aria-label="Delete last digit"]');
     tapKey('.');
     tapKey('4');
     expect(status().querySelector('.sr-only')?.textContent).toBe('Amount ₹0.40');

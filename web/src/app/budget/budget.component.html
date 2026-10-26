@@ -1,4 +1,4 @@
-<fp-page-header title="Budget" />
+<fp-page-header title="Budget"><fp-profile-link fpTrailing /></fp-page-header>
 
 @if (status(); as s) {
   <p class="muted">Cycle from {{ shortDate(s.cycleStart) }}; next cycle starts {{ shortDate(s.cycleEndExclusive) }}</p>

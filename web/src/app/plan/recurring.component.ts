@@ -7,11 +7,12 @@ import { PlanApiService } from './plan-api.service';
 import { errorMessage, paiseToRupeesText, rupeesTextToPaise, shortDate } from './plan-format';
 import { MaterialiseResult, RECURRING_FREQUENCIES, RecurringFrequency, TemplateView } from './plan.models';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 @Component({
   selector: 'app-recurring',
   standalone: true,
-  imports: [FpPageHeaderComponent],
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './recurring.component.html',
   styleUrl: './plan.css',

@@ -17,6 +17,7 @@ import { PayoffApiService } from './payoff-api.service';
 import { describeTimeline, payoffRows } from './payoff-format';
 import { PayoffPlanView, PayoffStrategy, RollOffView } from './payoff.models';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 use([BarChart, LineChart, GridComponent, TooltipComponent, AriaComponent, SVGRenderer]);
 
@@ -38,7 +39,7 @@ export function readPalette(el: Element = document.documentElement): ChartPalett
 @Component({
   selector: 'app-payoff',
   standalone: true,
-  imports: [FpPageHeaderComponent, NgxEchartsDirective],
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent, NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './payoff.component.html',

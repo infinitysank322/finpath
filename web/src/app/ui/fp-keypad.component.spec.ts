@@ -19,7 +19,7 @@ describe('FpKeypadComponent', () => {
     expect(buttons().length).toBe(12);
     expect(buttons().map((b) => b.getAttribute('aria-label'))).toEqual([
       'Digit 1', 'Digit 2', 'Digit 3', 'Digit 4', 'Digit 5', 'Digit 6', 'Digit 7', 'Digit 8', 'Digit 9',
-      'Decimal point', 'Digit 0', 'Delete digit',
+      'Decimal point', 'Digit 0', 'Delete last digit',
     ]);
     expect(getComputedStyle(f.nativeElement.querySelector('.pad')).gridTemplateColumns.split(' ').length).toBe(3);
   });

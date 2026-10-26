@@ -8,11 +8,12 @@ import { SinkingFundApiService } from './sinking-fund-api.service';
 import { statusText } from './sinking-fund-format';
 import { SinkingFundView } from './sinking-fund.models';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 
 @Component({
   selector: 'app-sinking-fund',
   standalone: true,
-  imports: [FpPageHeaderComponent],
+  imports: [FpPageHeaderComponent, FpProfileLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sinking-fund.component.html',
   styleUrl: './sinking-fund.css',
