@@ -1,0 +1,19 @@
+:host { display: block; max-width: var(--fp-page-max); margin: 0 auto; }
+p { margin: 0; }
+ul { list-style: none; margin: 0; padding: 0; }
+.muted { color: var(--fp-text-muted); }
+.error { border-left: 4px solid; padding-left: var(--fp-space-2); color: var(--fp-breach-text); }
+.items { display: flex; flex-direction: column; gap: var(--fp-space-2); }
+.item { display: flex; align-items: center; gap: var(--fp-space-3); min-width: 0; min-height: var(--fp-target); overflow-wrap: anywhere; }
+.mark { width: 1.5em; text-align: center; font-weight: 700; flex: none; }
+.body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.name { font-weight: 600; }
+.state { font-weight: 600; flex: none; }
+.item button { flex: none; }
+.streak strong { font-size: var(--fp-fs-xl); }
+.heatmap { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--fp-space-2); }
+.cell { display: flex; flex-direction: column; align-items: center; padding: var(--fp-space-2) var(--fp-space-1); min-width: 0;
+  border: 2px dashed var(--fp-border-strong); border-radius: var(--fp-radius-md); background: var(--fp-surface); color: var(--fp-text); }
+.cell.on { border-style: solid; background: var(--fp-track); }
+.glyph { font-weight: 700; font-size: var(--fp-fs-lg); }
+.when, .what { font-size: var(--fp-fs-sm, 0.8125rem); overflow-wrap: anywhere; }

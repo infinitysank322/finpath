@@ -23,6 +23,7 @@ import { FpSegmentedComponent } from '../ui/fp-segmented.component';
           <li><a class="fp-row" routerLink="/spending/budget">Category budgets</a></li>
           <li><a class="fp-row" routerLink="/goals/fi-planner">FI planner</a></li>
           <li><a class="fp-row" routerLink="/more/allocation">Cycle allocation</a></li>
+          <li><a class="fp-row" routerLink="/more/checklist">Monthly checklist</a></li>
           <li><a class="fp-row" routerLink="/more/investments">Investments</a></li>
         </ul>
       </nav>

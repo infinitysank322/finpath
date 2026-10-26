@@ -9,6 +9,8 @@ import { AllocationComponent } from './allocation/allocation.component';
 import { API_BASE } from './api-base';
 import { BudgetApiService } from './budget/budget-api.service';
 import { BudgetComponent } from './budget/budget.component';
+import { ChecklistApiService } from './checklist/checklist-api.service';
+import { ChecklistComponent } from './checklist/checklist.component';
 import { DashboardApiService } from './dashboard/dashboard-api.service';
 import { HomeComponent } from './dashboard/home.component';
 import { DebtHubComponent } from './debt/debt-hub.component';
@@ -317,6 +319,17 @@ describe('every rebuilt screen at 380 px (dark and light) with 44 px targets', (
     const alloc = { current: () => of({ cycleStart: '2026-10-25', surplusPaise: 0, shortfallPaise: 0, allocatedPaise: 0, prepayShare: null, lines: [] }) };
     const el = render(GoalsComponent, [{ provide: GoalApiService, useValue: goalApi }, { provide: AllocationApiService, useValue: alloc }], (f) => f.componentInstance.openAdd());
     check(el, 'goals');
+  });
+
+  it('checklist with heatmap', () => {
+    const it1 = (id: string, done: boolean) => ({ id, type: 'EMI', sourceRef: id, label: 'Loan ' + id, amountPaise: 1234500, done, doneAt: null });
+    const api = {
+      current: () => of({ cycleStart: '2026-10-25', items: [it1('a', true), it1('b', false)], doneCount: 1, totalCount: 2 }),
+      streak: () => of({ streak: 3, history: Array.from({ length: 12 }, (_, i) => ({ cycleStart: `2026-${String(i + 1).padStart(2, '0')}-25`, done: i % 3 !== 0 })) }),
+    };
+    const el = render(ChecklistComponent, [{ provide: ChecklistApiService, useValue: api }]);
+    expect(el.querySelectorAll('[data-f=cell]').length).toBe(12);
+    check(el, 'checklist');
   });
 
   describe('onboarding', () => {

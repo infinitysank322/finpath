@@ -1,0 +1,59 @@
+<div class="fp-page">
+  <fp-page-header eyebrow="Plan" title="Checklist" />
+  <p class="muted">Tick each payment once it is made. Your streak counts cycles where every item was done.</p>
+
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+  @if (loading()) {
+    <p class="muted" role="status">Loading...</p>
+  }
+  @if (view(); as v) {
+    <fp-card [heading]="cycleLabel(v.cycleStart)">
+      @if (v.totalCount === 0) {
+        <p data-f="empty">Nothing is on this cycle's checklist yet.</p>
+        <button type="button" class="fp-pill" data-f="generate" [disabled]="generating()" (click)="generate()">Create this cycle's checklist</button>
+      } @else {
+        <p data-f="progress" role="status">{{ v.doneCount }} of {{ v.totalCount }} done</p>
+        <ul class="items" aria-label="Checklist items">
+          @for (it of v.items; track it.id) {
+            <li class="item" [class.is-done]="it.done" data-f="item">
+              <span class="mark" aria-hidden="true">{{ it.done ? '✓' : '○' }}</span>
+              <span class="body">
+                <span class="name">{{ it.label }}</span>
+                <span class="muted">{{ typeText(it.type) }} · {{ it.amountPaise | paiseInr }}</span>
+              </span>
+              @if (it.done) {
+                <span class="state" data-f="done-text">Done</span>
+              } @else {
+                <button type="button" class="fp-pill" data-f="tick" [disabled]="busyId() !== null" (click)="markDone(it)">
+                  Mark done<span class="sr-only">: {{ it.label }}, {{ it.amountPaise | paiseInr }}</span>
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </fp-card>
+  }
+
+  @if (streak(); as s) {
+    <fp-card heading="Consistency">
+      <p class="streak" data-f="streak"><strong class="fp-num">{{ s.streak }}</strong> {{ s.streak === 1 ? 'cycle' : 'cycles' }} in a row with every item done</p>
+      @if (s.history.length === 0) {
+        <p class="muted">No past cycles yet.</p>
+      } @else {
+        <ul class="heatmap" aria-label="Last cycles, oldest first">
+          @for (c of s.history; track c.cycleStart) {
+            <li class="cell" [class.on]="c.done" data-f="cell">
+              <span class="glyph" aria-hidden="true">{{ c.done ? '✓' : '✕' }}</span>
+              <span class="when" aria-hidden="true">{{ cellLabel(c.cycleStart) }}</span>
+              <span class="what" aria-hidden="true">{{ c.done ? 'Done' : 'Missed' }}</span>
+              <span class="sr-only">{{ cycleLabel(c.cycleStart) }}: {{ c.done ? 'every item done' : 'not every item done' }}</span>
+            </li>
+          }
+        </ul>
+        <p class="muted">Each cell is one cycle, oldest first. A tick means every item was done; a cross means it was not.</p>
+      }
+    </fp-card>
+  }
+</div>
