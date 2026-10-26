@@ -1,8 +1,10 @@
 import { Injectable, inject } from '@angular/core';
+import { DASHBOARD_CACHE_KEY, DashboardCacheService } from '../dashboard/dashboard-cache.service';
 import { DRAFT_KEY } from '../expense/draft';
 import { ExpenseQueueService, QUEUE_STORAGE, QUEUE_STORAGE_KEY, queueKeyFor } from '../expense/expense-queue.service';
+import { clearPosition } from '../onboarding/wizard-progress';
 import { SIGNIN_KEY, SIGNIN_STORAGE } from './signin-storage';
-import { AuthSessionStore } from './session.store';
+import { AUTH_STORAGE, AuthSessionStore } from './session.store';
 
 /**
  * Everything FinPath keeps on this device for a user, and how it is removed. Pure storage work: no HTTP, no
@@ -11,9 +13,11 @@ import { AuthSessionStore } from './session.store';
 @Injectable({ providedIn: 'root' })
 export class LocalDataService {
   private readonly queue = inject(ExpenseQueueService);
+  private readonly dashboard = inject(DashboardCacheService);
   private readonly queueStorage = inject(QUEUE_STORAGE);
   private readonly tempStorage = inject(SIGNIN_STORAGE);
   private readonly session = inject(AuthSessionStore);
+  private readonly authStorage = inject(AUTH_STORAGE);
 
   /**
    * Removes the user's queue, any draft they started, the sign-in round-trip entry and the session.
@@ -22,12 +26,19 @@ export class LocalDataService {
   wipeUser(userId: string | null): void {
     if (userId) {
       this.queue.forget(userId);
+      this.dashboard.forget(userId);
+      clearPosition(this.authStorage, userId);
     }
     this.remove(this.tempStorage, DRAFT_KEY);
     this.queueStorage?.removeItem?.(QUEUE_STORAGE_KEY);
     this.remove(this.tempStorage, SIGNIN_KEY);
     this.session.clear();
     this.queue.reload();
+  }
+
+  /** Cached money figures never outlive a sign-out, even when unsent expenses are kept. */
+  forgetDashboard(userId: string | null): void {
+    if (userId) this.dashboard.forget(userId);
   }
 
   /** Discard unsent expenses only (the "Sign out and discard" path); the session is cleared by the caller. */
@@ -44,6 +55,8 @@ export class LocalDataService {
   purgeOrphans(): number {
     const current = this.session.userId();
     const s = this.queueStorage;
+    this.purgeOtherDashboards(current, s);
+    if (!current) return 0;
     if (!current || !s?.key || !s.removeItem || typeof s.length !== 'number') return 0;
     const prefix = `${QUEUE_STORAGE_KEY}.`;
     const own = queueKeyFor(current);
@@ -58,6 +71,22 @@ export class LocalDataService {
       return 0;
     }
     return orphans.length;
+  }
+
+  /** Dashboard caches hold money figures, so with no session at all every one of them goes. */
+  private purgeOtherDashboards(current: string | null, s: typeof this.queueStorage): void {
+    if (!s?.key || !s.removeItem || typeof s.length !== 'number') return;
+    const prefix = `${DASHBOARD_CACHE_KEY}.`;
+    try {
+      const stale: string[] = [];
+      for (let i = 0; i < s.length; i++) {
+        const k = s.key(i);
+        if (k && k.startsWith(prefix) && k !== `${prefix}${current ?? ''}`) stale.push(k);
+      }
+      stale.forEach((k) => s.removeItem!(k));
+    } catch {
+      /* ignore */
+    }
   }
 
   private remove(s: { removeItem(k: string): void } | null, key: string): void {

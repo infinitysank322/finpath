@@ -14,12 +14,12 @@ import java.util.List;
  * Parsing only; no arithmetic. Any deviation throws {@link IllegalStateException} (a server fault,
  * since only the allocation run writes this column) with a fixed message that echoes no content.
  */
-final class AllocationsJson {
+public final class AllocationsJson {
 
     private AllocationsJson() {
     }
 
-    static List<WaterfallAllocator.Line> parse(ObjectMapper mapper, String json) {
+    public static List<WaterfallAllocator.Line> parse(ObjectMapper mapper, String json) {
         try {
             JsonNode root = mapper.readTree(json);
             if (root == null || !root.isArray()) {

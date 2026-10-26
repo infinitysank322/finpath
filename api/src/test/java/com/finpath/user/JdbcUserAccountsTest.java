@@ -192,6 +192,12 @@ class JdbcUserAccountsTest {
             if (hadPurge) {
                 admin.execute("ALTER ROLE finpath_purge RENAME TO " + parkedPurge);
             }
+            // V15 (T72) adds a third one for the reminder-user listing.
+            String parkedReminder = "finpath_reminder_parked_" + suffix;
+            boolean hadReminder = roleExists("finpath_reminder");
+            if (hadReminder) {
+                admin.execute("ALTER ROLE finpath_reminder RENAME TO " + parkedReminder);
+            }
             try {
                 admin.execute("CREATE ROLE " + role + " LOGIN NOSUPERUSER NOBYPASSRLS CREATEROLE PASSWORD '"
                         + rolePassword + "'");
@@ -204,12 +210,16 @@ class JdbcUserAccountsTest {
                 admin.execute("DROP DATABASE IF EXISTS " + db + " WITH (FORCE)");
                 admin.execute("DROP ROLE IF EXISTS finpath_signin"); // only ever the scratch owner's copy here
                 admin.execute("DROP ROLE IF EXISTS finpath_purge");
+                admin.execute("DROP ROLE IF EXISTS finpath_reminder");
                 admin.execute("DROP ROLE IF EXISTS " + role);
                 if (hadSignin) {
                     admin.execute("ALTER ROLE " + parked + " RENAME TO finpath_signin");
                 }
                 if (hadPurge) {
                     admin.execute("ALTER ROLE " + parkedPurge + " RENAME TO finpath_purge");
+                }
+                if (hadReminder) {
+                    admin.execute("ALTER ROLE " + parkedReminder + " RENAME TO finpath_reminder");
                 }
             }
         }

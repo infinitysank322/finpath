@@ -55,6 +55,17 @@ class DataSubjectRightsDbTest {
         seedNetWorthSnapshot(b);
         seedChecklistItem(a);
         seedChecklistItem(b);
+        seedReminderSent(a);
+        seedReminderSent(b);
+    }
+
+    /** One reminder claim per user (superuser insert). */
+    private static void seedReminderSent(UUID user) throws SQLException {
+        try (Connection c = TestDb.admin(); java.sql.PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO reminder_sent (user_id, reminder_key, due_date) VALUES (?, 'cycle_start', DATE '2026-10-25')")) {
+            ps.setObject(1, user);
+            ps.executeUpdate();
+        }
     }
 
     /** One checklist item per user on its plan_cycle (superuser insert). */
@@ -221,6 +232,8 @@ class DataSubjectRightsDbTest {
         assertThat(reparsed.at("/tables/net_worth_snapshot/0/net_worth_paise").asLong()).isEqualTo(500);
         assertThat(reparsed.at("/tables/checklist_item")).hasSize(1);
         assertThat(reparsed.at("/tables/checklist_item/0/amount_paise").asLong()).isEqualTo(700);
+        assertThat(reparsed.at("/tables/reminder_sent")).hasSize(1);
+        assertThat(reparsed.at("/tables/reminder_sent/0/reminder_key").asText()).isEqualTo("cycle_start");
         assertThat(reparsed.get("tables").has("category")).isFalse();
     }
 

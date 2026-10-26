@@ -17,6 +17,13 @@ export interface IncomeView extends IncomeInput {
   countsInCurrentCycle: boolean;
 }
 
+export interface PlanCycleView {
+  cycleStart: string;
+  cycleEndExclusive: string;
+  startDay: number;
+  status: string;
+}
+
 export interface CycleTotalView {
   cycleStart: string;
   cycleEndExclusive: string;

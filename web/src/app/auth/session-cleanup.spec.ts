@@ -3,11 +3,13 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { API_BASE } from '../api-base';
+import { dashboardCacheKeyFor } from '../dashboard/dashboard-cache.service';
 import { DRAFT_KEY, DRAFT_TTL_MS, saveDraft, takeDraft } from '../expense/draft';
 import { AddExpenseComponent } from '../expense/add-expense.component';
 import { ExpenseQueueService, QUEUE_STORAGE, QUEUE_STORAGE_KEY, queueKeyFor } from '../expense/expense-queue.service';
 import { ExpenseInput } from '../expense/expense.models';
 import { memoryStorage } from '../expense/queue-testing';
+import { wizardKeyFor } from '../onboarding/wizard-progress';
 import { USER_A, USER_B, tokenResponse } from './auth-testing';
 import { authInterceptor } from './auth.interceptor';
 import { AuthService, REFRESH_LOCK } from './auth.service';
@@ -110,6 +112,15 @@ describe('T33b session cleanup', () => {
       ctrl.expectNone(`${BASE}/auth/logout`); // the account is gone; nothing to revoke
     });
 
+    it('wipe removes the onboarding resume position of that user only', async () => {
+      seed();
+      local.data[wizardKeyFor(USER_A)] = JSON.stringify({ id: 'done', index: 1 });
+      local.data[wizardKeyFor(USER_B)] = JSON.stringify({ id: 'done', index: 1 });
+      await auth.accountDeleted();
+      expect(local.data[wizardKeyFor(USER_A)]).toBeUndefined();
+      expect(local.data[wizardKeyFor(USER_B)]).toBeDefined();
+    });
+
     it('on consent withdrawal: the same wipe', async () => {
       seed();
       await auth.consentWithdrawn();
@@ -154,6 +165,26 @@ describe('T33b session cleanup', () => {
       await auth.signOut();
       expect(queued(USER_A).length).toBe(1);
       ctrl.expectOne(`${BASE}/auth/logout`).flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('plain sign-out removes the cached dashboard (money figures) but keeps the queue', async () => {
+      signInAs(USER_A);
+      local.setItem(dashboardCacheKeyFor(USER_A), '{}');
+      queue.enqueue(item('k').input as ExpenseInput, 'k-0000001');
+      await auth.signOut();
+      expect(local.data[dashboardCacheKeyFor(USER_A)]).toBeUndefined();
+      expect(queued(USER_A).length).toBe(1);
+      ctrl.expectOne(`${BASE}/auth/logout`).flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('a rejected refresh (forced sign-out) removes the cached dashboard', async () => {
+      signInAs(USER_A);
+      local.setItem(dashboardCacheKeyFor(USER_A), '{}');
+      const p = auth.refreshAfter(store.session()!).catch(() => undefined);
+      ctrl.expectOne((r) => r.url.endsWith('/auth/refresh')).flush(null, { status: 401, statusText: 'Unauthorized' });
+      await p;
+      expect(local.data[dashboardCacheKeyFor(USER_A)]).toBeUndefined();
+      expect(store.session()).toBeNull();
     });
   });
 

@@ -1,0 +1,29 @@
+:host { display: block; max-width: 32rem; margin: 0 auto; }
+h1 { margin: 0 0 .5rem; font-size: 1.5rem; }
+button, input, select { font: inherit; color: var(--fp-text); }
+ul { list-style: none; margin: 0; padding: 0; }
+.holding { padding: .75rem; margin-bottom: .5rem; background: var(--fp-surface); border: 1px solid var(--fp-border); border-radius: 12px; overflow-wrap: anywhere; }
+.muted { color: var(--fp-text-muted); }
+.badge { display: inline-block; padding: 0 .5rem; border: 1px solid var(--fp-border-strong); border-radius: 12px; font-weight: 600; }
+.badge.warn { background: var(--fp-warn-bg); color: var(--fp-warn-text); }
+.badge.breach { background: var(--fp-breach-bg); color: var(--fp-breach-text); }
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+.btn { min-height: 44px; padding: 0 .875rem; border: 1px solid var(--fp-border-strong); border-radius: 22px; background: transparent; }
+.btn.primary { background: var(--fp-primary); color: var(--fp-on-primary); border-color: var(--fp-primary); font-weight: 700; }
+.btn:disabled { background: var(--fp-surface); color: var(--fp-text-muted); }
+form { display: flex; flex-direction: column; gap: .75rem; padding: .75rem; background: var(--fp-surface); border: 1px solid var(--fp-border); border-radius: 12px; }
+.field { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+input, select { min-height: 44px; padding: 0 .75rem; border: 1px solid var(--fp-border-strong); border-radius: 8px; background: var(--fp-bg); width: 100%; box-sizing: border-box; }
+.error, .ok { margin: .5rem 0 0; }
+.error { border-left: 4px solid; padding-left: .5rem; color: var(--fp-breach-text); }
+h2 { margin: 1rem 0 .5rem; font-size: 1rem; color: var(--fp-text-muted); }
+.holding h3 { margin: 0; font-size: 1.0625rem; }
+.small { font-size: .875rem; }
+.chart-wrap { width: 100%; height: 300px; background: var(--fp-surface); border: 1px solid var(--fp-border); border-radius: 12px; padding: .25rem; box-sizing: border-box; }
+.chart { width: 100%; height: 100%; }
+table { width: 100%; border-collapse: collapse; margin-top: .75rem; font-size: .9375rem; }
+caption { text-align: left; color: var(--fp-text-muted); padding-bottom: .25rem; }
+th, td { text-align: left; padding: .5rem .375rem; border-bottom: 1px solid var(--fp-border); overflow-wrap: anywhere; vertical-align: top; }
+thead th, tfoot th, tfoot td { border-bottom-color: var(--fp-border-strong); }
+th[scope='row'] { font-weight: 600; }
+.num { text-align: right; }

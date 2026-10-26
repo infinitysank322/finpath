@@ -26,16 +26,16 @@ public class LoanRepository {
     /** A loan row as stored. */
     public record Row(UUID id, String lender, String type, long principalOutstandingPaise, BigDecimal rate,
             Long emiPaise, boolean emiDerived, Integer emisLeft, LocalDate bulletDueDate, long upfrontFeePaise,
-            Instant createdAt) {
+            Instant createdAt, Integer dueDay) {
     }
 
     /** Values to write; the id and timestamps are the database's. */
     public record Draft(String lender, String type, long principalOutstandingPaise, BigDecimal rate,
-            Long emiPaise, boolean emiDerived, Integer emisLeft, LocalDate bulletDueDate, long upfrontFeePaise) {
+            Long emiPaise, boolean emiDerived, Integer emisLeft, LocalDate bulletDueDate, long upfrontFeePaise, Integer dueDay) {
     }
 
     private static final String COLUMNS = "id, lender, type, principal_outstanding_paise, rate, emi_paise, "
-            + "emi_derived, emis_left, bullet_due_date, upfront_fee_paise, created_at";
+            + "emi_derived, emis_left, bullet_due_date, upfront_fee_paise, created_at, due_day";
 
     private final Supplier<JdbcTemplate> jdbc;
     private final Supplier<TransactionTemplate> tx;
@@ -61,19 +61,42 @@ public class LoanRepository {
         JdbcTemplate j = jdbc.get();
         return tx.get().execute(status -> j.queryForObject("INSERT INTO loan (user_id, lender, type, "
                 + "principal_outstanding_paise, rate, emi_paise, emi_derived, emis_left, bullet_due_date, "
-                + "upfront_fee_paise) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING " + COLUMNS,
+                + "upfront_fee_paise, due_day) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING " + COLUMNS,
                 (rs, n) -> map(rs), userId, d.lender(), d.type(), d.principalOutstandingPaise(), d.rate(),
-                d.emiPaise(), d.emiDerived(), d.emisLeft(), d.bulletDueDate(), d.upfrontFeePaise()));
+                d.emiPaise(), d.emiDerived(), d.emisLeft(), d.bulletDueDate(), d.upfrontFeePaise(), d.dueDay()));
     }
 
     public Optional<Row> update(UUID userId, UUID id, Draft d) {
         JdbcTemplate j = jdbc.get();
-        return tx.get().execute(status -> j.query("UPDATE loan SET lender = ?, type = ?, "
-                + "principal_outstanding_paise = ?, rate = ?, emi_paise = ?, emi_derived = ?, emis_left = ?, "
-                + "bullet_due_date = ?, upfront_fee_paise = ?, updated_at = now() WHERE id = ? AND user_id = ? "
-                + "RETURNING " + COLUMNS, (rs, n) -> map(rs), d.lender(), d.type(),
-                d.principalOutstandingPaise(), d.rate(), d.emiPaise(), d.emiDerived(), d.emisLeft(),
-                d.bulletDueDate(), d.upfrontFeePaise(), id, userId).stream().findFirst());
+        return tx.get().execute(status -> {
+            Optional<Row> row = j.query("UPDATE loan SET lender = ?, type = ?, "
+                    + "principal_outstanding_paise = ?, rate = ?, emi_paise = ?, emi_derived = ?, emis_left = ?, "
+                    + "bullet_due_date = ?, upfront_fee_paise = ?, due_day = ?, updated_at = now() WHERE id = ? AND user_id = ? "
+                    + "RETURNING " + COLUMNS, (rs, n) -> map(rs), d.lender(), d.type(),
+                    d.principalOutstandingPaise(), d.rate(), d.emiPaise(), d.emiDerived(), d.emisLeft(),
+                    d.bulletDueDate(), d.upfrontFeePaise(), d.dueDay(), id, userId).stream().findFirst();
+            if (row.isPresent()) {
+                syncOpenChecklistItems(j, userId, id, d);
+            }
+            return row;
+        });
+    }
+
+    /**
+     * Keeps the loan's checklist items in step with an edit: items still open (not done, cycle OPEN) take the
+     * new EMI, or are dropped when the loan no longer has an EMI or is paid off. Done items and closed cycles
+     * stay frozen (the V14 trigger also enforces this).
+     */
+    private static void syncOpenChecklistItems(JdbcTemplate j, UUID userId, UUID id, Draft d) {
+        String open = " FROM plan_cycle p WHERE p.id = i.plan_cycle_id AND p.status = 'OPEN' AND i.type = 'EMI' "
+                + "AND i.source_ref = ? AND i.user_id = ? AND i.done_at IS NULL";
+        if (d.emiPaise() == null || d.emiPaise() <= 0 || d.principalOutstandingPaise() == 0) {
+            j.update("DELETE FROM checklist_item i USING plan_cycle p WHERE p.id = i.plan_cycle_id "
+                    + "AND p.status = 'OPEN' AND i.type = 'EMI' AND i.source_ref = ? AND i.user_id = ? "
+                    + "AND i.done_at IS NULL", id.toString(), userId);
+        } else {
+            j.update("UPDATE checklist_item i SET amount_paise = ?" + open, d.emiPaise(), id.toString(), userId);
+        }
     }
 
     public Optional<Row> find(UUID userId, UUID id) {
@@ -105,6 +128,7 @@ public class LoanRepository {
     private static Row map(ResultSet rs) throws SQLException {
         return new Row(rs.getObject(1, UUID.class), rs.getString(2), rs.getString(3), rs.getLong(4),
                 rs.getBigDecimal(5), (Long) rs.getObject(6), rs.getBoolean(7), (Integer) rs.getObject(8),
-                rs.getObject(9, LocalDate.class), rs.getLong(10), rs.getTimestamp(11).toInstant());
+                rs.getObject(9, LocalDate.class), rs.getLong(10), rs.getTimestamp(11).toInstant(),
+                rs.getObject(12) == null ? null : rs.getInt(12));
     }
 }

@@ -1,0 +1,103 @@
+<h1>Investments</h1>
+<p class="muted">Educational information, not personal advice or a recommendation to buy or sell anything. Values are what you enter.</p>
+
+@if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+@if (message()) { <p class="ok" role="status">{{ message() }}</p> }
+
+@if (loading()) {
+  <p class="muted" role="status">Loading...</p>
+} @else if (holdings().length === 0 && !error()) {
+  <p class="muted">No holdings yet. Add one to see how your money is spread across asset classes.</p>
+}
+
+@if (aggregate(); as a) {
+  @if (slices().length > 0) {
+    <h2>Allocation by asset class</h2>
+    <div class="chart-wrap" role="img" [attr.aria-label]="description()">
+      @if (chartOptions(); as o) {
+        <div echarts [options]="o" [merge]="o" class="chart" aria-hidden="true"></div>
+      }
+    </div>
+    <table>
+      <caption>Current value by asset class (total {{ fmt(a.total.currentValuePaise) }})</caption>
+      <thead>
+        <tr><th scope="col">Class</th><th scope="col" class="num">Invested</th><th scope="col" class="num">Current value</th><th scope="col" class="num">Share</th><th scope="col" class="num">Monthly</th></tr>
+      </thead>
+      <tbody>
+        @for (c of a.classes; track c.assetClass) {
+          @if (c.count > 0) {
+            <tr>
+              <th scope="row">{{ label(c.assetClass) }}</th>
+              <td class="num">{{ c.investedPaise | paiseInr }}</td>
+              <td class="num">{{ c.currentValuePaise | paiseInr }}</td>
+              <td class="num">{{ shareOf(c.assetClass) }}</td>
+              <td class="num">{{ c.monthlyContributionPaise | paiseInr }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <th scope="row">Total</th>
+          <td class="num">{{ a.total.investedPaise | paiseInr }}</td>
+          <td class="num">{{ a.total.currentValuePaise | paiseInr }}</td>
+          <td class="num">100%</td>
+          <td class="num">{{ a.total.monthlyContributionPaise | paiseInr }}</td>
+        </tr>
+      </tfoot>
+    </table>
+    <p class="muted small">Shares are rounded to whole percent for display and may not add to exactly 100. Each slice is labelled and patterned, so colour is not needed to read it.</p>
+  }
+}
+
+<h2>Your holdings</h2>
+<ul aria-label="Your holdings">
+  @for (h of holdings(); track h.id) {
+    <li class="holding">
+      <h3>{{ h.name }} <span class="badge">{{ label(h.assetClass) }}</span></h3>
+      <div>Invested {{ h.investedPaise | paiseInr }}; current value {{ h.currentValuePaise | paiseInr }}</div>
+      <div class="muted">Monthly contribution {{ h.monthlyContributionPaise | paiseInr }}</div>
+      <div class="actions">
+        <button type="button" class="btn" [disabled]="busy()" [attr.aria-label]="'Edit ' + h.name" (click)="openEdit(h)">Edit</button>
+        @if (confirmingId() === h.id) {
+          <button type="button" class="btn primary" [disabled]="busy()" [attr.aria-label]="'Confirm remove ' + h.name" (click)="remove(h)">Confirm remove</button>
+          <button type="button" class="btn" [disabled]="busy()" (click)="keep()">Keep</button>
+        } @else {
+          <button type="button" class="btn" [disabled]="busy()" [attr.aria-label]="'Remove ' + h.name" (click)="askRemove(h)">Remove</button>
+        }
+      </div>
+    </li>
+  }
+</ul>
+
+@if (formOpen()) {
+  <form (submit)="$event.preventDefault(); save()" aria-label="Holding">
+    <label class="field"><span>Asset class</span>
+      <select id="hold-class" (change)="assetClass.set($any($event.target).value)">
+        @for (x of classes(); track x.code) { <option [value]="x.code" [selected]="assetClass() === x.code">{{ x.label }}</option> }
+      </select>
+    </label>
+    <label class="field"><span>Label (1 to {{ nameMax }} characters)</span>
+      <input type="text" id="hold-name" autocomplete="off" [attr.maxlength]="nameMax" aria-describedby="hold-hint" [value]="name()" (input)="on(name, $event)" />
+    </label>
+    <label class="field"><span>Amount invested so far in rupees (optional)</span>
+      <input type="text" id="hold-invested" inputmode="decimal" autocomplete="off" aria-describedby="hold-hint" [value]="investedText()" (input)="on(investedText, $event)" />
+    </label>
+    <label class="field"><span>Current value in rupees (optional)</span>
+      <input type="text" id="hold-current" inputmode="decimal" autocomplete="off" aria-describedby="hold-hint" [value]="currentText()" (input)="on(currentText, $event)" />
+    </label>
+    <label class="field"><span>Monthly contribution in rupees (optional)</span>
+      <input type="text" id="hold-monthly" inputmode="decimal" autocomplete="off" aria-describedby="hold-hint" [value]="monthlyText()" (input)="on(monthlyText, $event)" />
+    </label>
+    @if (assetClass() === 'epf') {
+      <p class="muted">Enter your EPF balance yourself, from your passbook or statement. It is never worked out for you; leave it at 0 if you do not know it.</p>
+    }
+    <p id="hold-hint" class="muted">{{ nameWarning }} Amounts are whole rupees or up to two decimals.</p>
+    <div class="actions">
+      <button type="submit" class="btn primary" [disabled]="!canSave()">Save</button>
+      <button type="button" class="btn" (click)="cancel()">Cancel</button>
+    </div>
+  </form>
+} @else {
+  <p><button type="button" class="btn primary" id="hold-add" (click)="openAdd()">Add holding</button></p>
+}

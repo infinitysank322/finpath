@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { ExpenseQueueService } from '../expense/expense-queue.service';
+import { InstallPromptService } from '../pwa/install-prompt.service';
 import { Theme, ThemeService } from '../theme.service';
 import { FpCardComponent } from '../ui/fp-card.component';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
@@ -22,8 +23,12 @@ import { FpSegmentedComponent } from '../ui/fp-segmented.component';
           <li><a class="fp-row" routerLink="/spending/budget">Category budgets</a></li>
           <li><a class="fp-row" routerLink="/goals/fi-planner">FI planner</a></li>
           <li><a class="fp-row" routerLink="/more/allocation">Cycle allocation</a></li>
+          <li><a class="fp-row" routerLink="/more/investments">Investments</a></li>
         </ul>
       </nav>
+      @if (installer.canInstall()) {
+        <button type="button" class="fp-pill install" data-f="install" (click)="installer.install()">Install FinPath on this device</button>
+      }
       <section class="block">
         <span class="fp-label" aria-hidden="true">Appearance</span>
         <fp-segmented label="Theme" ariaPrefix="Theme " [options]="themes" [value]="themeService.theme()" (valueChange)="setTheme($event)" />
@@ -54,13 +59,14 @@ import { FpSegmentedComponent } from '../ui/fp-segmented.component';
      .block { display: flex; flex-direction: column; gap: var(--fp-space-2); }
      .block p { margin: 0; }
      .row { display: flex; flex-wrap: wrap; gap: var(--fp-space-2); }
-     .signout { align-self: flex-start; }`,
+     .signout, .install { align-self: flex-start; }`,
   ],
 })
 export class MoreComponent {
   private readonly auth = inject(AuthService);
   private readonly queue = inject(ExpenseQueueService);
   readonly themeService = inject(ThemeService);
+  readonly installer = inject(InstallPromptService);
   readonly themes = [
     { value: 'dark', label: 'Dark' },
     { value: 'light', label: 'Light' },

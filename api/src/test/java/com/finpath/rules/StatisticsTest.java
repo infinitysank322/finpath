@@ -32,6 +32,17 @@ class StatisticsTest {
     }
 
     @Test
+    void discretionaryShareFromTagSplitSumsWantsAndWasteExactly() {
+        assertEquals(new BigDecimal("30.0"),
+                Statistics.discretionaryShare(Money.ofPaise(20), Money.ofPaise(10), Money.ofPaise(100)));
+        assertEquals(Statistics.discretionaryShare(Money.ofPaise(30), Money.ofPaise(100)),
+                Statistics.discretionaryShare(Money.ofPaise(20), Money.ofPaise(10), Money.ofPaise(100)));
+        assertNull(Statistics.discretionaryShare(Money.ZERO, Money.ZERO, Money.ZERO));
+        assertThrows(ArithmeticException.class, () -> Statistics.discretionaryShare(Money.ofPaise(Long.MAX_VALUE),
+                Money.ofPaise(1), Money.ofPaise(100)));
+    }
+
+    @Test
     void zeroIncomeOrOutflowHasNoRatio() {
         assertNull(Statistics.savingsRate(Money.ofPaise(5), Money.ZERO));
         assertNull(Statistics.discretionaryShare(Money.ofPaise(5), Money.ZERO));

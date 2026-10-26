@@ -170,7 +170,10 @@ export class AuthService {
     const s = this.store.session();
     if (s) this.api.logout(s.refreshToken).subscribe({ error: () => undefined });
     if (opts.discardQueue) this.local.wipeUser(s?.userId ?? null);
-    else this.store.clear();
+    else {
+      this.local.forgetDashboard(s?.userId ?? null);
+      this.store.clear();
+    }
     this.returnTo = null;
     return this.router.navigateByUrl('/sign-in');
   }
@@ -234,6 +237,7 @@ export class AuthService {
       // Only a definitive rejection of the token we sent signs out; offline or 5xx keeps the session.
       if (rejected && this.store.reload()?.refreshToken === current.refreshToken) {
         this.rememberReturnTo(this.router.url);
+        this.local.forgetDashboard(current.userId);
         this.store.clear();
         void this.router.navigateByUrl('/sign-in');
       }
