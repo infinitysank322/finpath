@@ -50,6 +50,22 @@ h1, h2, h3 { font-family: var(--fp-font-num); }
 .fp-btn-ghost { background: var(--fp-chip-bg); border-color: var(--fp-border-strong); color: var(--fp-text); }
 .fp-btn-block { width: 100%; min-height: 56px; border-radius: var(--fp-radius-lg); font-size: var(--fp-fs-base); }
 
+/* Form field: a label (use .fp-label) above a control. */
+.fp-field { display: flex; flex-direction: column; gap: var(--fp-space-2); min-width: 0; }
+.fp-input { width: 100%; min-height: var(--fp-target); padding: 0 var(--fp-space-3); border: 1px solid var(--fp-border-strong); border-radius: var(--fp-radius-md); background: var(--fp-surface); color: var(--fp-text); font: 500 var(--fp-fs-base) var(--fp-font-text); }
+select.fp-input { appearance: auto; }
+
+/* Quiet pill button (secondary actions, dismiss). */
+.fp-pill { min-height: var(--fp-target); padding: 0 var(--fp-space-4); border: 1px solid var(--fp-border-strong); border-radius: var(--fp-radius-pill); background: var(--fp-chip-bg); color: var(--fp-text); font: 600 var(--fp-fs-sm) var(--fp-font-text); cursor: pointer; }
+.fp-pill:disabled { color: var(--fp-text-muted); cursor: not-allowed; }
+
+/* Inline messages. Colour is never the only signal: errors carry a leading bar. */
+.fp-alert:not(:empty) { padding: var(--fp-space-3); border-left: 4px solid var(--fp-breach-bar); border-radius: var(--fp-radius-sm); background: var(--fp-breach-bg); color: var(--fp-breach-text); }
+.fp-warn { padding: var(--fp-space-3); border-left: 4px solid var(--fp-warn-bar); border-radius: var(--fp-radius-sm); background: var(--fp-warn-bg); color: var(--fp-warn-text); }
+
+/* A list row on a flat surface (loans, bills, queued items). */
+.fp-row { display: flex; flex-wrap: wrap; gap: var(--fp-space-1) var(--fp-space-3); align-items: center; justify-content: space-between; padding: var(--fp-space-3) var(--fp-space-4); background: var(--fp-surface); border: 1px solid var(--fp-card-border); border-radius: var(--fp-radius-md); overflow-wrap: anywhere; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

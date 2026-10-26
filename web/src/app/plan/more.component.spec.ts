@@ -4,6 +4,7 @@ import { AuthService } from '../auth/auth.service';
 import { ExpenseApiService } from '../expense/expense-api.service';
 import { QUEUE_OWNER, QUEUE_STORAGE, queueKeyFor } from '../expense/expense-queue.service';
 import { memoryStorage } from '../expense/queue-testing';
+import { THEME_KEY } from '../theme.service';
 import { MoreComponent } from './more.component';
 
 const item = (key: string) => ({
@@ -93,5 +94,36 @@ describe('MoreComponent sign-out', () => {
     click(f, 'Cancel');
     expect(signOut).not.toHaveBeenCalled();
     expect(f.nativeElement.querySelector('[data-f=unsent-warning]')).toBeNull();
+  });
+});
+
+describe('MoreComponent theme', () => {
+  it('Light / Dark segments set data-theme and persist the choice', () => {
+    localStorage.removeItem(THEME_KEY);
+    TestBed.configureTestingModule({
+      imports: [MoreComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { signOut: () => Promise.resolve() } },
+        { provide: ExpenseApiService, useValue: { categories: () => [] } },
+        { provide: QUEUE_STORAGE, useValue: memoryStorage() },
+        { provide: QUEUE_OWNER, useValue: () => null },
+      ],
+    });
+    const f = TestBed.createComponent(MoreComponent);
+    f.detectChanges();
+    const el: HTMLElement = f.nativeElement;
+    const light = el.querySelector('[aria-label="Theme Light"]') as HTMLButtonElement;
+    const dark = el.querySelector('[aria-label="Theme Dark"]') as HTMLButtonElement;
+    expect(dark.getAttribute('aria-pressed')).toBe('true');
+    light.click();
+    f.detectChanges();
+    expect(document.documentElement.dataset['theme']).toBe('light');
+    expect(localStorage.getItem(THEME_KEY)).toBe('light');
+    expect(light.getAttribute('aria-pressed')).toBe('true');
+    dark.click();
+    expect(document.documentElement.dataset['theme']).toBe('dark');
+    localStorage.removeItem(THEME_KEY);
+    document.documentElement.removeAttribute('data-theme');
   });
 });

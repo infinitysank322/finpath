@@ -1,17 +1,19 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, Injector, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService, SIGNIN_STORAGE } from '../auth/auth.service';
 import { DRAFT_KEY, clearDraft, saveDraft, takeDraft } from './draft';
 import { formatExactPaise, formatTyped, pressKey, toPaise } from './amount-entry';
 import { ExpenseApiService } from './expense-api.service';
 import { ExpenseQueueService, QUEUE_OWNER } from './expense-queue.service';
+import { FpChipGridComponent } from '../ui/fp-chip-grid.component';
+import { FpKeypadComponent } from '../ui/fp-keypad.component';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpSegmentedComponent } from '../ui/fp-segmented.component';
 import { PendingExpensesComponent } from './pending-expenses.component';
 import { MODES, PaymentMode, SpendTag, TAGS } from './expense.models';
 
 export { DRAFT_KEY };
-
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'];
 
 /** yyyy-MM-dd in the Indian calendar day (the cycle is Asia/Kolkata). */
 export function todayIst(now: Date = new Date()): string {
@@ -25,7 +27,7 @@ function newKey(): string {
 @Component({
   selector: 'app-add-expense',
   standalone: true,
-  imports: [PendingExpensesComponent],
+  imports: [PendingExpensesComponent, RouterLink, FpPageHeaderComponent, FpChipGridComponent, FpSegmentedComponent, FpKeypadComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './add-expense.component.html',
   styleUrl: './add-expense.component.css',
@@ -39,10 +41,12 @@ export class AddExpenseComponent {
   /** The sign-in this entry belongs to, captured at save time (a rejected refresh clears the session mid-save). */
   private entryOwner: string | null = null;
 
-  readonly keys = KEYS;
   readonly categories = this.api.categories();
   readonly modes = MODES;
   readonly tags = TAGS;
+  readonly categoryOptions = this.categories.map((c) => ({ value: c.code, label: c.name }));
+  readonly modeOptions = MODES.map((m) => ({ value: m.code, label: m.label }));
+  readonly tagOptions = TAGS.map((x) => ({ value: x.code, label: x.label }));
 
   readonly amountText = signal('');
   readonly category = signal<string | null>(null);
@@ -72,18 +76,19 @@ export class AddExpenseComponent {
   /** Payload signature of the last failed attempt; the key is reused only for an identical payload. */
   private failedSig: string | null = null;
 
-  keyLabel(k: string): string {
-    return k === 'back' ? 'Delete last digit' : k === '.' ? 'Decimal point' : `Digit ${k}`;
-  }
-
   press(k: string): void {
     this.amountText.update((t) => pressKey(t, k));
     this.message.set('');
     this.error.set('');
   }
 
-  toggleTag(t: SpendTag): void {
-    this.tag.update((cur) => (cur === t ? null : t));
+  onMode(code: string): void {
+    this.mode.set(code as PaymentMode);
+  }
+
+  /** null = the selected tag was pressed again (the tag is optional). */
+  onTag(code: string | null): void {
+    this.tag.set(code as SpendTag | null);
   }
 
   onNote(event: Event): void {

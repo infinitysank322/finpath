@@ -2,58 +2,75 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { ExpenseQueueService } from '../expense/expense-queue.service';
+import { Theme, ThemeService } from '../theme.service';
+import { FpCardComponent } from '../ui/fp-card.component';
+import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
+import { FpSegmentedComponent } from '../ui/fp-segmented.component';
 
 @Component({
   selector: 'app-more',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, FpPageHeaderComponent, FpCardComponent, FpSegmentedComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h1>More</h1>
-    <nav aria-label="Plan setup">
-      <ul>
-        <li><a routerLink="/more/income">Income sources</a></li>
-        <li><a routerLink="/more/recurring">Recurring bills</a></li>
-        <li><a routerLink="/spending/budget">Category budgets</a></li>
-        <li><a routerLink="/goals/fi-planner">FI planner</a></li>
-        <li><a routerLink="/more/allocation">Cycle allocation</a></li>
-      </ul>
-    </nav>
-    <section aria-labelledby="acct-h">
-      <h2 id="acct-h">Account</h2>
-      @if (unsent() !== null) {
-        <p role="alert" class="warn" data-f="unsent-warning">
-          {{ unsent() }} {{ unsent() === 1 ? 'expense has' : 'expenses have' }} not been sent yet. Sign out anyway keeps
-          them on this device until you sign in with this account again; they are deleted if someone else signs in
-          first. On a shared device, choose
-          Sign out and discard: they are deleted and cannot be recovered.
-        </p>
-        <div class="row">
-          <button type="button" class="btn" (click)="confirm()">Sign out anyway</button>
-          <button type="button" class="btn" (click)="discard()" data-f="discard">Sign out and discard</button>
-          <button type="button" class="btn" (click)="unsent.set(null)">Cancel</button>
-        </div>
-      } @else {
-        <button type="button" class="btn" (click)="signOut()">Sign out</button>
-      }
-    </section>
+    <div class="fp-page">
+      <fp-page-header title="More" />
+      <nav aria-label="Plan setup">
+        <ul>
+          <li><a class="fp-row" routerLink="/more/income">Income sources</a></li>
+          <li><a class="fp-row" routerLink="/more/recurring">Recurring bills</a></li>
+          <li><a class="fp-row" routerLink="/spending/budget">Category budgets</a></li>
+          <li><a class="fp-row" routerLink="/goals/fi-planner">FI planner</a></li>
+          <li><a class="fp-row" routerLink="/more/allocation">Cycle allocation</a></li>
+        </ul>
+      </nav>
+      <section class="block">
+        <span class="fp-label" aria-hidden="true">Appearance</span>
+        <fp-segmented label="Theme" ariaPrefix="Theme " [options]="themes" [value]="themeService.theme()" (valueChange)="setTheme($event)" />
+      </section>
+      <section class="block" aria-labelledby="acct-h">
+        <h2 id="acct-h" class="fp-label">Account</h2>
+        @if (unsent() !== null) {
+          <p role="alert" class="fp-warn" data-f="unsent-warning">
+            {{ unsent() }} {{ unsent() === 1 ? 'expense has' : 'expenses have' }} not been sent yet. Sign out anyway keeps
+            them on this device until you sign in with this account again; they are deleted if someone else signs in
+            first. On a shared device, choose
+            Sign out and discard: they are deleted and cannot be recovered.
+          </p>
+          <div class="row">
+            <button type="button" class="fp-pill" (click)="confirm()">Sign out anyway</button>
+            <button type="button" class="fp-pill" (click)="discard()" data-f="discard">Sign out and discard</button>
+            <button type="button" class="fp-pill" (click)="unsent.set(null)">Cancel</button>
+          </div>
+        } @else {
+          <button type="button" class="fp-pill signout" (click)="signOut()">Sign out</button>
+        }
+      </section>
+    </div>
   `,
   styles: [
-    `h1 { margin: 0 0 .5rem; font-size: 1.5rem; }
-     h2 { margin: 1.5rem 0 .5rem; font-size: 1.125rem; }
-     ul { list-style: none; margin: 0; padding: 0; }
-     li { margin-bottom: .5rem; }
-     a { display: block; min-height: 44px; padding: .625rem .75rem; box-sizing: border-box; background: var(--fp-surface); border: 1px solid var(--fp-border); border-radius: 8px; color: var(--fp-primary-text); }
-     .warn { margin: 0 0 .75rem; padding: .75rem; border-radius: 8px; background: var(--fp-warn-bg); color: var(--fp-warn-text); }
-     .row { display: flex; flex-wrap: wrap; gap: .5rem; }
-     .btn { min-height: 44px; padding: 0 1rem; border-radius: 22px; border: 1px solid var(--fp-border-strong); background: transparent; color: var(--fp-text); font: inherit; cursor: pointer; }`,
+    `ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--fp-space-2); }
+     a.fp-row { min-height: var(--fp-target); color: var(--fp-text); text-decoration: none; font-weight: 600; }
+     .block { display: flex; flex-direction: column; gap: var(--fp-space-2); }
+     .block p { margin: 0; }
+     .row { display: flex; flex-wrap: wrap; gap: var(--fp-space-2); }
+     .signout { align-self: flex-start; }`,
   ],
 })
 export class MoreComponent {
   private readonly auth = inject(AuthService);
   private readonly queue = inject(ExpenseQueueService);
+  readonly themeService = inject(ThemeService);
+  readonly themes = [
+    { value: 'dark', label: 'Dark' },
+    { value: 'light', label: 'Light' },
+  ];
   /** Count shown in the sign-out warning; null = no warning open. */
   readonly unsent = signal<number | null>(null);
+
+  setTheme(theme: string | null): void {
+    if (theme === 'dark' || theme === 'light') this.themeService.set(theme as Theme);
+  }
 
   signOut(): void {
     this.queue.reload();

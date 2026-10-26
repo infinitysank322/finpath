@@ -24,13 +24,13 @@ const inr = new PaiseInrPipe();
 /** Reads the active theme's tokens so chart colours follow dark mode. */
 export function readInterestPalette(el: Element = document.documentElement): InterestPalette {
   const css = getComputedStyle(el);
-  const v = (n: string, d: string) => css.getPropertyValue(n).trim() || d;
+  const v = (n: string) => css.getPropertyValue(n).trim();
   return {
-    text: v('--fp-text', '#1b1f24'),
-    muted: v('--fp-text-muted', '#4a5563'),
-    border: v('--fp-border', '#d3d9e0'),
-    principal: v('--fp-primary', '#0b5cad'),
-    interest: v('--fp-warn-bar', '#8a5a00'),
+    text: v('--fp-text'),
+    muted: v('--fp-text-muted'),
+    border: v('--fp-border'),
+    principal: v('--fp-primary'),
+    interest: v('--fp-warn-bar'),
   };
 }
 

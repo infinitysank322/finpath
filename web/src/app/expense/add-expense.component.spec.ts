@@ -157,7 +157,7 @@ describe('AddExpenseComponent', () => {
     expect(travel.checked).toBeTrue();
     expect((root.querySelector('[aria-label="Category Dining"]') as HTMLInputElement).checked).toBeFalse();
     expect(travel.name).toBe((root.querySelector('[aria-label="Category Dining"]') as HTMLInputElement).name);
-    expect(root.querySelectorAll('fieldset legend').length).toBe(2);
+    expect(root.querySelectorAll('fp-chip-grid [role=group][aria-label]').length).toBe(2);
     tap('[aria-label="Tag Need"]');
     expect(root.querySelector('[aria-label="Tag Need"]')?.getAttribute('aria-pressed')).toBe('true');
   });
@@ -196,7 +196,7 @@ describe('AddExpenseComponent', () => {
     expect(status().getAttribute('role')).toBe('status');
     expect(status().getAttribute('aria-label')).toBeNull();
     expect(status().querySelector('.sr-only')?.textContent).toBe('Amount ₹12.50');
-    for (let i = 0; i < 4; i++) tap('.keypad button[aria-label="Delete last digit"]');
+    for (let i = 0; i < 4; i++) tap('.keypad button[aria-label="Delete digit"]');
     tapKey('.');
     tapKey('4');
     expect(status().querySelector('.sr-only')?.textContent).toBe('Amount ₹0.40');
@@ -231,7 +231,7 @@ describe('AddExpenseComponent', () => {
     fill('5');
     tap('[aria-label="Save expense"]');
     expect(errorText()).toContain('Sign in to save');
-    expect(root.querySelector('button.chip:not([aria-label])')?.textContent?.trim()).toBe('Sign in to save');
+    expect(root.querySelector('button.fp-btn-ghost:not([aria-label])')?.textContent?.trim()).toBe('Sign in to save');
     api.failWith = 500;
     tap('[aria-label="Save expense"]');
     expect(errorText()).toContain('server had a problem');

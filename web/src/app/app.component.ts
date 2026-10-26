@@ -1,24 +1,22 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AUTH_PATHS } from './app.routes';
 import { AuthService } from './auth/auth.service';
 import { LocalDataService } from './auth/local-data.service';
 import { AuthSessionStore } from './auth/session.store';
-import { ThemeService } from './theme.service';
 import { FpBottomNavComponent } from './ui/fp-bottom-nav.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, FpBottomNavComponent],
+  imports: [RouterOutlet, FpBottomNavComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
 export class AppComponent {
-  readonly themeService = inject(ThemeService);
   private readonly router = inject(Router);
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -27,7 +25,7 @@ export class AppComponent {
     ),
     { initialValue: this.router.url },
   );
-  /** Sign-in and the OAuth callback show only the brand and theme toggle. */
+  /** Sign-in and the OAuth callback show no bottom nav. */
   readonly chrome = computed(() => {
     const path = this.url().split(/[?#]/)[0];
     return !AUTH_PATHS.includes(path);

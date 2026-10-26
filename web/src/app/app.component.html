@@ -1,23 +1,4 @@
 <a class="skip" href="#main">Skip to content</a>
-<header class="bar">
-  <span class="brand">FinPath</span>
-  <div class="actions">
-    @if (chrome()) {
-      <a routerLink="/more" class="more-link" aria-label="More">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
-      </a>
-    }
-    <button
-      type="button"
-      class="theme-toggle"
-      (click)="themeService.toggle()"
-      [attr.aria-pressed]="themeService.theme() === 'dark'"
-      aria-label="Dark mode"
-    >
-      {{ themeService.theme() === 'dark' ? 'Dark' : 'Light' }}
-    </button>
-  </div>
-</header>
 <main id="main" tabindex="-1" [class.has-nav]="chrome()">
   <router-outlet />
 </main>
