@@ -23,6 +23,8 @@ import { PayoffApiService } from './debt/payoff-api.service';
 import { PayoffComponent } from './debt/payoff.component';
 import { PrepayApiService } from './debt/prepay-api.service';
 import { PrepayComponent } from './debt/prepay.component';
+import { SpendingApiService } from './spending/spending-api.service';
+import { SpendingComponent } from './spending/spending.component';
 import { SinkingFundApiService } from './debt/sinking-fund-api.service';
 import { SinkingFundComponent } from './debt/sinking-fund.component';
 import { FiApiService } from './fi/fi-api.service';
@@ -175,6 +177,20 @@ describe('every rebuilt screen at 380 px (dark and light) with 44 px targets', (
     }
     expectFitsPhone(el, name);
   };
+
+  it('spending donut, need/want/waste and comparison bars', () => {
+    const lines = [{ categoryCode: 'GROCERIES', spentPaise: 123400, share: '0.6488' }, { categoryCode: 'DINING', spentPaise: 66800, share: '0.3512' }];
+    const api = {
+      tagSummary: () => of({ from: '2026-10-25', toExclusive: '2026-11-25', needPaise: 123400, wantPaise: 56700, wastePaise: 8900, untaggedPaise: 1200, totalPaise: 190200 }),
+      categories: () => of({ cycleStart: '2026-10-25', cycleEndExclusive: '2026-11-25', totalPaise: 190200, lines }),
+      comparison: () => of({
+        cycleStart: '2026-10-25', cycleEndExclusive: '2026-11-25',
+        baselineCycles: [{ start: '2026-07-25', endExclusive: '2026-08-25' }, { start: '2026-09-25', endExclusive: '2026-10-25' }],
+        lines: lines.map((l) => ({ categoryCode: l.categoryCode, currentPaise: l.spentPaise, averagePaise: 90000, deltaPaise: l.spentPaise - 90000 })),
+      }),
+    };
+    check(render(SpendingComponent, [{ provide: SpendingApiService, useValue: api }]), 'spending', false);
+  });
 
   it('budget, with the edit sheet open', () => {
     const el = render(BudgetComponent, [{ provide: BudgetApiService, useValue: budgetApi }], (f) => {

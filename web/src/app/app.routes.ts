@@ -1,8 +1,6 @@
 import { Route, Routes } from '@angular/router';
 import { authGuard, signedOutGuard } from './auth/auth.guard';
 
-const page = () => import('./placeholder.component').then((m) => m.PlaceholderComponent);
-
 /** Everything behind sign-in. Redirect routes cannot carry guards; their targets do. */
 const appRoutes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'home' },
@@ -14,7 +12,7 @@ const appRoutes: Routes = [
     title: 'Add expense - FinPath',
   },
   { path: 'spending/budget', loadComponent: () => import('./budget/budget.component').then((m) => m.BudgetComponent), title: 'Budget - FinPath' },
-  { path: 'spending', loadComponent: page, title: 'Spending - FinPath', data: { heading: 'Spending' } },
+  { path: 'spending', pathMatch: 'full', loadComponent: () => import('./spending/spending.component').then((m) => m.SpendingComponent), title: 'Spending - FinPath' },
   { path: 'debt/payoff', loadComponent: () => import('./debt/payoff.component').then((m) => m.PayoffComponent), title: 'Payoff timeline - FinPath' },
   { path: 'debt/loans', pathMatch: 'full', loadComponent: () => import('./debt/loan-list.component').then((m) => m.LoanListComponent), title: 'Loans - FinPath' },
   { path: 'debt/loans/:id', pathMatch: 'full', loadComponent: () => import('./debt/loan-detail.component').then((m) => m.LoanDetailComponent), title: 'Loan - FinPath' },

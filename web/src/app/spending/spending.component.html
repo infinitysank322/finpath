@@ -1,0 +1,105 @@
+<div class="fp-page">
+  <fp-page-header title="Spending"><fp-profile-link fpTrailing /></fp-page-header>
+  <p class="edu fp-note">Educational view of your own spending. It is not advice about any security or product.</p>
+
+  @if (error()) {
+    <p class="error fp-alert" role="alert">{{ error() }}</p>
+    <button type="button" class="fp-pill" (click)="load()">Try again</button>
+  }
+  @if (loading()) {
+    <p class="fp-note" role="status">Loading spending...</p>
+  }
+
+  @if (categories(); as c) {
+    <fp-card heading="Where this cycle's money went">
+      <p class="fp-note" data-f="cycle">Cycle {{ cycle() }}. Total spent {{ fmt(c.totalPaise) }}.</p>
+      @if (donutRows().length === 0) {
+        <p class="fp-note" data-f="empty">No spending recorded in this cycle yet.</p>
+      } @else {
+        <div class="fp-chart" role="img" [attr.aria-label]="donutDescription()" data-f="donut">
+          @if (donutOptions(); as o) {
+            <div echarts [options]="o" [merge]="o" class="fp-chart-canvas" aria-hidden="true"></div>
+          }
+        </div>
+        <p class="fp-note fp-small">Each slice is labelled with its category and share of the cycle's spending, and has its own pattern.</p>
+        <div class="fp-table-wrap" role="region" tabindex="0" aria-label="Spending by category table">
+          <table class="fp-table" data-f="donut-table">
+            <caption>Spending by category, cycle {{ cycle() }}</caption>
+            <thead><tr><th scope="col">Category</th><th scope="col" class="num">Amount</th><th scope="col" class="num">Share</th></tr></thead>
+            <tbody>
+              @for (r of donutRows(); track r.code) {
+                <tr><th scope="row">{{ r.name }}</th><td class="num">{{ fmt(r.paise) }}</td><td class="num">{{ r.percent === null ? 'Not available' : r.percent + '%' }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </fp-card>
+  }
+
+  @if (tags(); as t) {
+    <fp-card heading="Need, want and waste">
+      <p class="fp-note fp-small">Tags are the ones you set on each expense. Spending you have not tagged is shown separately.</p>
+      @if (t.totalPaise > 0) {
+        <div class="strip" role="img" [attr.aria-label]="'Need, want and waste split of ' + fmt(t.totalPaise) + ' spent'" data-f="tag-strip">
+          @for (r of tagRows(); track r.tag) {
+            @if (r.paise > 0) {
+              <span class="seg" [class]="r.tag.toLowerCase()" [style.flex-grow]="r.paise">{{ r.name }}</span>
+            }
+          }
+        </div>
+      }
+      <div class="fp-table-wrap" role="region" tabindex="0" aria-label="Need, want and waste table">
+        <table class="fp-table" data-f="tag-table">
+          <caption>Spending by tag, current cycle</caption>
+          <thead><tr><th scope="col">Tag</th><th scope="col" class="num">Amount</th></tr></thead>
+          <tbody>
+            @for (r of tagRows(); track r.tag) {
+              <tr><th scope="row">{{ r.name }}</th><td class="num">{{ fmt(r.paise) }}</td></tr>
+            }
+          </tbody>
+          <tfoot><tr><th scope="row">Total</th><td class="num">{{ fmt(t.totalPaise) }}</td></tr></tfoot>
+        </table>
+      </div>
+    </fp-card>
+  }
+
+  @if (comparisonError()) {
+    <p class="error fp-alert" role="alert" data-f="comparison-error">{{ comparisonError() }}</p>
+  }
+  @if (comparison(); as m) {
+    <fp-card heading="Against your recent average">
+      @if (compRows().length === 0) {
+        <p class="fp-note" data-f="comparison-empty">Nothing to compare yet.</p>
+      } @else {
+        <ul class="key fp-small" aria-label="How to read the bars">
+          <li><span class="swatch solid" aria-hidden="true"></span> Solid bar: this cycle ({{ currentLabel() }})</li>
+          <li><span class="swatch hatched" aria-hidden="true"></span> Hatched bar: average of the {{ baselineCount() }} earlier {{ baselineCount() === 1 ? 'cycle' : 'cycles' }} ({{ baseline() }})</li>
+        </ul>
+        <div class="fp-chart bars" [style.--fp-bars]="compBars()" role="img" [attr.aria-label]="compDescription()" data-f="comparison-chart">
+          @if (compOptions(); as o) {
+            <div echarts [options]="o" [merge]="o" class="fp-chart-canvas" aria-hidden="true"></div>
+          }
+        </div>
+        <div class="fp-table-wrap" role="region" tabindex="0" aria-label="Category comparison table">
+          <table class="fp-table" data-f="comparison-table">
+            <caption>This cycle ({{ currentLabel() }}) against the average of {{ baseline() }}</caption>
+            <thead><tr><th scope="col">Category</th><th scope="col" class="num">This cycle</th><th scope="col" class="num">Average</th><th scope="col" class="num">Change</th></tr></thead>
+            <tbody>
+              @for (r of compRows(); track r.code) {
+                <tr><th scope="row">{{ r.name }}</th><td class="num">{{ fmt(r.currentPaise) }}</td><td class="num">{{ fmt(r.averagePaise) }}</td><td class="num">{{ changeText(r.deltaPaise) }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </fp-card>
+    <fp-card heading="Assumptions" role="region" aria-label="Assumptions" class="assumptions">
+      <ul class="fp-bullets">
+        <li>The average is taken by FinPath's rules engine over the {{ baselineCount() }} cycles before this one, using your own cycle dates.</li>
+        <li>Spending includes recurring postings. A cycle still in progress is compared with whole earlier cycles.</li>
+        <li>This is an educational comparison, not advice.</li>
+      </ul>
+    </fp-card>
+  }
+</div>
