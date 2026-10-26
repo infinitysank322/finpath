@@ -1,14 +1,16 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AllocationApiService } from './allocation/allocation-api.service';
 import { AllocationComponent } from './allocation/allocation.component';
 import { API_BASE } from './api-base';
 import { BudgetApiService } from './budget/budget-api.service';
 import { BudgetComponent } from './budget/budget.component';
+import { DashboardApiService } from './dashboard/dashboard-api.service';
+import { HomeComponent } from './dashboard/home.component';
 import { DebtHubComponent } from './debt/debt-hub.component';
 import { EmiGuardComponent } from './debt/emi-guard.component';
 import { GuardApiService } from './debt/guard-api.service';
@@ -180,6 +182,21 @@ describe('every rebuilt screen at 380 px (dark and light) with 44 px targets', (
       f.componentInstance.openEdit(f.componentInstance.status()!.lines[0]);
     });
     check(el, 'budget');
+  });
+
+  it('home cycle ring, with a warning level', () => {
+    const dash = {
+      asOf: '2026-10-25',
+      cycle: { start: '2026-10-25', endExclusive: '2026-11-25', lengthDays: 31, daysElapsed: 12, daysLeft: 19 },
+      budget: { status: 'OK', budgetPaise: 1234500, spentPaise: 1050000, remainingPaise: 184500, usedFraction: '0.8506', level: 'WARN', safeToSpendPerDayPaise: 9700 },
+    };
+    check(render(HomeComponent, [{ provide: DashboardApiService, useValue: { get: () => of(dash) } }]), 'home ring', false);
+  });
+
+  it('home, failed load shows a 44 px retry', () => {
+    const failing = render(HomeComponent, [{ provide: DashboardApiService, useValue: { get: () => throwError(() => new HttpErrorResponse({ status: 500 })) } }]);
+    expect(failing.querySelector('[data-f=failed]')).not.toBeNull();
+    check(failing, 'home failed');
   });
 
   it('income, with the form open', () => {

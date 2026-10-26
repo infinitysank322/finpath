@@ -24,7 +24,7 @@ export class DashboardCacheService {
       const raw = this.storage.getItem(key);
       if (!raw) return null;
       const o = JSON.parse(raw) as CachedDashboard;
-      return o && typeof o.savedAt === 'number' && o.data && typeof o.data.asOf === 'string' && isObj(o.data.cycle) && isObj(o.data.budget) ? o : null;
+      return o && typeof o.savedAt === 'number' && o.data && typeof o.data.asOf === 'string' && isObj(o.data.cycle) && isObj(o.data.budget) && budgetShapeOk(o.data.budget as unknown as Record<string, unknown>) ? o : null;
     } catch {
       return null;
     }
@@ -52,4 +52,9 @@ export class DashboardCacheService {
     const id = this.session.userId();
     return id ? dashboardCacheKeyFor(id) : null;
   }
+}
+
+/** Entries cached before the ring (T75) hold no budget figures; drop them rather than show an empty ring. */
+function budgetShapeOk(b: Record<string, unknown>): boolean {
+  return b['status'] !== 'OK' || typeof b['budgetPaise'] === 'number';
 }

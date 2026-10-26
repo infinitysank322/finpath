@@ -13,7 +13,10 @@ import { HomeComponent } from './home.component';
 const view: DashboardView = {
   asOf: '2026-10-25',
   cycle: { start: '2026-10-01', endExclusive: '2026-11-01', lengthDays: 31, daysElapsed: 25, daysLeft: 6 },
-  budget: { status: 'OK', safeToSpendPerDayPaise: 150_000 },
+  budget: {
+    status: 'OK', budgetPaise: 1_234_500, spentPaise: 654_300, remainingPaise: 580_200, usedFraction: '0.5300',
+    level: 'OK', safeToSpendPerDayPaise: 96_700,
+  },
 };
 
 describe('HomeComponent offline behaviour (T79)', () => {
@@ -94,4 +97,61 @@ describe('HomeComponent offline behaviour (T79)', () => {
     expect(has(f, '[data-f=loading]')).toBeFalse();
     expect(text(f)).toContain('6 days left');
   }));
+
+  describe('cycle ring (T75)', () => {
+    const el = (f: ReturnType<typeof render>, sel: string) => (f.nativeElement as HTMLElement).querySelector(sel);
+    const field = (f: ReturnType<typeof render>, k: string) => el(f, `[data-f=${k}]`)?.textContent?.trim();
+
+    it('shows API figures verbatim: spent, budget, remaining, days left, safe-to-spend, percent', () => {
+      next = () => of(view);
+      const f = render();
+      expect(field(f, 'spent')).toBe('₹6,543');
+      expect(field(f, 'budget')).toBe('₹12,345');
+      expect(field(f, 'remaining')).toBe('₹5,802');
+      expect(field(f, 'safe')).toBe('₹967');
+      expect(field(f, 'days-left')).toContain('6 days left');
+      expect(field(f, 'pct')).toBe('53.00%');
+      expect(field(f, 'level')).toContain('On track');
+    });
+
+    it('ring arc equals the API fraction and has an aria text equivalent', () => {
+      next = () => of(view);
+      const f = render();
+      expect(el(f, '.arc')!.getAttribute('stroke-dasharray')).toBe('53 100');
+      const svg = el(f, '[data-f=ring]')!;
+      expect(svg.getAttribute('role')).toBe('img');
+      const label = svg.getAttribute('aria-label')!;
+      expect(label).toContain('53.00% of budget used');
+      expect(label).toContain('Spent ₹6,543 of ₹12,345');
+      expect(label).toContain('6 days left');
+      expect(label).toContain('₹967 per day');
+    });
+
+    it('over budget: ring is capped at one turn and the level is stated in words', () => {
+      next = () => of({ ...view, budget: { ...view.budget, usedFraction: '1.2500', level: 'BREACH', remainingPaise: -300_000, safeToSpendPerDayPaise: 0 } });
+      const f = render();
+      expect(el(f, '.arc')!.getAttribute('stroke-dasharray')).toBe('100 100');
+      expect(field(f, 'level')).toContain('Over budget');
+      expect(field(f, 'pct')).toBe('125.00%');
+    });
+
+    it('warning level is stated in words, not colour alone', () => {
+      next = () => of({ ...view, budget: { ...view.budget, usedFraction: '0.8500', level: 'WARN' } });
+      expect(field(render(), 'level')).toContain('Warning');
+    });
+
+    it('NOT_SET_UP: no ring and no fabricated zero, just a prompt and days left', () => {
+      next = () => of({ ...view, budget: { status: 'NOT_SET_UP', budgetPaise: null, spentPaise: null, remainingPaise: null, usedFraction: null, level: null, safeToSpendPerDayPaise: null } } as DashboardView);
+      const f = render();
+      expect(el(f, '[data-f=ring]')).toBeNull();
+      expect(el(f, '[data-f=not-set-up]')).not.toBeNull();
+      expect(field(f, 'days-left')).toContain('6 days left');
+      expect(text(f)).not.toContain('₹0');
+    });
+
+    it('cycle is labelled by its own dates, not a calendar month name for the cycle', () => {
+      next = () => of(view);
+      expect(field(render(), 'cycle')).toBe('Cycle from 1 Oct, next cycle from 1 Nov');
+    });
+  });
 });

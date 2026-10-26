@@ -8,7 +8,7 @@ import { DashboardView } from './dashboard.models';
 const view = (asOf = '2026-10-25'): DashboardView => ({
   asOf,
   cycle: { start: '2026-10-01', endExclusive: '2026-11-01', lengthDays: 31, daysElapsed: 25, daysLeft: 6 },
-  budget: { status: 'OK', safeToSpendPerDayPaise: 150_000 },
+  budget: { status: 'OK', budgetPaise: 1_234_500, spentPaise: 654_300, remainingPaise: 580_200, usedFraction: '0.5300', level: 'OK', safeToSpendPerDayPaise: 150_000 },
 });
 
 describe('DashboardCacheService', () => {
@@ -39,6 +39,13 @@ describe('DashboardCacheService', () => {
   it('saves nothing and loads nothing when signed out', () => {
     cache.save(view());
     expect(Object.keys(store.data)).toEqual([]);
+    expect(cache.load()).toBeNull();
+  });
+
+  it('drops an entry cached before the ring, which has no budget figures', () => {
+    session.save(tokenResponse(USER_A, 'r'));
+    const old = view();
+    store.setItem(dashboardCacheKeyFor(USER_A), JSON.stringify({ savedAt: 1, data: { ...old, budget: { status: 'OK', safeToSpendPerDayPaise: 1 } } }));
     expect(cache.load()).toBeNull();
   });
 
