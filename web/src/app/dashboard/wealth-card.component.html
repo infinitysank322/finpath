@@ -1,0 +1,55 @@
+<fp-card heading="Net worth" data-f="networth">
+  @if (nw(); as n) {
+    <p class="fp-num fi-date" data-f="nw-now">{{ n.nowPaise | paiseInr }}</p>
+    <p class="fp-note">Today. The line and table show closed cycles only.</p>
+    @if (options(); as o) {
+      <div class="chart" echarts [options]="o" role="img" [attr.aria-label]="description()" data-f="nw-chart"></div>
+      <table class="tbl fp-dl" data-f="nw-table">
+        <caption class="fp-note">Net worth at each closed cycle</caption>
+        <thead><tr><th scope="col">Cycle from</th><th scope="col">Net worth</th></tr></thead>
+        <tbody>
+          @for (p of series(); track p.cycleStart) {
+            <tr><td>{{ date(p.cycleStart) }}</td><td class="fp-num">{{ p.netWorthPaise | paiseInr }}</td></tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <p class="fp-note" data-f="nw-empty">The line appears once your first cycle closes.</p>
+    }
+  } @else {
+    <p class="fp-note" data-f="nw-missing">Net worth is not available yet.</p>
+  }
+</fp-card>
+
+<fp-card heading="Financial independence" data-f="fi">
+  @if (fi(); as f) {
+    @if (f.status === 'OK' && f.base) {
+      <p class="fi-date fp-num" data-f="fi-base">
+        @if (f.base.fiDate) { {{ date(f.base.fiDate) }} ({{ fiYearsText(f.base.fiYears) }}) } @else { Not reached in the planning horizon }
+      </p>
+      <p class="fp-note" data-f="fi-delta">{{ deltaText() }}</p>
+      <table class="tbl fp-dl" data-f="fi-bands">
+        <caption class="fp-note">FI date range across return assumptions</caption>
+        <thead><tr><th scope="col">Case</th><th scope="col">FI date</th></tr></thead>
+        <tbody>
+          @for (b of f.bands; track b.band) {
+            <tr>
+              <td>{{ band(b.band) }} ({{ pct(b.annualReturn) }} a year)</td>
+              <td class="fp-num">@if (b.fiDate) { {{ date(b.fiDate) }} } @else { Not reached }</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <ul class="assume fp-note" data-f="fi-assumptions">
+        <li>Inflation {{ pct(f.assumptions.inflation) }} a year; corpus is {{ f.assumptions.fiMultiplier }} times yearly expenses, net of passive income.</li>
+        <li>Low case assumes debt-like returns of {{ pct(f.assumptions.debtReturnHigh) }}, high case equity-like returns of {{ pct(f.assumptions.equityReturn) }}; base sits between them.</li>
+        <li>SIP step-up {{ pct(f.assumptions.stepUp) }} a year. Actual returns vary and can be negative.</li>
+      </ul>
+      <p class="fp-note" data-f="fi-disclaimer">{{ f.disclaimer }}</p>
+    } @else {
+      <p class="fp-note" data-f="fi-not-set-up">Your FI date appears once an allocation plan and a SIP are set up.</p>
+    }
+  } @else {
+    <p class="fp-note" data-f="fi-missing">Your FI date is not available yet.</p>
+  }
+</fp-card>

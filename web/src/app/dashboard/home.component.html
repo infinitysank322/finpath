@@ -34,6 +34,7 @@
         <p class="fp-num" data-f="days-left">{{ v.cycle.daysLeft }} days left in this cycle</p>
       }
     </fp-card>
+    <app-wealth-card [view]="v" />
   } @else if (failed()) {
     <p role="alert" class="fp-alert" data-f="failed">Could not load your dashboard. Check your connection and try again.</p>
     <button type="button" class="fp-pill retry" (click)="load()">Retry</button>

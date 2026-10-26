@@ -10,6 +10,7 @@ import { FpCardComponent } from '../ui/fp-card.component';
 import { FpPageHeaderComponent } from '../ui/fp-page-header.component';
 import { FpProfileLinkComponent } from '../ui/fp-profile-link.component';
 import { ageLabel } from './staleness';
+import { WealthCardComponent } from './wealth-card.component';
 
 /** Status 0 = fetch failed; 504 = what the Angular service worker answers when the network is down
  * (a genuine gateway 504 is treated the same: either way the server could not be reached). */
@@ -30,7 +31,7 @@ const shortDate = (iso: string): string => {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [PaiseInrPipe, FpCardComponent, FpPageHeaderComponent, FpProfileLinkComponent],
+  imports: [PaiseInrPipe, FpCardComponent, FpPageHeaderComponent, FpProfileLinkComponent, WealthCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
