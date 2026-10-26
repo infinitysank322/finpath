@@ -26,16 +26,16 @@ public class LoanRepository {
     /** A loan row as stored. */
     public record Row(UUID id, String lender, String type, long principalOutstandingPaise, BigDecimal rate,
             Long emiPaise, boolean emiDerived, Integer emisLeft, LocalDate bulletDueDate, long upfrontFeePaise,
-            Instant createdAt) {
+            Instant createdAt, Integer dueDay) {
     }
 
     /** Values to write; the id and timestamps are the database's. */
     public record Draft(String lender, String type, long principalOutstandingPaise, BigDecimal rate,
-            Long emiPaise, boolean emiDerived, Integer emisLeft, LocalDate bulletDueDate, long upfrontFeePaise) {
+            Long emiPaise, boolean emiDerived, Integer emisLeft, LocalDate bulletDueDate, long upfrontFeePaise, Integer dueDay) {
     }
 
     private static final String COLUMNS = "id, lender, type, principal_outstanding_paise, rate, emi_paise, "
-            + "emi_derived, emis_left, bullet_due_date, upfront_fee_paise, created_at";
+            + "emi_derived, emis_left, bullet_due_date, upfront_fee_paise, created_at, due_day";
 
     private final Supplier<JdbcTemplate> jdbc;
     private final Supplier<TransactionTemplate> tx;
@@ -61,9 +61,9 @@ public class LoanRepository {
         JdbcTemplate j = jdbc.get();
         return tx.get().execute(status -> j.queryForObject("INSERT INTO loan (user_id, lender, type, "
                 + "principal_outstanding_paise, rate, emi_paise, emi_derived, emis_left, bullet_due_date, "
-                + "upfront_fee_paise) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING " + COLUMNS,
+                + "upfront_fee_paise, due_day) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING " + COLUMNS,
                 (rs, n) -> map(rs), userId, d.lender(), d.type(), d.principalOutstandingPaise(), d.rate(),
-                d.emiPaise(), d.emiDerived(), d.emisLeft(), d.bulletDueDate(), d.upfrontFeePaise()));
+                d.emiPaise(), d.emiDerived(), d.emisLeft(), d.bulletDueDate(), d.upfrontFeePaise(), d.dueDay()));
     }
 
     public Optional<Row> update(UUID userId, UUID id, Draft d) {
@@ -71,10 +71,10 @@ public class LoanRepository {
         return tx.get().execute(status -> {
             Optional<Row> row = j.query("UPDATE loan SET lender = ?, type = ?, "
                     + "principal_outstanding_paise = ?, rate = ?, emi_paise = ?, emi_derived = ?, emis_left = ?, "
-                    + "bullet_due_date = ?, upfront_fee_paise = ?, updated_at = now() WHERE id = ? AND user_id = ? "
+                    + "bullet_due_date = ?, upfront_fee_paise = ?, due_day = ?, updated_at = now() WHERE id = ? AND user_id = ? "
                     + "RETURNING " + COLUMNS, (rs, n) -> map(rs), d.lender(), d.type(),
                     d.principalOutstandingPaise(), d.rate(), d.emiPaise(), d.emiDerived(), d.emisLeft(),
-                    d.bulletDueDate(), d.upfrontFeePaise(), id, userId).stream().findFirst();
+                    d.bulletDueDate(), d.upfrontFeePaise(), d.dueDay(), id, userId).stream().findFirst();
             if (row.isPresent()) {
                 syncOpenChecklistItems(j, userId, id, d);
             }
@@ -128,6 +128,7 @@ public class LoanRepository {
     private static Row map(ResultSet rs) throws SQLException {
         return new Row(rs.getObject(1, UUID.class), rs.getString(2), rs.getString(3), rs.getLong(4),
                 rs.getBigDecimal(5), (Long) rs.getObject(6), rs.getBoolean(7), (Integer) rs.getObject(8),
-                rs.getObject(9, LocalDate.class), rs.getLong(10), rs.getTimestamp(11).toInstant());
+                rs.getObject(9, LocalDate.class), rs.getLong(10), rs.getTimestamp(11).toInstant(),
+                rs.getObject(12) == null ? null : rs.getInt(12));
     }
 }

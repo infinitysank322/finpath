@@ -66,6 +66,14 @@ describe('LoanDetailComponent', () => {
     expect(el.textContent).toContain('Calculated, not from lender');
   });
 
+  it('shows the due day when set and omits it otherwise', () => {
+    expect(render({ ...DETAIL_EMI, dueDay: 5 }).textContent).toContain('5th of each month');
+  });
+
+  it('omits the due day when null or absent', () => {
+    expect(render({ ...DETAIL_EMI, dueDay: null }).textContent).not.toContain('Payment due on');
+  });
+
   it('shows an error for a missing loan', () => {
     const f = TestBed.createComponent(LoanDetailComponent);
     f.detectChanges();

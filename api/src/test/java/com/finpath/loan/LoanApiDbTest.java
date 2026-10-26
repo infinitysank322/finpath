@@ -189,6 +189,52 @@ class LoanApiDbTest {
         assertThat(new BigDecimal(read.get("rate").asText())).isEqualByComparingTo(HOME_RATE);
     }
 
+    private static String withDueDay(String json, String rawValue) {
+        return json.substring(0, json.length() - 1) + ",\"dueDay\":" + rawValue + "}";
+    }
+
+    @Test
+    void dueDayRoundTripsOnCreateGetListDetailAndReplaceClearsIt() throws Exception {
+        as(a);
+        String base = body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT, null, null);
+        JsonNode created = send(post("/loans"), withDueDay(base, "5"), 201);
+        String id = created.get("id").asText();
+        assertThat(created.get("dueDay").asInt()).isEqualTo(5);
+        assertThat(send(get("/loans/" + id), null, 200).get("dueDay").asInt()).isEqualTo(5);
+        assertThat(send(get("/loans"), null, 200).get(0).get("dueDay").asInt()).isEqualTo(5);
+        assertThat(send(get("/loans/" + id + "/detail"), null, 200).get("dueDay").asInt()).isEqualTo(5);
+        assertThat(send(put("/loans/" + id), withDueDay(base, "31"), 200).get("dueDay").asInt()).isEqualTo(31);
+        JsonNode cleared = send(put("/loans/" + id), base, 200);
+        assertThat(cleared.get("dueDay").isNull()).isTrue();
+        assertThat(send(get("/loans/" + id + "/detail"), null, 200).get("dueDay").isNull()).isTrue();
+        assertThat(send(post("/loans"), withDueDay(base, "null"), 201).get("dueDay").isNull()).isTrue();
+        assertThat(send(post("/loans"), base, 201).get("dueDay").isNull()).isTrue();
+    }
+
+    @Test
+    void dueDayOutsideOneToThirtyOneOrNotAnIntegerIs400AndWritesNothing() throws Exception {
+        as(a);
+        String base = body("Home Bank", "emi", HOME_PRINCIPAL, HOME_RATE, HOME_STATED, HOME_LEFT, null, null);
+        for (String bad : List.of("0", "32", "-1", "\"5\"", "5.5", "true")) {
+            JsonNode err = send(post("/loans"), withDueDay(base, bad), 400);
+            if (err != null) {   // a non-integer is rejected by the deserialiser before the advice runs
+                assertThat(err.get("error").asText()).as(bad).isEqualTo("invalid_request");
+            }
+        }
+        assertThat(loanCount(a)).isZero();
+    }
+
+    @Test
+    void databaseCheckRejectsDueDay32EvenViaDirectSql() throws Exception {
+        try (Connection c = TestDb.admin(); PreparedStatement ps = c.prepareStatement(
+                "INSERT INTO loan (user_id, lender, type, principal_outstanding_paise, rate, emi_paise, emis_left, "
+                        + "due_day) VALUES (?, 'X', 'emi', 1000, 0.1, 10, 12, 32)")) {
+            ps.setObject(1, a);
+            assertThatThrownBy(ps::executeUpdate).isInstanceOf(SQLException.class)
+                    .hasMessageContaining("due_day");
+        }
+    }
+
     @Test
     void omittedEmiIsDerivedByTheRulesAndFlagged() throws Exception {
         as(a);

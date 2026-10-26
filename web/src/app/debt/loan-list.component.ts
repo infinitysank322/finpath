@@ -9,7 +9,7 @@ import { formatExactPaise } from '../expense/amount-entry';
 import { GuardApiService } from './guard-api.service';
 import { LoanApiService, loansWithTotal } from './loan-api.service';
 import { LoanFormComponent } from './loan-form.component';
-import { dmy, loanTypeLabel, rateToPctText } from './loan-format';
+import { dmy, ordinalDay, loanTypeLabel, rateToPctText } from './loan-format';
 import { LoanView } from './loan.models';
 
 /** FR-12 list. The total EMI is the server's guard figure; nothing is summed here. */
@@ -57,6 +57,9 @@ import { LoanView } from './loan.models';
                 } @else if (l.emisLeft !== null) {
                   <div><dt>EMIs left</dt><dd>{{ l.emisLeft }}</dd></div>
                 }
+                @if (l.dueDay) {
+                  <div><dt>Due on</dt><dd>the {{ ordinal(l.dueDay) }}</dd></div>
+                }
               </dl>
               @if (confirming() === l.id) {
                 <span role="group" [attr.aria-label]="'Remove ' + l.lender + '?'">
@@ -89,6 +92,7 @@ export class LoanListComponent {
   readonly typeLabel = loanTypeLabel;
   readonly pct = rateToPctText;
   readonly date = dmy;
+  readonly ordinal = ordinalDay;
 
   readonly confirming = signal<string | null>(null);
   readonly removing = signal(false);

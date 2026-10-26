@@ -31,3 +31,10 @@ export function dmy(iso: string): string {
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
 }
+
+/** 1 -> "1st", 22 -> "22nd", 11 -> "11th". Text only; the day itself comes from the API. */
+export function ordinalDay(n: number): string {
+  const r = n % 100;
+  if (r >= 11 && r <= 13) return `${n}th`;
+  return `${n}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`;
+}

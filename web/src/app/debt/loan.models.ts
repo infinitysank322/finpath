@@ -12,6 +12,8 @@ export interface LoanInput {
   emisLeft: number | null;
   bulletDueDate: string | null;
   upfrontFeePaise: number | null;
+  /** Day of month the payment is due, 1-31, or null. Reminder dates are the API's. */
+  dueDay: number | null;
 }
 
 export interface LoanView {
@@ -25,6 +27,7 @@ export interface LoanView {
   emisLeft: number | null;
   bulletDueDate: string | null;
   upfrontFeePaise: number;
+  dueDay: number | null;
   createdAt: string;
 }
 
@@ -54,6 +57,8 @@ export interface LoanDetailView {
   totalRemainingPayablePaise: number;
   instalmentsRemaining: number;
   payoffCycle: PayoffCycle | null;
+  /** Present only if the API's detail response carries it. */
+  dueDay?: number | null;
   closed: boolean;
   pastDue: boolean;
   balloonFinalPayment: boolean;

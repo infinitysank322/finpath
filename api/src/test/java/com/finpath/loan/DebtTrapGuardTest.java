@@ -55,7 +55,7 @@ class DebtTrapGuardTest {
 
     private static Row row(long emi) {
         return new Row(UUID.randomUUID(), "Bank", "emi", 1_000_000L, new BigDecimal("0.09"), emi, false, 12,
-                null, 0L, Instant.EPOCH);
+                null, 0L, Instant.EPOCH, null);
     }
 
     private static long headroom() {
@@ -63,7 +63,7 @@ class DebtTrapGuardTest {
     }
 
     private static LoanInput loan(long emi) {
-        return new LoanInput("New Bank", "emi", 1_000_000L, "0.09", emi, 12L, null, null);
+        return new LoanInput("New Bank", "emi", 1_000_000L, "0.09", emi, 12L, null, null, null);
     }
 
     @Test
@@ -111,7 +111,7 @@ class DebtTrapGuardTest {
 
     @Test
     void invalidLoanIsRejectedBeforeTheGuardOrConsent() {
-        assertThatThrownBy(() -> service.create(user, new LoanInput("", "emi", 1L, "0.09", 1L, 12L, null, null),
+        assertThatThrownBy(() -> service.create(user, new LoanInput("", "emi", 1L, "0.09", 1L, 12L, null, null, null),
                 false)).isInstanceOf(InvalidLoanException.class);
         verify(repo, never()).insert(any(), any());
     }
@@ -176,7 +176,7 @@ class DebtTrapGuardTest {
     @Test
     void closedLoansDoNotCountTowardsTheRatio() {
         Row closed = new Row(UUID.randomUUID(), "Old", "emi", 0L, new BigDecimal("0.09"), 999_999_999L, false, 1,
-                null, 0L, Instant.EPOCH);
+                null, 0L, Instant.EPOCH, null);
         when(repo.list(user)).thenReturn(List.of(row(EXISTING), closed));
         assertThat(service.guard(user).totalEmiPaise()).isEqualTo(EXISTING);
     }

@@ -44,7 +44,7 @@ class LoanDebtFreeTest {
     private Row home(long principal) {
         return new Row(UUID.randomUUID(), "Bank", "emi", principal,
                 new BigDecimal(FX.text(GoldenKeys.LOAN_HOME_RATE)), FX.paise(GoldenKeys.LOAN_HOME_EMI_STATED), false,
-                FX.integer(GoldenKeys.LOAN_HOME_EMIS_LEFT), null, 0L, Instant.EPOCH);
+                FX.integer(GoldenKeys.LOAN_HOME_EMIS_LEFT), null, 0L, Instant.EPOCH, null);
     }
 
     @Test

@@ -1,6 +1,5 @@
 package com.finpath.rls;
 
-import com.finpath.auth.CurrentUser;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -40,7 +39,7 @@ public class RlsTransactionManager extends DataSourceTransactionManager {
     private final Supplier<Optional<UUID>> currentUser;
 
     public RlsTransactionManager(DataSource dataSource) {
-        this(dataSource, CurrentUser::id);
+        this(dataSource, RlsScope::principalOrScoped);
     }
 
     public RlsTransactionManager(DataSource dataSource, Supplier<Optional<UUID>> currentUser) {

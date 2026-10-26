@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -80,6 +81,18 @@ class OpenApiTest {
                 .andExpect(jsonPath("$.paths['/checklist/streak'].get").exists())
                 .andExpect(jsonPath("$.paths['/plan/rebalance'].post").exists())
                 .andExpect(jsonPath("$.components.securitySchemes.bearer.scheme").value("bearer"));
+    }
+
+    @Test
+    void loanSchemasCarryTheOptionalIntegerDueDay() throws Exception {
+        JsonNode schemas = mapper.readTree(mvc.perform(get("/v3/api-docs")).andReturn().getResponse()
+                .getContentAsString()).at("/components/schemas");
+        for (String name : List.of("LoanInput", "LoanView", "LoanDetailView")) {
+            JsonNode dueDay = schemas.at("/" + name + "/properties/dueDay");
+            assertThat(dueDay.isMissingNode()).as(name + ".dueDay").isFalse();
+            assertThat(dueDay.get("type").asText()).as(name + ".dueDay type").isEqualTo("integer");
+            assertThat(schemas.at("/" + name + "/required").findValuesAsText("")).doesNotContain("dueDay");
+        }
     }
 
     @Test

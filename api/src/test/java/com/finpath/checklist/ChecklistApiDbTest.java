@@ -383,10 +383,10 @@ class ChecklistApiDbTest {
         long newGold = FX.paise("loan.gold_monthly_interest_paise") + 100;
         new LoanRepository(() -> jdbcRef, () -> txRef).update(a, goldLoan, new LoanRepository.Draft("Gold lender",
                 "bullet", FX.paise("loan.gold_principal_paise"), FX.decimal("loan.gold_rate"), newGold, false, null,
-                LocalDate.of(2031, 10, 1), 0));
+                LocalDate.of(2031, 10, 1), 0, null));
         new LoanRepository(() -> jdbcRef, () -> txRef).update(a, homeLoan, new LoanRepository.Draft("Home bank",
                 "emi", FX.paise("loan.home_principal_paise"), FX.decimal("loan.home_rate"), oldHome + 100, false,
-                FX.integer("loan.home_emis_left"), null, 0));
+                FX.integer("loan.home_emis_left"), null, 0, null));
         assertThat(scalar("SELECT amount_paise FROM checklist_item WHERE id = '" + openId + "'"))
                 .isEqualTo(String.valueOf(newGold));
         assertThat(scalar("SELECT amount_paise FROM checklist_item WHERE id = '" + doneId + "'"))
@@ -399,7 +399,7 @@ class ChecklistApiDbTest {
         generate();
         new LoanRepository(() -> jdbcRef, () -> txRef).update(a, goldLoan, new LoanRepository.Draft("Gold lender",
                 "bullet", 0, FX.decimal("loan.gold_rate"), FX.paise("loan.gold_monthly_interest_paise"), false, null,
-                LocalDate.of(2031, 10, 1), 0));
+                LocalDate.of(2031, 10, 1), 0, null));
         assertThat(scalar("SELECT count(*) FROM checklist_item WHERE source_ref = '" + goldLoan + "'"))
                 .isEqualTo("0");
         assertThat(generate().get("totalCount").asInt()).isEqualTo(4);

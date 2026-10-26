@@ -6,7 +6,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { formatExactPaise } from '../expense/amount-entry';
 import { errorMessage } from '../plan/plan-format';
 import { LoanApiService } from './loan-api.service';
-import { dmy, loanTypeLabel, rateToPctText } from './loan-format';
+import { dmy, ordinalDay, loanTypeLabel, rateToPctText } from './loan-format';
 import { LoanDetailView } from './loan.models';
 
 const PREVIEW_ROWS = 12;
@@ -49,6 +49,9 @@ const PREVIEW_ROWS = 12;
         <div><dt>Interest still to pay</dt><dd>{{ exact(l.interestRemainingPaise) }}</dd></div>
         <div><dt>Total still payable</dt><dd>{{ exact(l.totalRemainingPayablePaise) }}</dd></div>
         <div><dt>Payments left</dt><dd>{{ l.instalmentsRemaining }}</dd></div>
+        @if (l.dueDay) {
+          <div><dt>Payment due on</dt><dd>{{ ordinal(l.dueDay) }} of each month</dd></div>
+        }
         @if (l.payoffCycle; as p) {
           <div><dt>Final payment in the cycle starting</dt><dd>{{ date(p.start) }}</dd></div>
         }
@@ -108,6 +111,7 @@ export class LoanDetailComponent {
   readonly typeLabel = loanTypeLabel;
   readonly pct = rateToPctText;
   readonly date = dmy;
+  readonly ordinal = ordinalDay;
 
   constructor() {
     inject(ActivatedRoute)

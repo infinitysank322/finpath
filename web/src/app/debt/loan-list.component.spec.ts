@@ -7,6 +7,7 @@ import { LoanListComponent } from './loan-list.component';
 import { rupees, SAMPLE_EMI_TOTAL_PAISE, SAMPLE_VIEWS } from './loan.fixture';
 
 describe('LoanListComponent', () => {
+  const guardBody = (n: number) => ({ ratio: '0.4', status: 'OK', headroomPaise: 0, totalEmiPaise: n, monthlyIncomePaise: 1 });
   let http: HttpTestingController;
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -41,6 +42,17 @@ describe('LoanListComponent', () => {
     expect((f.nativeElement as HTMLElement).textContent).toContain('Calculated, not from lender');
   });
 
+  it('shows the due day only when set', () => {
+    const f = TestBed.createComponent(LoanListComponent);
+    f.detectChanges();
+    http.expectOne('/api/loans').flush([{ ...SAMPLE_VIEWS[0], dueDay: 2 }, SAMPLE_VIEWS[3]]);
+    http.expectOne('/api/loans/debt-trap-guard').flush(guardBody(1));
+    f.detectChanges();
+    const cards = (f.nativeElement as HTMLElement).querySelectorAll('.card');
+    expect(cards[0].textContent).toContain('the 2nd');
+    expect(cards[1].textContent).not.toContain('Due on');
+  });
+
   it('shows an error with retry when loading fails', () => {
     const f = TestBed.createComponent(LoanListComponent);
     f.detectChanges();
@@ -49,8 +61,6 @@ describe('LoanListComponent', () => {
     f.detectChanges();
     expect((f.nativeElement as HTMLElement).querySelector('[role=alert]')!.textContent).toContain('server had a problem');
   });
-
-  const guardBody = (n: number) => ({ ratio: '0.4', status: 'OK', headroomPaise: 0, totalEmiPaise: n, monthlyIncomePaise: 1 });
 
   it('asks for confirmation before deleting and disables Yes while the DELETE is pending', () => {
     const f = TestBed.createComponent(LoanListComponent);

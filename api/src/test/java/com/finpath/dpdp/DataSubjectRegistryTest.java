@@ -88,7 +88,7 @@ class DataSubjectRegistryTest {
     @Test
     void consentIsRegisteredAndDeletedBeforeUsers() {
         assertThat(DataSubjectRegistry.exportTables()).extracting(TableRef::table).contains("consent");
-        assertThat(DataSubjectRegistry.deleteTables()).extracting(TableRef::table).containsExactly("consent", "net_worth_snapshot", "checklist_item", "plan_cycle", "income_source", "transaction", "recurring_template", "category_budget", "loan", "goal", "holding", "users");
+        assertThat(DataSubjectRegistry.deleteTables()).extracting(TableRef::table).containsExactly("consent", "net_worth_snapshot", "checklist_item", "reminder_sent", "plan_cycle", "income_source", "transaction", "recurring_template", "category_budget", "loan", "goal", "holding", "users");
     }
 
     @Test

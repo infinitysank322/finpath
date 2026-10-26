@@ -51,12 +51,13 @@ public class LoanService {
             @JsonDeserialize(using = StrictInteger.class) Long principalOutstandingPaise, String rate,
             @JsonDeserialize(using = StrictInteger.class) Long emiPaise,
             @JsonDeserialize(using = StrictInteger.class) Long emisLeft, LocalDate bulletDueDate,
-            @JsonDeserialize(using = StrictInteger.class) Long upfrontFeePaise) {
+            @JsonDeserialize(using = StrictInteger.class) Long upfrontFeePaise,
+            @JsonDeserialize(using = StrictInteger.class) Long dueDay) {
     }
 
     public record LoanView(UUID id, String lender, String type, long principalOutstandingPaise, String rate,
             Long emiPaise, boolean emiDerived, Integer emisLeft, LocalDate bulletDueDate, long upfrontFeePaise,
-            Instant createdAt) {
+            Instant createdAt, Integer dueDay) {
     }
 
     static final ZoneId CYCLE_ZONE = ZoneId.of("Asia/Kolkata");
@@ -78,7 +79,7 @@ public class LoanService {
     public record LoanDetailView(UUID id, String lender, String type, long emiUsedPaise, boolean emiDerived,
             ComputedEmiComparison computedEmiComparison, String effectiveAnnualRate, long interestRemainingPaise,
             long totalRemainingPayablePaise, int instalmentsRemaining, PayoffCycle payoffCycle, boolean closed,
-            boolean pastDue, boolean balloonFinalPayment, List<InstalmentView> instalments) {
+            boolean pastDue, boolean balloonFinalPayment, List<InstalmentView> instalments, Integer dueDay) {
     }
 
     /** One loan in payoff order; payoffCycle is the 0-based cycle offset in which it closes. */
@@ -184,7 +185,7 @@ public class LoanService {
         return new LoanDetailView(r.id(), r.lender(), r.type(), d.emiUsed().paise(), d.emiDerived(), cmp,
                 d.effectiveAnnualRate().toPlainString(), d.interestRemaining().paise(),
                 d.totalRemainingPayable().paise(), d.instalmentsRemaining(), payoff, d.closed(), d.pastDue(),
-                d.balloonFinalPayment(), rows);
+                d.balloonFinalPayment(), rows, r.dueDay());
     }
 
     /** FR-14 plan over the caller's open loans. The strategy is required: anything else is 400, never a default. */
@@ -466,6 +467,13 @@ public class LoanService {
         if (fee < 0 || (fee > 0 && (!CARD_EMI.equals(type) || fee >= in.principalOutstandingPaise()))) {
             throw new InvalidLoanException();
         }
+        Integer dueDay = null;
+        if (in.dueDay() != null) {
+            if (in.dueDay() < 1 || in.dueDay() > 31) {
+                throw new InvalidLoanException();
+            }
+            dueDay = in.dueDay().intValue();
+        }
         Long emi = in.emiPaise();
         boolean derived = false;
         if (emi != null) {
@@ -477,7 +485,7 @@ public class LoanService {
             derived = true;
         }
         return new Draft(lender, type, in.principalOutstandingPaise(), rate, emi, derived, emisLeft,
-                in.bulletDueDate(), fee);
+                in.bulletDueDate(), fee, dueDay);
     }
 
     /** Rules-engine instalment for an unstated EMI; card_emi has none (the lender's figure is required). */
@@ -518,6 +526,6 @@ public class LoanService {
     private static LoanView view(Row r) {
         return new LoanView(r.id(), r.lender(), r.type(), r.principalOutstandingPaise(),
                 r.rate().stripTrailingZeros().toPlainString(), r.emiPaise(), r.emiDerived(), r.emisLeft(),
-                r.bulletDueDate(), r.upfrontFeePaise(), r.createdAt());
+                r.bulletDueDate(), r.upfrontFeePaise(), r.createdAt(), r.dueDay());
     }
 }

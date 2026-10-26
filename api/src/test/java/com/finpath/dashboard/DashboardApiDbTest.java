@@ -179,7 +179,7 @@ class DashboardApiDbTest {
                 FX.paise(GoldenKeys.EMERGENCY_CURRENT), 0L));
         loans.create(user, new LoanInput("Bank", "emi", FX.paise(GoldenKeys.LOAN_HOME_PRINCIPAL),
                 FX.text(GoldenKeys.LOAN_HOME_RATE), FX.paise(GoldenKeys.LOAN_HOME_EMI_STATED),
-                (long) FX.integer(GoldenKeys.LOAN_HOME_EMIS_LEFT), null, null), true);
+                (long) FX.integer(GoldenKeys.LOAN_HOME_EMIS_LEFT), null, null, null), true);
         budgets.put(user, "GROCERIES", cycleStart, new BudgetInput(FX.paise(GoldenKeys.BUDGET_CATEGORY)));
         spend(user, "GROCERIES", FX.paise(GoldenKeys.BUDGET_SPENT));
         spend(user, "TRAVEL", FX.paise(GoldenKeys.BUDGET_SPENT));

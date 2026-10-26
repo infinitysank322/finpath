@@ -55,6 +55,13 @@ import { DebtTrapBlockedBody, LoanInput, LoanType, LoanView } from './loan.model
         <input id="ln-fee" type="text" inputmode="decimal" autocomplete="off" [value]="feeText()" (input)="feeText.set(val($event))" />
       }
 
+      <label for="ln-dueday">Due day of month (optional)</label>
+      <input id="ln-dueday" type="text" inputmode="numeric" autocomplete="off" maxlength="2" aria-describedby="ln-dueday-help" [attr.aria-invalid]="dueDayInvalid()" [value]="dueDayText()" (input)="dueDayText.set(val($event))" />
+      <p id="ln-dueday-help" class="muted small">Reminders arrive 5 days before. Leave empty for none.</p>
+      @if (dueDayInvalid()) {
+        <p class="error" role="alert">Enter a day from 1 to 31, or leave it empty.</p>
+      }
+
       <button type="submit" class="btn primary" [disabled]="input() === null || saving()" [attr.aria-busy]="saving()">Add loan</button>
     </form>
     <p class="error" role="alert">{{ error() }}</p>
@@ -75,10 +82,17 @@ export class LoanFormComponent {
   readonly emisLeftText = signal('');
   readonly dueDate = signal('');
   readonly feeText = signal('');
+  readonly dueDayText = signal('');
   readonly saving = signal(false);
   readonly error = signal('');
   /** Set while the guard dialog is open for a loan the server refused (409). */
   readonly blocked = signal<GuardView | null>(null);
+
+  /** True when text is entered that is not a whole number 1-31. Empty is valid (no reminder). */
+  readonly dueDayInvalid = computed(() => {
+    const t = this.dueDayText().trim();
+    return t !== '' && !/^([1-9]|[12]\d|3[01])$/.test(t);
+  });
 
   readonly isBullet = computed(() => this.type() === 'bullet');
   readonly typeHint = computed(() => LOAN_TYPES.find((t) => t.code === this.type())?.hint ?? '');
@@ -112,7 +126,9 @@ export class LoanFormComponent {
       fee = rupeesTextToPaise(this.feeText());
       if (fee === null) return null;
     }
-    return { lender, type, principalOutstandingPaise: principal, rate, emiPaise: emi, emisLeft, bulletDueDate: due, upfrontFeePaise: fee };
+    if (this.dueDayInvalid()) return null;
+    const dueDay = this.dueDayText().trim() === '' ? null : parseInt(this.dueDayText().trim(), 10);
+    return { lender, type, principalOutstandingPaise: principal, rate, emiPaise: emi, emisLeft, bulletDueDate: due, upfrontFeePaise: fee, dueDay };
   });
 
   val(e: Event): string {
@@ -155,6 +171,6 @@ export class LoanFormComponent {
   }
 
   private reset(): void {
-    for (const s of [this.lender, this.principalText, this.rateText, this.emiText, this.emisLeftText, this.dueDate, this.feeText]) s.set('');
+    for (const s of [this.lender, this.principalText, this.rateText, this.emiText, this.emisLeftText, this.dueDate, this.feeText, this.dueDayText]) s.set('');
   }
 }
