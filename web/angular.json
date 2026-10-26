@@ -30,6 +30,7 @@
               }
             ],
             "styles": [
+              "src/styles/fonts.css",
               "src/styles/tokens.css",
               "src/styles/base.css"
             ],
@@ -96,6 +97,7 @@
               }
             ],
             "styles": [
+              "src/styles/fonts.css",
               "src/styles/tokens.css",
               "src/styles/base.css"
             ],
